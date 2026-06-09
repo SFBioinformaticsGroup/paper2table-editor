@@ -1,0 +1,157 @@
+import type { Citation, ColumnValue, Metadata, Row, Table, TableFragment, TableWithFragments } from './types'
+
+export function getTableFragments(table: Table): TableFragment[] {
+  if ('table_fragments' in table) {
+    return (table as TableWithFragments).table_fragments
+  }
+  const t = table as { rows: Row[]; page: number }
+  return [{ rows: t.rows, page: t.page }]
+}
+
+export function getRowColumns(row: Row): Record<string, ColumnValue> {
+  const result: Record<string, ColumnValue> = {}
+  for (const [key, val] of Object.entries(row)) {
+    if (key !== 'agreement_level_' && key !== 'sources_') {
+      result[key] = val as ColumnValue
+    }
+  }
+  return result
+}
+
+export function columnNames(rows: Row[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      if (key !== 'agreement_level_' && key !== 'sources_' && !seen.has(key)) {
+        seen.add(key)
+        result.push(key)
+      }
+    }
+  }
+  return result
+}
+
+export function isEmptyRow(row: Row): boolean {
+  for (const [key, val] of Object.entries(row)) {
+    if (key === 'agreement_level_' || key === 'sources_') continue
+    if (val == null) continue
+    if (Array.isArray(val)) {
+      if (val.some((v) => typeof v === 'object' && 'value' in v ? v.value !== '' : String(v) !== '')) return false
+    } else if (String(val) !== '') {
+      return false
+    }
+  }
+  return true
+}
+
+export function renderColumnValue(val: ColumnValue): string {
+  if (val == null) return ''
+  if (Array.isArray(val)) return val.map((v) => (typeof v === 'object' && 'value' in v ? v.value : String(v))).join(', ')
+  return String(val)
+}
+
+export function renderCitation(citation: Citation | undefined): string {
+  if (citation == null) return ''
+  if (Array.isArray(citation)) return citation.map((v) => v.value).join(', ')
+  return citation
+}
+
+export function agreementClass(level: number | null | undefined): string {
+  if (level == null || level <= 1) return 'low'
+  if (level === 2) return 'medium'
+  return 'high'
+}
+
+export function readerEmoji(reader: string | undefined): string {
+  if (!reader) return ''
+  if (['pdfplumber', 'camelot', 'pymupdf'].includes(reader)) return '💻'
+  if (reader.startsWith('hybrid-')) return '☯️'
+  return '🤖'
+}
+
+export function flattenMetadataRows(metadata: Metadata): [string, string][] {
+  const rows: [string, string][] = []
+
+  function flattenDict(data: Record<string, unknown>, prefix: string): void {
+    for (const [key, value] of Object.entries(data)) {
+      const fullKey = prefix ? `${prefix}.${key}` : key
+      if (Array.isArray(value)) {
+        rows.push([fullKey, value.map((v) => String(v)).join(', ')])
+      } else if (value !== null && typeof value === 'object') {
+        flattenDict(value as Record<string, unknown>, fullKey)
+      } else {
+        rows.push([fullKey, String(value)])
+      }
+    }
+  }
+
+  for (const [key, value] of Object.entries(metadata)) {
+    if (key === 'sources') continue
+    if (Array.isArray(value)) {
+      rows.push([key, value.map((v) => String(v)).join(', ')])
+    } else if (value !== null && typeof value === 'object') {
+      flattenDict(value as Record<string, unknown>, '')
+    } else {
+      rows.push([key, String(value)])
+    }
+  }
+  return rows
+}
+
+export function collectPaperSourceUuids(content: { tables: Table[] }): Set<string> {
+  const uuids = new Set<string>()
+  for (const table of content.tables) {
+    for (const fragment of getTableFragments(table)) {
+      for (const row of fragment.rows) {
+        for (const uid of row.sources_ ?? []) {
+          uuids.add(uid)
+        }
+      }
+    }
+  }
+  return uuids
+}
+
+export function buildFragmentColumns(rows: Row[]): string[] {
+  const hasAgreement = rows.some((r) => r.agreement_level_ != null)
+  const hasSources = rows.some((r) => r.sources_ != null)
+  const allColNames = columnNames(rows)
+  const rowColSets = rows.map((r) => new Set(Object.keys(getRowColumns(r))))
+  const commonCols = allColNames.filter((c) => rowColSets.every((s) => s.has(c)))
+  const extraCols = allColNames.filter((c) => !commonCols.includes(c))
+
+  const cols: string[] = []
+  if (hasAgreement) cols.push('agreement_level_')
+  cols.push(...commonCols, ...extraCols)
+  if (hasSources) cols.push('readers_', 'sources_')
+  return cols
+}
+
+export function renderDataCell(
+  row: Row,
+  col: string,
+  uuidToReader: Map<string, string>
+): string {
+  if (col === 'agreement_level_') {
+    return row.agreement_level_ != null ? String(row.agreement_level_) : ''
+  }
+  if (col === 'readers_') {
+    const sourceIds = row.sources_ ?? []
+    const seen = new Set<string>()
+    const readers: string[] = []
+    for (const id of sourceIds) {
+      const reader = uuidToReader.get(id)
+      if (reader && !seen.has(reader)) {
+        seen.add(reader)
+        readers.push(reader)
+      }
+    }
+    return readers.join(', ')
+  }
+  if (col === 'sources_') {
+    return (row.sources_ ?? []).join(', ')
+  }
+  const colValues = getRowColumns(row)
+  return renderColumnValue(colValues[col] ?? null)
+}

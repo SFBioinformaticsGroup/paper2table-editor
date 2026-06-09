@@ -1,0 +1,147 @@
+import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
+import { join } from 'path'
+import { readFileSync, readdirSync } from 'fs'
+import Ajv2020 from 'ajv/dist/2020'
+
+let validateTablesFile: ((data: unknown) => { valid: boolean; errors: string[] }) | null = null
+
+function initValidator(): void {
+  try {
+    const schemaPath = join(app.getAppPath(), 'resources', 'tablesfile.schema.json')
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'))
+    const ajv = new Ajv2020({ allErrors: true })
+    const validate = ajv.compile(schema)
+    validateTablesFile = (data) => {
+      const valid = validate(data) as boolean
+      const errors = valid
+        ? []
+        : (validate.errors ?? []).map((e) => `${e.instancePath || '(root)'} ${e.message}`)
+      return { valid, errors }
+    }
+  } catch (err) {
+    console.error('Could not load JSON schema for validation:', err)
+  }
+}
+
+function buildMenu(win: BrowserWindow): void {
+  const openDir = async () => {
+    const result = await dialog.showOpenDialog(win, { properties: ['openDirectory'] })
+    if (!result.canceled && result.filePaths.length > 0) {
+      win.webContents.send('directory-selected', result.filePaths[0])
+    }
+  }
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'File',
+      submenu: [
+        { label: 'Open Directory…', accelerator: 'CmdOrCtrl+O', click: openDir },
+        { type: 'separator' },
+        { role: process.platform === 'darwin' ? 'close' : 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    }
+  ]
+
+  if (process.platform === 'darwin') {
+    template.unshift({
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    })
+  }
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
+function createWindow(): void {
+  const win = new BrowserWindow({
+    width: 1280,
+    height: 900,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  })
+
+  buildMenu(win)
+
+  if (process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(process.env.ELECTRON_RENDERER_URL)
+  } else {
+    win.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+}
+
+app.whenReady().then(() => {
+  initValidator()
+  createWindow()
+})
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow()
+})
+
+ipcMain.handle('open-directory', async () => {
+  const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0]
+})
+
+ipcMain.handle('list-directory', async (_event, dirPath: string) => {
+  let metadata: Record<string, unknown> = {}
+  try {
+    const raw = readFileSync(join(dirPath, 'tables.metadata.json'), 'utf-8')
+    metadata = JSON.parse(raw)
+    if (metadata.reader === 'tablemerge' && !('agreement_method' in metadata)) {
+      metadata = { ...metadata, agreement_method: 'simple-count' }
+    }
+  } catch {
+    // no metadata file
+  }
+
+  let fileNames: string[] = []
+  try {
+    fileNames = readdirSync(dirPath)
+      .filter((f) => f.endsWith('.tables.json') && f !== 'tables.metadata.json')
+      .sort()
+  } catch {
+    // unreadable dir
+  }
+
+  return { metadata, fileNames }
+})
+
+ipcMain.handle('load-paper', async (_event, dirPath: string, fileName: string) => {
+  const data = JSON.parse(readFileSync(join(dirPath, fileName), 'utf-8'))
+  const validationErrors: string[] = validateTablesFile
+    ? (() => { const r = validateTablesFile(data); return r.valid ? [] : r.errors })()
+    : []
+  return { content: data, validationErrors }
+})
