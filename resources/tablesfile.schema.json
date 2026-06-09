@@ -76,7 +76,7 @@
       ]
     },
     "metadata": {
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
         "filename": {
           "type": "string"
@@ -109,6 +109,9 @@
     },
     "columnValue": {
       "oneOf": [
+        {
+          "type": "null"
+        },
         {
           "type": "string"
         },
