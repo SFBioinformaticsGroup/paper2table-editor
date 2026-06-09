@@ -16,6 +16,8 @@ function buildUuidToReader(metadata: Metadata): Map<string, string> {
 
 function buildAnchorIds(state: DirectoryState): string[] {
   const ids: string[] = []
+  if (Object.keys(state.metadata).length > 0) ids.push('metadata')
+  if ((state.metadata.sources?.length ?? 0) > 0) ids.push('sources')
   state.fileNames.forEach((fileName, paperIdx) => {
     const paperId = `paper-${paperIdx}`
     ids.push(paperId)
@@ -36,7 +38,6 @@ export function App() {
   const [loadingPapers, setLoadingPapers] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState('')
   const anchorIdsRef = useRef<string[]>([])
-  // tracks which papers have been requested to avoid duplicate loads
   const requestedRef = useRef(new Set<string>())
 
   async function loadPaper(dirPath: string, fileName: string) {
@@ -103,6 +104,10 @@ export function App() {
     return window.api.onDirectorySelected(loadDir)
   }, [])
 
+  useEffect(() => {
+    document.title = state?.dirPath ? `${state.dirPath} — Tables Editor` : 'Tables Editor'
+  }, [state?.dirPath])
+
   // scroll spy
   useEffect(() => {
     if (!state) return
@@ -123,7 +128,6 @@ export function App() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [state])
 
-
   if (!state) {
     return (
       <div className="open-dir-screen">
@@ -142,6 +146,7 @@ export function App() {
   const uuidToReader = buildUuidToReader(state.metadata)
   const allSources = state.metadata.sources ?? []
   const hasMetadata = Object.keys(state.metadata).length > 0
+  const hasSources = (state.metadata.sources?.length ?? 0) > 0
 
   return (
     <>
@@ -149,6 +154,8 @@ export function App() {
         fileNames={state.fileNames}
         papers={state.papers}
         activeId={activeId}
+        hasMetadata={hasMetadata}
+        hasSources={hasSources}
         onSelectPaper={(fileName) => loadPaper(state.dirPath, fileName)}
       />
       <main>
@@ -157,10 +164,7 @@ export function App() {
             <span className="spinner" aria-label="Loading" />
           </div>
         )}
-        <div className="toolbar">
-          {state.dirPath && <span className="dir-path">{state.dirPath}</span>}
-        </div>
-        <h1>Paper2Table Viewer</h1>
+        <div className="dir-header">{state.dirPath}</div>
         {hasMetadata && <MetadataSection metadata={state.metadata} />}
         <h2>Papers</h2>
         {state.fileNames.map((fileName, paperIdx) => {

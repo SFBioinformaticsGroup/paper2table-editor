@@ -22,7 +22,7 @@ export function MetadataSection({ metadata }: { metadata: Metadata }) {
 
   return (
     <>
-      <h2>Metadata</h2>
+      <h2 id="metadata">Metadata</h2>
       {rows.length > 0 && (
         <div className="table-wrapper">
           <table className="table metadata-table">
@@ -39,7 +39,7 @@ export function MetadataSection({ metadata }: { metadata: Metadata }) {
       )}
       {sources.length > 0 && (
         <>
-          <h3>Sources</h3>
+          <h3 id="sources">Sources</h3>
           <div className="table-wrapper">
             <table className="table">
               <thead>
