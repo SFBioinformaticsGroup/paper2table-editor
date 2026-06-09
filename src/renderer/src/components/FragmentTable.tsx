@@ -56,7 +56,7 @@ export function FragmentTable({
     <div className="fragment-section">
       {showFragmentHeading && (
         <>
-          <h5 id={anchorId}>page {fragment.page}</h5>
+          <h5 id={anchorId}>Table {tableIdx}, p. {fragment.page}</h5>
           <div className="fragment-toolbar">
             <button
               className="table-toolbar-btn danger"

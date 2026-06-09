@@ -143,20 +143,20 @@ export function PaperSection({
         const isLastTable = tableIdx === content.tables.length - 1
         const tableTitle = table.title
 
-        // For single-fragment tables the anchor goes on the h4.
-        // For multi-fragment tables there is no anchor on h4; each fragment h5 carries its own anchor.
-        const singleAnchorId = !hasMultipleFragments
-          ? `${paperId}-table-${tableIdx + 1}-page-${fragments[0]?.page}`
-          : undefined
+        // Single-fragment: anchor is the fragment anchor so scroll-spy tracks it.
+        // Multi-fragment: a dedicated table-level anchor; each fragment h5 keeps its own anchor.
+        const tableAnchorId = hasMultipleFragments
+          ? `${paperId}-table-${tableIdx + 1}`
+          : `${paperId}-table-${tableIdx + 1}-page-${fragments[0]?.page}`
 
         const headingText =
           `Table ${tableIdx + 1}` +
           (tableTitle ? ` — ${tableTitle}` : '') +
-          (!hasMultipleFragments && fragments[0] ? `, page ${fragments[0].page}` : '')
+          (!hasMultipleFragments && fragments[0] ? `, p. ${fragments[0].page}` : '')
 
         return (
           <div key={tableIdx} className="table-section">
-            <h4 id={singleAnchorId}>{headingText}</h4>
+            <h4 id={tableAnchorId}>{headingText}</h4>
 
             <TableToolbar
               fileName={fileName}
