@@ -262,3 +262,298 @@ main {
   margin: 2px 0;
   color: #444;
 }
+
+/* ── Editor: paper toolbar ──────────────────────────────────────────────── */
+
+.paper-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0 8px;
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 3px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8em;
+  color: #444;
+  line-height: 1.4;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.toolbar-btn.danger {
+  color: #c33;
+  border-color: #e9b;
+}
+
+.toolbar-btn.danger:hover {
+  background: #fef0f0;
+}
+
+.toolbar-btn.save-btn.dirty {
+  border-color: #a60;
+  color: #a60;
+  font-weight: 600;
+}
+
+.delete-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8em;
+  color: #a00;
+}
+
+/* ── Editor: table / fragment sections ─────────────────────────────────── */
+
+.table-section {
+  margin-top: 1.2em;
+}
+
+.fragment-section {
+  margin-top: 0.6em;
+}
+
+.fragment-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 4px;
+}
+
+/* ── Editor: table toolbar ──────────────────────────────────────────────── */
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 4px;
+}
+
+.table-toolbar-btn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 2px 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78em;
+  color: #555;
+}
+
+.table-toolbar-btn:hover {
+  background: #f0f0f0;
+}
+
+.table-toolbar-btn.danger {
+  color: #c33;
+  border-color: #e9b;
+}
+
+.table-toolbar-btn.danger:hover {
+  background: #fef0f0;
+}
+
+/* ── Editor: row action column ──────────────────────────────────────────── */
+
+.row-actions-header {
+  width: 36px;
+  border: 1px solid #ddd;
+  padding: 4px;
+}
+
+.row-actions {
+  width: 36px;
+  padding: 2px 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.12s;
+  vertical-align: middle;
+}
+
+tr:hover .row-actions {
+  opacity: 1;
+}
+
+.row-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 3px;
+  color: #aaa;
+  font-size: 0.85em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.row-actions button:hover {
+  color: #c33;
+}
+
+/* ── Editor: column header actions ──────────────────────────────────────── */
+
+.col-header {
+  position: relative;
+}
+
+.col-header-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.col-header-actions {
+  display: inline-flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.12s;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+th:hover .col-header-actions {
+  opacity: 1;
+}
+
+.col-header-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 3px;
+  color: #999;
+  font-size: 0.8em;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 2px;
+}
+
+.col-header-icon-btn:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.col-header-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  z-index: 30;
+  min-width: 160px;
+  padding: 4px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.col-header-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 5px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: #333;
+}
+
+.col-header-menu > button:hover {
+  background: #f0f0f0;
+}
+
+.col-merge-list {
+  border-top: 1px solid #eee;
+  padding-top: 2px;
+}
+
+.col-merge-item {
+  display: block !important;
+  width: 100%;
+  text-align: left;
+  padding: 4px 20px !important;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.82em;
+  color: #555 !important;
+}
+
+.col-merge-item:hover {
+  background: #f0f0f0 !important;
+}
+
+.col-header-edit-input {
+  font: inherit;
+  border: 1px solid #99c;
+  border-radius: 2px;
+  padding: 1px 4px;
+  width: 100%;
+  min-width: 60px;
+}
+
+/* ── Editor: editable cell ──────────────────────────────────────────────── */
+
+.editable-cell {
+  position: relative;
+  padding-right: 20px !important;
+}
+
+.cell-edit-btn {
+  opacity: 0;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #bbb;
+  font-size: 0.75em;
+  padding: 1px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.editable-cell:hover .cell-edit-btn {
+  opacity: 1;
+}
+
+.cell-edit-btn:hover {
+  color: #555;
+}
+
+.editable-cell.editing {
+  padding: 2px !important;
+}
+
+.cell-edit-textarea {
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  resize: both;
+  border: 1px solid #99c;
+  border-radius: 2px;
+  padding: 2px 4px;
+  min-height: 2em;
+  display: block;
+}

@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import { join } from 'path'
-import { readFileSync, readdirSync } from 'fs'
+import { readFileSync, readdirSync, writeFileSync, unlinkSync } from 'fs'
 import Ajv2020 from 'ajv/dist/2020'
 
 let validateTablesFile: ((data: unknown) => { valid: boolean; errors: string[] }) | null = null
@@ -37,14 +37,17 @@ function buildMenu(win: BrowserWindow): void {
       submenu: [
         { label: 'Open Directory…', accelerator: 'CmdOrCtrl+O', click: openDir },
         { type: 'separator' },
+        { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => win.webContents.send('save-current-paper') },
+        { label: 'Save As…', accelerator: 'CmdOrCtrl+Shift+S', click: () => win.webContents.send('save-current-paper-as') },
+        { type: 'separator' },
         { role: process.platform === 'darwin' ? 'close' : 'quit' }
       ]
     },
     {
       label: 'Edit',
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
+        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', click: () => win.webContents.send('undo-paper') },
+        { label: 'Redo', accelerator: 'CmdOrCtrl+Shift+Z', click: () => win.webContents.send('redo-paper') },
         { type: 'separator' },
         { role: 'cut' },
         { role: 'copy' },
@@ -144,4 +147,25 @@ ipcMain.handle('load-paper', async (_event, dirPath: string, fileName: string) =
     ? (() => { const r = validateTablesFile(data); return r.valid ? [] : r.errors })()
     : []
   return { content: data, validationErrors }
+})
+
+ipcMain.handle('save-paper', async (_event, dirPath: string, fileName: string, content: string) => {
+  writeFileSync(join(dirPath, fileName), content, 'utf-8')
+  return { ok: true }
+})
+
+ipcMain.handle('delete-paper', async (_event, dirPath: string, fileName: string) => {
+  unlinkSync(join(dirPath, fileName))
+  return { ok: true }
+})
+
+ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: string, content: string) => {
+  const win = BrowserWindow.getFocusedWindow()
+  const result = await dialog.showSaveDialog(win!, {
+    defaultPath: join(dirPath, suggestedName),
+    filters: [{ name: 'Tables JSON', extensions: ['json'] }]
+  })
+  if (result.canceled || !result.filePath) return { ok: false, filePath: null }
+  writeFileSync(result.filePath, content, 'utf-8')
+  return { ok: true, filePath: result.filePath }
 })

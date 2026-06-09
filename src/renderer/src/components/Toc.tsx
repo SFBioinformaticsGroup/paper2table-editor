@@ -8,10 +8,11 @@ interface Props {
   activeId: string
   hasMetadata: boolean
   hasSources: boolean
+  dirtyFileNames: Set<string>
   onSelectPaper: (fileName: string) => void
 }
 
-export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, onSelectPaper }: Props) {
+export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, onSelectPaper }: Props) {
   const [papersExpanded, setPapersExpanded] = useState(true)
   const [collapsedPapers, setCollapsedPapers] = useState(new Set<string>())
 
@@ -82,7 +83,7 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, onSe
                           className={activeId === paperId ? 'active' : undefined}
                           onClick={() => onSelectPaper(fileName)}
                         >
-                          {fileName}
+                          {dirtyFileNames.has(fileName) ? '• ' : ''}{fileName}
                         </a>
                       </div>
                       {!isCollapsed && fragments.length > 0 && (

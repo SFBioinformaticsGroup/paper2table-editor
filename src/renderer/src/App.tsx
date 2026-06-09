@@ -1,10 +1,88 @@
-import { useEffect, useRef, useState } from 'react'
-import type { DirectoryState, Metadata, TablesFile } from './types'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import type {
+  DirectoryState,
+  EditHistories,
+  Metadata,
+  PaperHistory,
+  PaperState,
+  TablesFile
+} from './types'
 import { getTableFragments } from './tableUtils'
+import * as actions from './editorActions'
+import type { EditorCallbacks } from './editorCallbacks'
 import { Toc } from './components/Toc'
 import { MetadataSection } from './components/MetadataSection'
 import { PaperSection } from './components/PaperSection'
 import './App.css'
+
+// ── history reducer ──────────────────────────────────────────────────────────
+
+type HistoryAction =
+  | { type: 'APPLY'; fileName: string; newState: PaperState }
+  | { type: 'UNDO'; fileName: string }
+  | { type: 'REDO'; fileName: string }
+  | { type: 'MARK_SAVED'; fileName: string }
+  | { type: 'RESET'; fileName: string; fresh: TablesFile }
+
+function historyReducer(state: EditHistories, action: HistoryAction): EditHistories {
+  const fileName = action.fileName
+  const entry = state[fileName]
+
+  if (action.type === 'RESET') {
+    const h: PaperHistory = {
+      past: [],
+      present: action.fresh,
+      future: [],
+      savedSnapshot: action.fresh
+    }
+    return { ...state, [fileName]: h }
+  }
+
+  if (!entry) return state
+
+  if (action.type === 'APPLY') {
+    const h: PaperHistory = {
+      past: [...entry.past, entry.present],
+      present: action.newState,
+      future: [],
+      savedSnapshot: entry.savedSnapshot
+    }
+    return { ...state, [fileName]: h }
+  }
+
+  if (action.type === 'UNDO') {
+    if (entry.past.length === 0) return state
+    const prev = entry.past[entry.past.length - 1]
+    const h: PaperHistory = {
+      past: entry.past.slice(0, -1),
+      present: prev,
+      future: [entry.present, ...entry.future],
+      savedSnapshot: entry.savedSnapshot
+    }
+    return { ...state, [fileName]: h }
+  }
+
+  if (action.type === 'REDO') {
+    if (entry.future.length === 0) return state
+    const next = entry.future[0]
+    const h: PaperHistory = {
+      past: [...entry.past, entry.present],
+      present: next,
+      future: entry.future.slice(1),
+      savedSnapshot: entry.savedSnapshot
+    }
+    return { ...state, [fileName]: h }
+  }
+
+  if (action.type === 'MARK_SAVED') {
+    const h: PaperHistory = { ...entry, savedSnapshot: entry.present }
+    return { ...state, [fileName]: h }
+  }
+
+  return state
+}
+
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 function buildUuidToReader(metadata: Metadata): Map<string, string> {
   const map = new Map<string, string>()
@@ -14,14 +92,14 @@ function buildUuidToReader(metadata: Metadata): Map<string, string> {
   return map
 }
 
-function buildAnchorIds(state: DirectoryState): string[] {
+function buildAnchorIds(state: DirectoryState, histories: EditHistories): string[] {
   const ids: string[] = []
   if (Object.keys(state.metadata).length > 0) ids.push('metadata')
   if ((state.metadata.sources?.length ?? 0) > 0) ids.push('sources')
   state.fileNames.forEach((fileName, paperIdx) => {
     const paperId = `paper-${paperIdx}`
     ids.push(paperId)
-    const content = state.papers[fileName]
+    const content = histories[fileName]?.present ?? state.papers[fileName]
     if (!content) return
     content.tables.forEach((table, tableIdx) => {
       for (const fragment of getTableFragments(table)) {
@@ -32,13 +110,27 @@ function buildAnchorIds(state: DirectoryState): string[] {
   return ids
 }
 
+// ── App ──────────────────────────────────────────────────────────────────────
+
 export function App() {
   const [state, setState] = useState<DirectoryState | null>(null)
   const [appLoading, setAppLoading] = useState(false)
   const [loadingPapers, setLoadingPapers] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState('')
+  const [histories, dispatchHistory] = useReducer(historyReducer, {})
   const anchorIdsRef = useRef<string[]>([])
   const requestedRef = useRef(new Set<string>())
+  const focusedPaperRef = useRef<string>('')
+
+  // current visible content for a paper (edited or original)
+  const getPaperContent = useCallback(
+    (fileName: string, st: DirectoryState): TablesFile | null => {
+      const present = histories[fileName]?.present
+      if (present !== undefined) return present
+      return st.papers[fileName] ?? null
+    },
+    [histories]
+  )
 
   async function loadPaper(dirPath: string, fileName: string) {
     if (requestedRef.current.has(fileName)) return
@@ -60,6 +152,7 @@ export function App() {
               : prev.validationErrors
         }
       })
+      dispatchHistory({ type: 'RESET', fileName, fresh: result.content })
     } catch {
       requestedRef.current.delete(fileName)
     } finally {
@@ -100,18 +193,138 @@ export function App() {
     await loadDir(path)
   }
 
+  // ── edit helpers ──────────────────────────────────────────────────────────
+
+  const applyEdit = useCallback(
+    (fileName: string, transform: (f: TablesFile) => TablesFile) => {
+      const current = histories[fileName]?.present ?? state?.papers[fileName]
+      if (!current) return
+      dispatchHistory({ type: 'APPLY', fileName, newState: transform(current) })
+    },
+    [histories, state]
+  )
+
+  const applyDelete = useCallback((fileName: string) => {
+    dispatchHistory({ type: 'APPLY', fileName, newState: null })
+  }, [])
+
+  // ── save/load ─────────────────────────────────────────────────────────────
+
+  const savePaperFn = useCallback(
+    async (fileName: string) => {
+      if (!state) return
+      const entry = histories[fileName]
+      if (!entry) return
+      if (entry.present === null) {
+        await window.api.deletePaper(state.dirPath, fileName)
+        dispatchHistory({ type: 'MARK_SAVED', fileName })
+        setState((prev) => {
+          if (!prev) return prev
+          return { ...prev, fileNames: prev.fileNames.filter((f) => f !== fileName) }
+        })
+      } else {
+        const content = JSON.stringify(entry.present, null, 2)
+        await window.api.savePaper(state.dirPath, fileName, content)
+        dispatchHistory({ type: 'MARK_SAVED', fileName })
+      }
+    },
+    [state, histories]
+  )
+
+  const savePaperAsFn = useCallback(
+    async (fileName: string) => {
+      if (!state) return
+      const entry = histories[fileName]
+      if (!entry || entry.present === null) return
+      const content = JSON.stringify(entry.present, null, 2)
+      const result = await window.api.savePaperAs(state.dirPath, fileName, content)
+      if (!result.ok || !result.filePath) return
+      const newName = result.filePath.split('/').pop()!
+      setState((prev) => {
+        if (!prev) return prev
+        if (prev.fileNames.includes(newName)) return prev
+        return { ...prev, fileNames: [...prev.fileNames, newName] }
+      })
+      dispatchHistory({ type: 'RESET', fileName: newName, fresh: entry.present as TablesFile })
+    },
+    [state, histories]
+  )
+
+  // ── callbacks ─────────────────────────────────────────────────────────────
+
+  const callbacks: EditorCallbacks = useMemo(
+    () => ({
+      deletePaper: applyDelete,
+      undo: (fileName) => dispatchHistory({ type: 'UNDO', fileName }),
+      redo: (fileName) => dispatchHistory({ type: 'REDO', fileName }),
+      savePaper: savePaperFn,
+      savePaperAs: savePaperAsFn,
+      deleteTable: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => actions.deleteTable(f, tableIdx)),
+      deleteFragment: (fileName, tableIdx, fragmentIdx) =>
+        applyEdit(fileName, (f) => actions.deleteFragment(f, tableIdx, fragmentIdx)),
+      compactFragments: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => actions.compactFragments(f, tableIdx)),
+      mergeWithNextTable: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => actions.mergeWithNextTable(f, tableIdx)),
+      deleteRow: (fileName, tableIdx, fragmentIdx, rowIdx) =>
+        applyEdit(fileName, (f) => actions.deleteRow(f, tableIdx, fragmentIdx, rowIdx)),
+      promoteRowToHeader: (fileName, tableIdx, fragmentIdx, rowIdx) =>
+        applyEdit(fileName, (f) => actions.promoteRowToHeader(f, tableIdx, fragmentIdx, rowIdx)),
+      deleteColumn: (fileName, tableIdx, colName) =>
+        applyEdit(fileName, (f) => actions.deleteColumn(f, tableIdx, colName)),
+      renameColumn: (fileName, tableIdx, oldName, newName) =>
+        applyEdit(fileName, (f) => actions.renameColumn(f, tableIdx, oldName, newName)),
+      mergeColumns: (fileName, tableIdx, keepCol, dropCol) =>
+        applyEdit(fileName, (f) => actions.mergeColumns(f, tableIdx, keepCol, dropCol)),
+      editCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName, newValue) =>
+        applyEdit(fileName, (f) =>
+          actions.editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
+        )
+    }),
+    [applyEdit, applyDelete, savePaperFn, savePaperAsFn]
+  )
+
+  // ── effects ───────────────────────────────────────────────────────────────
+
   useEffect(() => {
     return window.api.onDirectorySelected(loadDir)
   }, [])
 
   useEffect(() => {
-    document.title = state?.dirPath ? `${state.dirPath} — Tables Editor` : 'Tables Editor'
-  }, [state?.dirPath])
+    const anyDirty = Object.entries(histories).some(
+      ([, h]) => h.present !== h.savedSnapshot
+    )
+    document.title = state?.dirPath
+      ? `${anyDirty ? '• ' : ''}${state.dirPath} — Tables Editor`
+      : 'Tables Editor'
+  }, [state?.dirPath, histories])
+
+  // IPC-triggered save/undo/redo (from menu)
+  useEffect(() => {
+    const u1 = window.api.onSaveCurrentPaper(() => {
+      const name = focusedPaperRef.current
+      if (name) savePaperFn(name)
+    })
+    const u2 = window.api.onSaveCurrentPaperAs(() => {
+      const name = focusedPaperRef.current
+      if (name) savePaperAsFn(name)
+    })
+    const u3 = window.api.onUndoPaper(() => {
+      const name = focusedPaperRef.current
+      if (name) dispatchHistory({ type: 'UNDO', fileName: name })
+    })
+    const u4 = window.api.onRedoPaper(() => {
+      const name = focusedPaperRef.current
+      if (name) dispatchHistory({ type: 'REDO', fileName: name })
+    })
+    return () => { u1(); u2(); u3(); u4() }
+  }, [savePaperFn, savePaperAsFn])
 
   // scroll spy
   useEffect(() => {
     if (!state) return
-    anchorIdsRef.current = buildAnchorIds(state)
+    anchorIdsRef.current = buildAnchorIds(state, histories)
     const handleScroll = () => {
       const scrollY = window.scrollY + 8
       let active = ''
@@ -122,11 +335,22 @@ export function App() {
         else break
       }
       setActiveId(active)
+
+      // track focused paper for menu shortcuts
+      for (const [i, fileName] of state.fileNames.entries()) {
+        const el = document.getElementById(`paper-${i}`)
+        if (!el) continue
+        if (el.getBoundingClientRect().top + window.scrollY <= scrollY + 200) {
+          focusedPaperRef.current = fileName
+        }
+      }
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [state])
+  }, [state, histories])
+
+  // ── render ────────────────────────────────────────────────────────────────
 
   if (!state) {
     return (
@@ -148,6 +372,12 @@ export function App() {
   const hasMetadata = Object.keys(state.metadata).length > 0
   const hasSources = (state.metadata.sources?.length ?? 0) > 0
 
+  const dirtyFileNames = new Set(
+    Object.entries(histories)
+      .filter(([, h]) => h.present !== h.savedSnapshot)
+      .map(([name]) => name)
+  )
+
   return (
     <>
       <Toc
@@ -156,6 +386,7 @@ export function App() {
         activeId={activeId}
         hasMetadata={hasMetadata}
         hasSources={hasSources}
+        dirtyFileNames={dirtyFileNames}
         onSelectPaper={(fileName) => loadPaper(state.dirPath, fileName)}
       />
       <main>
@@ -169,8 +400,12 @@ export function App() {
         <h2>Papers</h2>
         {state.fileNames.map((fileName, paperIdx) => {
           const paperId = `paper-${paperIdx}`
-          const content = state.papers[fileName]
+          const history = histories[fileName]
+          const content = history?.present ?? state.papers[fileName]
           const isLoading = loadingPapers[fileName]
+
+          // paper deleted
+          if (history?.present === null) return null
 
           if (!content) {
             return (
@@ -184,6 +419,10 @@ export function App() {
               </div>
             )
           }
+
+          const canUndo = (history?.past.length ?? 0) > 0
+          const canRedo = (history?.future.length ?? 0) > 0
+          const isDirty = dirtyFileNames.has(fileName)
 
           return (
             <div key={fileName}>
@@ -206,6 +445,11 @@ export function App() {
                 content={content}
                 allSources={allSources}
                 uuidToReader={uuidToReader}
+                fileName={fileName}
+                callbacks={callbacks}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                isDirty={isDirty}
               />
             </div>
           )

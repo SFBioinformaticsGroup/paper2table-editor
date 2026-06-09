@@ -18,6 +18,9 @@
               },
               "page": {
                 "type": "integer"
+              },
+              "title": {
+                "type": "string"
               }
             },
             "required": [
@@ -49,6 +52,9 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "title": {
+                "type": "string"
               }
             },
             "required": [
@@ -135,7 +141,10 @@
             "type": "string"
           }
         },
-        "^(?!(?:agreement_level_|sources_)$).*$": {
+        "^row_$": {
+          "type": ["integer", "null"]
+        },
+        "^(?!(?:agreement_level_|sources_|row_)$).*$": {
           "$ref": "#/$defs/columnValue"
         }
       },

@@ -20,10 +20,12 @@ export interface TableFragment {
 export interface TableWithRows {
   rows: Row[]
   page: number
+  title?: string
 }
 
 export interface TableWithFragments {
   table_fragments: TableFragment[]
+  title?: string
 }
 
 export type Table = TableWithRows | TableWithFragments
@@ -56,3 +58,14 @@ export interface DirectoryState {
   papers: Record<string, TablesFile>
   validationErrors: Record<string, string[]>
 }
+
+export type PaperState = TablesFile | null
+
+export interface PaperHistory {
+  past: PaperState[]
+  present: PaperState
+  future: PaperState[]
+  savedSnapshot: PaperState
+}
+
+export type EditHistories = Record<string, PaperHistory>

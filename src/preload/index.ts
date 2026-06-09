@@ -7,9 +7,39 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('list-directory', dirPath),
   loadPaper: (dirPath: string, fileName: string): Promise<unknown> =>
     ipcRenderer.invoke('load-paper', dirPath, fileName),
+  savePaper: (dirPath: string, fileName: string, content: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('save-paper', dirPath, fileName, content),
+  deletePaper: (dirPath: string, fileName: string): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('delete-paper', dirPath, fileName),
+  savePaperAs: (
+    dirPath: string,
+    suggestedName: string,
+    content: string
+  ): Promise<{ ok: boolean; filePath: string | null }> =>
+    ipcRenderer.invoke('save-paper-as', dirPath, suggestedName, content),
   onDirectorySelected: (callback: (path: string) => void): (() => void) => {
     const handler = (_event: Electron.IpcRendererEvent, path: string) => callback(path)
     ipcRenderer.on('directory-selected', handler)
     return () => ipcRenderer.removeListener('directory-selected', handler)
+  },
+  onSaveCurrentPaper: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('save-current-paper', handler)
+    return () => ipcRenderer.removeListener('save-current-paper', handler)
+  },
+  onSaveCurrentPaperAs: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('save-current-paper-as', handler)
+    return () => ipcRenderer.removeListener('save-current-paper-as', handler)
+  },
+  onUndoPaper: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('undo-paper', handler)
+    return () => ipcRenderer.removeListener('undo-paper', handler)
+  },
+  onRedoPaper: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('redo-paper', handler)
+    return () => ipcRenderer.removeListener('redo-paper', handler)
   }
 })
