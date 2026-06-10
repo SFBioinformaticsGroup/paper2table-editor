@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import { join, dirname, basename } from 'path'
-import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync } from 'fs'
+import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync, statSync } from 'fs'
 import Ajv2020 from 'ajv/dist/2020'
 
 let validateTablesFile: ((data: unknown) => { valid: boolean; errors: string[] }) | null = null
@@ -100,8 +100,10 @@ function createWindow(): void {
 
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
+    win.webContents.openDevTools()
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
+    win.webContents.openDevTools()
   }
 }
 
@@ -177,13 +179,28 @@ ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: s
   return { ok: true, filePath: result.filePath }
 })
 
-ipcMain.handle('resolve-source-path', async (_event, dirPath: string, sourcePath: string) => {
+ipcMain.handle('resolve-sources', async (
+  _event,
+  dirPath: string,
+  sources: Array<{ uuid: string; path: string }>
+) => {
+  if (sources.length === 0) return []
   const candidates = [dirPath, dirname(dirPath), dirname(dirname(dirPath))]
+  let baseDir: string | null = null
   for (const base of candidates) {
-    const full = join(base, sourcePath)
-    if (existsSync(full)) {
-      return { fullPath: full, dir: dirname(full), file: basename(full) }
+    for (const { path: sp } of sources) {
+      if (existsSync(join(base, sp))) { baseDir = base; break }
     }
+    if (baseDir) break
   }
-  return null
+  if (!baseDir) return []
+  return sources.flatMap(({ uuid, path: sp }) => {
+    const full = join(baseDir!, sp)
+    if (!existsSync(full)) return []
+    try {
+      return [{ uuid, fullPath: full, isDir: statSync(full).isDirectory() }]
+    } catch {
+      return []
+    }
+  })
 })

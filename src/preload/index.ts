@@ -52,9 +52,9 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('navigate-forward', handler)
     return () => ipcRenderer.removeListener('navigate-forward', handler)
   },
-  resolveSourcePath: (
+  resolveSources: (
     dirPath: string,
-    sourcePath: string
-  ): Promise<{ fullPath: string; dir: string; file: string } | null> =>
-    ipcRenderer.invoke('resolve-source-path', dirPath, sourcePath)
+    sources: Array<{ uuid: string; path: string }>
+  ): Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>> =>
+    ipcRenderer.invoke('resolve-sources', dirPath, sources)
 })

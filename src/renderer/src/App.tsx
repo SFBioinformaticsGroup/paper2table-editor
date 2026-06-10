@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { FaChevronLeft, FaChevronRight, FaFloppyDisk, FaRotateLeft } from 'react-icons/fa6'
 import type {
   DirectoryState,
   EditHistories,
   Metadata,
   PaperHistory,
   PaperState,
+  ResolvedSource,
   TablesFile
 } from './types'
 import { getTableFragments } from './tableUtils'
@@ -92,6 +94,13 @@ function buildUuidToReader(metadata: Metadata): Map<string, string> {
   return map
 }
 
+function buildUuidToFullPath(resolvedSources: Record<string, ResolvedSource>): Map<string, string | null> {
+  const map = new Map<string, string | null>()
+  for (const [uuid, info] of Object.entries(resolvedSources)) {
+    map.set(uuid, info.fullPath)
+  }
+  return map
+}
 
 function buildAnchorIds(state: DirectoryState, histories: EditHistories): string[] {
   const ids: string[] = []
@@ -119,12 +128,13 @@ export function App() {
   const [loadingPapers, setLoadingPapers] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState('')
   const [histories, dispatchHistory] = useReducer(historyReducer, {})
-  const [navBack, setNavBack] = useState<Array<{ fileName: string; scrollY: number }>>([])
-  const [navForward, setNavForward] = useState<Array<{ fileName: string; scrollY: number }>>([])
-  const [uuidToFullPath, setUuidToFullPath] = useState<Map<string, string | null>>(new Map())
+  const [navBack, setNavBack] = useState<Array<{ dirPath: string; fileName: string; scrollY: number }>>([])
+  const [navForward, setNavForward] = useState<Array<{ dirPath: string; fileName: string; scrollY: number }>>([])
+  const [focusedFileName, setFocusedFileName] = useState('')
   const anchorIdsRef = useRef<string[]>([])
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
+  const pendingScrollRef = useRef<{ fileName: string; scrollY: number } | null>(null)
 
   // current visible content for a paper (edited or original)
   const getPaperContent = useCallback(
@@ -176,9 +186,18 @@ export function App() {
         metadata: Metadata
         fileNames: string[]
       }
+      const sourcesInput = (listing.metadata.sources ?? [])
+        .filter((s) => s.uuid && s.path)
+        .map((s) => ({ uuid: String(s.uuid), path: String(s.path) }))
+      const resolved = await window.api.resolveSources(dirPath, sourcesInput)
+      const resolvedSources: Record<string, ResolvedSource> = {}
+      for (const { uuid, fullPath, isDir } of resolved) {
+        resolvedSources[uuid] = { fullPath, isDir }
+      }
       setState({
         dirPath,
         metadata: listing.metadata,
+        resolvedSources,
         fileNames: listing.fileNames,
         papers: {},
         validationErrors: {}
@@ -267,8 +286,8 @@ export function App() {
   const navigateToSourceFn = useCallback(
     (uuid: string) => {
       if (!state) return
-      const fullPath = uuidToFullPath.get(uuid)
-      if (!fullPath) return
+      const info = state.resolvedSources[uuid]
+      if (!info) return
 
       const dirtyCount = Object.values(histories).filter(
         (h) => h.present !== h.savedSnapshot
@@ -278,45 +297,63 @@ export function App() {
         !window.confirm(`You have ${dirtyCount} unsaved paper(s). Navigate anyway?`)
       ) return
 
-      const lastSlash = fullPath.lastIndexOf('/')
-      const targetDir = fullPath.substring(0, lastSlash)
-      const targetFile = fullPath.substring(lastSlash + 1)
-      const normalizedDir = state.dirPath.replace(/\/$/, '')
-
-      const entry = { fileName: focusedPaperRef.current, scrollY: window.scrollY }
+      const entry = { dirPath: state.dirPath, fileName: focusedPaperRef.current, scrollY: window.scrollY }
       setNavBack((prev) => [...prev, entry])
       setNavForward([])
 
-      if (targetDir === normalizedDir) {
-        if (!state.papers[targetFile] && !histories[targetFile]) {
-          loadPaper(state.dirPath, targetFile)
-        }
-        setTimeout(() => scrollToPaper(targetFile), 80)
+      const normalizedDir = state.dirPath.replace(/\/$/, '')
+
+      if (info.isDir) {
+        // Source path is a directory — load it directly
+        if (info.fullPath === normalizedDir) return  // already here
+        loadDir(info.fullPath)
       } else {
-        loadDir(targetDir)
+        // Source path is a file
+        const lastSlash = info.fullPath.lastIndexOf('/')
+        const targetDir = info.fullPath.substring(0, lastSlash)
+        const targetFile = info.fullPath.substring(lastSlash + 1)
+        if (targetDir === normalizedDir) {
+          if (!state.papers[targetFile] && !histories[targetFile]) {
+            loadPaper(state.dirPath, targetFile)
+          }
+          setTimeout(() => scrollToPaper(targetFile), 80)
+        } else {
+          pendingScrollRef.current = { fileName: targetFile, scrollY: 0 }
+          loadDir(targetDir)
+        }
       }
     },
-    [state, histories, uuidToFullPath]
+    [state, histories]
   )
 
   const navigateBackFn = useCallback(() => {
-    if (navBack.length === 0) return
+    if (!state || navBack.length === 0) return
     const entry = navBack[navBack.length - 1]
-    const current = { fileName: focusedPaperRef.current, scrollY: window.scrollY }
+    const current = { dirPath: state.dirPath, fileName: focusedPaperRef.current, scrollY: window.scrollY }
     setNavBack((prev) => prev.slice(0, -1))
     setNavForward((prev) => [current, ...prev])
-    scrollToPaper(entry.fileName)
-    setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+    if (entry.dirPath !== state.dirPath) {
+      pendingScrollRef.current = { fileName: entry.fileName, scrollY: entry.scrollY }
+      loadDir(entry.dirPath)
+    } else {
+      scrollToPaper(entry.fileName)
+      setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+    }
   }, [navBack, state])
 
   const navigateForwardFn = useCallback(() => {
-    if (navForward.length === 0) return
+    if (!state || navForward.length === 0) return
     const entry = navForward[0]
-    const current = { fileName: focusedPaperRef.current, scrollY: window.scrollY }
+    const current = { dirPath: state.dirPath, fileName: focusedPaperRef.current, scrollY: window.scrollY }
     setNavForward((prev) => prev.slice(1))
     setNavBack((prev) => [...prev, current])
-    scrollToPaper(entry.fileName)
-    setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+    if (entry.dirPath !== state.dirPath) {
+      pendingScrollRef.current = { fileName: entry.fileName, scrollY: entry.scrollY }
+      loadDir(entry.dirPath)
+    } else {
+      scrollToPaper(entry.fileName)
+      setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+    }
   }, [navForward, state])
 
   // ── callbacks ─────────────────────────────────────────────────────────────
@@ -361,28 +398,22 @@ export function App() {
     return window.api.onDirectorySelected(loadDir)
   }, [])
 
-  // Resolve source paths asynchronously: try dirPath, parent, grandparent
+  // After cross-dir navigation: load target paper and scroll to it
   useEffect(() => {
-    if (!state) {
-      setUuidToFullPath(new Map())
-      return
+    const pending = pendingScrollRef.current
+    if (!state || !pending) return
+    pendingScrollRef.current = null
+    if (!state.papers[pending.fileName] && !requestedRef.current.has(pending.fileName)) {
+      loadPaper(state.dirPath, pending.fileName)
     }
-    const sources = (state.metadata.sources ?? []).filter((s) => s.uuid && s.path)
-    if (sources.length === 0) {
-      setUuidToFullPath(new Map())
-      return
-    }
-    let cancelled = false
-    Promise.all(
-      sources.map(async (source) => {
-        const result = await window.api.resolveSourcePath(state.dirPath, String(source.path))
-        return [String(source.uuid), result ? result.fullPath : null] as [string, string | null]
-      })
-    ).then((pairs) => {
-      if (!cancelled) setUuidToFullPath(new Map(pairs))
-    })
-    return () => { cancelled = true }
-  }, [state?.dirPath, state?.metadata])
+    const targetScrollY = pending.scrollY
+    setTimeout(() => {
+      scrollToPaper(pending.fileName)
+      if (targetScrollY > 0) {
+        setTimeout(() => window.scrollTo({ top: targetScrollY, behavior: 'smooth' }), 80)
+      }
+    }, 80)
+  }, [state?.dirPath])
 
   useEffect(() => {
     const anyDirty = Object.entries(histories).some(
@@ -431,13 +462,18 @@ export function App() {
       }
       setActiveId(active)
 
-      // track focused paper for menu shortcuts
+      // track focused paper for menu shortcuts and toolbar buttons
+      let newFocused = focusedPaperRef.current
       for (const [i, fileName] of state.fileNames.entries()) {
         const el = document.getElementById(`paper-${i}`)
         if (!el) continue
         if (el.getBoundingClientRect().top + window.scrollY <= scrollY + 200) {
-          focusedPaperRef.current = fileName
+          newFocused = fileName
         }
+      }
+      if (newFocused !== focusedPaperRef.current) {
+        focusedPaperRef.current = newFocused
+        setFocusedFileName(newFocused)
       }
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -463,6 +499,7 @@ export function App() {
   }
 
   const uuidToReader = buildUuidToReader(state.metadata)
+  const uuidToFullPath = buildUuidToFullPath(state.resolvedSources)
   const allSources = state.metadata.sources ?? []
   const hasMetadata = Object.keys(state.metadata).length > 0
   const hasSources = (state.metadata.sources?.length ?? 0) > 0
@@ -472,6 +509,11 @@ export function App() {
       .filter(([, h]) => h.present !== h.savedSnapshot)
       .map(([name]) => name)
   )
+
+  const focusedEntry = histories[focusedFileName]
+  const canUndoFocused = (focusedEntry?.past.length ?? 0) > 0
+  const focusedDirty = dirtyFileNames.has(focusedFileName)
+  const hasFocused = Boolean(focusedFileName)
 
   return (
     <>
@@ -484,12 +526,7 @@ export function App() {
         dirtyFileNames={dirtyFileNames}
         onSelectPaper={(fileName) => loadPaper(state.dirPath, fileName)}
       />
-      <main>
-        {appLoading && (
-          <div className="loading-overlay">
-            <span className="spinner" aria-label="Loading" />
-          </div>
-        )}
+      <div className="main-wrapper">
         <div className="dir-header">
           <div className="nav-buttons">
             <button
@@ -498,7 +535,7 @@ export function App() {
               disabled={navBack.length === 0}
               onClick={navigateBackFn}
             >
-              ←
+              <FaChevronLeft />
             </button>
             <button
               className="nav-btn"
@@ -506,11 +543,42 @@ export function App() {
               disabled={navForward.length === 0}
               onClick={navigateForwardFn}
             >
-              →
+              <FaChevronRight />
             </button>
           </div>
           <span className="dir-path">{state.dirPath}</span>
+          <div className="header-actions">
+            <button
+              className="toolbar-btn"
+              title="Undo (Cmd+Z)"
+              disabled={!canUndoFocused}
+              onClick={() => { if (focusedFileName) callbacks.undo(focusedFileName) }}
+            >
+              <FaRotateLeft />
+            </button>
+            <button
+              className={`toolbar-btn save-btn${focusedDirty ? ' dirty' : ''}`}
+              title="Save (Cmd+S)"
+              disabled={!focusedDirty}
+              onClick={() => { if (focusedFileName) callbacks.savePaper(focusedFileName) }}
+            >
+              <FaFloppyDisk /> {focusedDirty ? 'Save*' : 'Save'}
+            </button>
+            <button
+              className="toolbar-btn"
+              title="Save As…"
+              onClick={() => { if (focusedFileName) callbacks.savePaperAs(focusedFileName) }}
+            >
+              <FaFloppyDisk /> Save As…
+            </button>
+          </div>
         </div>
+        <main>
+        {appLoading && (
+          <div className="loading-overlay">
+            <span className="spinner" aria-label="Loading" />
+          </div>
+        )}
         {hasMetadata && (
           <MetadataSection
             metadata={state.metadata}
@@ -576,7 +644,8 @@ export function App() {
             </div>
           )
         })}
-      </main>
+        </main>
+      </div>
     </>
   )
 }

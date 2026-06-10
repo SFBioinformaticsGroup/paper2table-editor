@@ -135,16 +135,20 @@ export function FragmentTable({
                               {uuids.map((uuid) => {
                                 const fullPath = uuidToFullPath.get(uuid)
                                 const navigable = fullPath != null
-                                return (
-                                  <button
+                                return navigable ? (
+                                  <a
                                     key={uuid}
-                                    className={`uuid-chip${navigable ? '' : ' uuid-chip-dead'}`}
-                                    title={fullPath ?? uuid}
-                                    disabled={!navigable}
-                                    onClick={navigable ? () => callbacks.navigateToSource(uuid) : undefined}
+                                    className="uuid-chip"
+                                    title={fullPath}
+                                    href="#"
+                                    onClick={(e) => { e.preventDefault(); callbacks.navigateToSource(uuid) }}
                                   >
                                     {uuid.slice(0, 8)}
-                                  </button>
+                                  </a>
+                                ) : (
+                                  <span key={uuid} className="uuid-chip uuid-chip-dead" title={uuid}>
+                                    {uuid.slice(0, 8)}
+                                  </span>
                                 )
                               })}
                             </td>

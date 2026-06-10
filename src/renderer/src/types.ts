@@ -51,9 +51,15 @@ export interface Metadata {
   [key: string]: unknown
 }
 
+export interface ResolvedSource {
+  fullPath: string
+  isDir: boolean
+}
+
 export interface DirectoryState {
   dirPath: string
   metadata: Metadata
+  resolvedSources: Record<string, ResolvedSource>  // keyed by uuid
   fileNames: string[]
   papers: Record<string, TablesFile>
   validationErrors: Record<string, string[]>

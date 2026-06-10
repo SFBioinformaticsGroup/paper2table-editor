@@ -19,9 +19,9 @@ interface Window {
     onRedoPaper: (callback: () => void) => (() => void)
     onNavigateBack: (callback: () => void) => (() => void)
     onNavigateForward: (callback: () => void) => (() => void)
-    resolveSourcePath: (
+    resolveSources: (
       dirPath: string,
-      sourcePath: string
-    ) => Promise<{ fullPath: string; dir: string; file: string } | null>
+      sources: Array<{ uuid: string; path: string }>
+    ) => Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>>
   }
 }

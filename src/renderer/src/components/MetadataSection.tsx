@@ -25,14 +25,20 @@ function SourceCell({
     return (
       <td>
         {emoji && <span style={{ marginRight: 4 }}>{emoji}</span>}
-        <button
-          className={`uuid-chip${navigable ? '' : ' uuid-chip-dead'}`}
-          title={fullPath ?? source.uuid}
-          disabled={!navigable}
-          onClick={navigable ? () => navigateToSource(source.uuid!) : undefined}
-        >
-          {source.uuid.slice(0, 8)}
-        </button>
+        {navigable ? (
+          <a
+            className="uuid-chip"
+            title={fullPath}
+            href="#"
+            onClick={(e) => { e.preventDefault(); navigateToSource(source.uuid!) }}
+          >
+            {source.uuid.slice(0, 8)}
+          </a>
+        ) : (
+          <span className="uuid-chip uuid-chip-dead" title={source.uuid}>
+            {source.uuid.slice(0, 8)}
+          </span>
+        )}
       </td>
     )
   }

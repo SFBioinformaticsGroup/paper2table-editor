@@ -116,24 +116,28 @@ body {
   white-space: nowrap;
 }
 
-main {
+.main-wrapper {
   flex: 1;
-  padding: 20px;
   min-width: 0;
-  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  padding: 20px;
+  overflow-x: clip;
 }
 
 .dir-header {
   position: sticky;
   top: 0;
   background: #fff;
-  border-bottom: 1px solid #eee;
-  padding: 4px 0 6px;
-  margin-bottom: 1em;
+  border-bottom: 1px solid #ddd;
+  padding: 5px 8px;
   z-index: 5;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .dir-path {
@@ -146,6 +150,13 @@ main {
   min-width: 0;
 }
 
+.header-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
 .nav-buttons {
   display: flex;
   gap: 2px;
@@ -156,16 +167,14 @@ main {
   background: none;
   border: 1px solid #ccc;
   border-radius: 3px;
-  width: 26px;
-  height: 22px;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 0.8em;
   color: #444;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  line-height: 1;
+  height: 26px;
+  padding: 0 7px;
 }
 
 .nav-btn:hover:not(:disabled) {
@@ -328,14 +337,21 @@ main {
   background: none;
   border: 1px solid #ccc;
   border-radius: 3px;
-  padding: 3px 8px;
+  height: 26px;
+  padding: 0 8px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 0.8em;
   color: #444;
-  line-height: 1.4;
+}
+
+.toolbar-btn svg,
+.nav-btn svg {
+  width: 0.9em;
+  height: 0.9em;
+  flex-shrink: 0;
 }
 
 .toolbar-btn:hover:not(:disabled) {
@@ -400,12 +416,13 @@ main {
   background: none;
   border: 1px solid #ddd;
   border-radius: 3px;
-  padding: 2px 7px;
+  height: 26px;
+  padding: 0 7px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.78em;
+  font-size: 0.8em;
   color: #555;
 }
 
@@ -624,13 +641,13 @@ th:hover .col-header-actions {
   border-radius: 3px;
   padding: 1px 5px;
   margin: 1px 2px;
-  cursor: pointer;
   color: #3040c0;
   text-decoration: none;
   transition: background 0.12s;
+  cursor: pointer;
 }
 
-.uuid-chip:hover {
+a.uuid-chip:hover {
   background: #d8e0ff;
   border-color: #8090e0;
 }
@@ -640,9 +657,4 @@ th:hover .col-header-actions {
   border-color: #ccc;
   color: #999;
   cursor: default;
-}
-
-.uuid-chip-dead:hover {
-  background: #f0f0f0;
-  border-color: #ccc;
 }
