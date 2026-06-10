@@ -92,6 +92,7 @@ function buildUuidToReader(metadata: Metadata): Map<string, string> {
   return map
 }
 
+
 function buildAnchorIds(state: DirectoryState, histories: EditHistories): string[] {
   const ids: string[] = []
   if (Object.keys(state.metadata).length > 0) ids.push('metadata')
@@ -118,6 +119,9 @@ export function App() {
   const [loadingPapers, setLoadingPapers] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState('')
   const [histories, dispatchHistory] = useReducer(historyReducer, {})
+  const [navBack, setNavBack] = useState<Array<{ fileName: string; scrollY: number }>>([])
+  const [navForward, setNavForward] = useState<Array<{ fileName: string; scrollY: number }>>([])
+  const [uuidToFullPath, setUuidToFullPath] = useState<Map<string, string | null>>(new Map())
   const anchorIdsRef = useRef<string[]>([])
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
@@ -250,6 +254,71 @@ export function App() {
     [state, histories]
   )
 
+  // ── navigation ────────────────────────────────────────────────────────────
+
+  function scrollToPaper(fileName: string) {
+    if (!state) return
+    const idx = state.fileNames.indexOf(fileName)
+    if (idx === -1) return
+    const el = document.getElementById(`paper-${idx}`)
+    el?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const navigateToSourceFn = useCallback(
+    (uuid: string) => {
+      if (!state) return
+      const fullPath = uuidToFullPath.get(uuid)
+      if (!fullPath) return
+
+      const dirtyCount = Object.values(histories).filter(
+        (h) => h.present !== h.savedSnapshot
+      ).length
+      if (
+        dirtyCount > 0 &&
+        !window.confirm(`You have ${dirtyCount} unsaved paper(s). Navigate anyway?`)
+      ) return
+
+      const lastSlash = fullPath.lastIndexOf('/')
+      const targetDir = fullPath.substring(0, lastSlash)
+      const targetFile = fullPath.substring(lastSlash + 1)
+      const normalizedDir = state.dirPath.replace(/\/$/, '')
+
+      const entry = { fileName: focusedPaperRef.current, scrollY: window.scrollY }
+      setNavBack((prev) => [...prev, entry])
+      setNavForward([])
+
+      if (targetDir === normalizedDir) {
+        if (!state.papers[targetFile] && !histories[targetFile]) {
+          loadPaper(state.dirPath, targetFile)
+        }
+        setTimeout(() => scrollToPaper(targetFile), 80)
+      } else {
+        loadDir(targetDir)
+      }
+    },
+    [state, histories, uuidToFullPath]
+  )
+
+  const navigateBackFn = useCallback(() => {
+    if (navBack.length === 0) return
+    const entry = navBack[navBack.length - 1]
+    const current = { fileName: focusedPaperRef.current, scrollY: window.scrollY }
+    setNavBack((prev) => prev.slice(0, -1))
+    setNavForward((prev) => [current, ...prev])
+    scrollToPaper(entry.fileName)
+    setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+  }, [navBack, state])
+
+  const navigateForwardFn = useCallback(() => {
+    if (navForward.length === 0) return
+    const entry = navForward[0]
+    const current = { fileName: focusedPaperRef.current, scrollY: window.scrollY }
+    setNavForward((prev) => prev.slice(1))
+    setNavBack((prev) => [...prev, current])
+    scrollToPaper(entry.fileName)
+    setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+  }, [navForward, state])
+
   // ── callbacks ─────────────────────────────────────────────────────────────
 
   const callbacks: EditorCallbacks = useMemo(
@@ -259,6 +328,7 @@ export function App() {
       redo: (fileName) => dispatchHistory({ type: 'REDO', fileName }),
       savePaper: savePaperFn,
       savePaperAs: savePaperAsFn,
+      navigateToSource: navigateToSourceFn,
       deleteTable: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => actions.deleteTable(f, tableIdx)),
       deleteFragment: (fileName, tableIdx, fragmentIdx) =>
@@ -282,7 +352,7 @@ export function App() {
           actions.editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
         )
     }),
-    [applyEdit, applyDelete, savePaperFn, savePaperAsFn]
+    [applyEdit, applyDelete, savePaperFn, savePaperAsFn, navigateToSourceFn]
   )
 
   // ── effects ───────────────────────────────────────────────────────────────
@@ -290,6 +360,29 @@ export function App() {
   useEffect(() => {
     return window.api.onDirectorySelected(loadDir)
   }, [])
+
+  // Resolve source paths asynchronously: try dirPath, parent, grandparent
+  useEffect(() => {
+    if (!state) {
+      setUuidToFullPath(new Map())
+      return
+    }
+    const sources = (state.metadata.sources ?? []).filter((s) => s.uuid && s.path)
+    if (sources.length === 0) {
+      setUuidToFullPath(new Map())
+      return
+    }
+    let cancelled = false
+    Promise.all(
+      sources.map(async (source) => {
+        const result = await window.api.resolveSourcePath(state.dirPath, String(source.path))
+        return [String(source.uuid), result ? result.fullPath : null] as [string, string | null]
+      })
+    ).then((pairs) => {
+      if (!cancelled) setUuidToFullPath(new Map(pairs))
+    })
+    return () => { cancelled = true }
+  }, [state?.dirPath, state?.metadata])
 
   useEffect(() => {
     const anyDirty = Object.entries(histories).some(
@@ -318,8 +411,10 @@ export function App() {
       const name = focusedPaperRef.current
       if (name) dispatchHistory({ type: 'REDO', fileName: name })
     })
-    return () => { u1(); u2(); u3(); u4() }
-  }, [savePaperFn, savePaperAsFn])
+    const u5 = window.api.onNavigateBack(navigateBackFn)
+    const u6 = window.api.onNavigateForward(navigateForwardFn)
+    return () => { u1(); u2(); u3(); u4(); u5(); u6() }
+  }, [savePaperFn, savePaperAsFn, navigateBackFn, navigateForwardFn])
 
   // scroll spy
   useEffect(() => {
@@ -395,8 +490,34 @@ export function App() {
             <span className="spinner" aria-label="Loading" />
           </div>
         )}
-        <div className="dir-header">{state.dirPath}</div>
-        {hasMetadata && <MetadataSection metadata={state.metadata} />}
+        <div className="dir-header">
+          <div className="nav-buttons">
+            <button
+              className="nav-btn"
+              title="Back (Cmd+[)"
+              disabled={navBack.length === 0}
+              onClick={navigateBackFn}
+            >
+              ←
+            </button>
+            <button
+              className="nav-btn"
+              title="Forward (Cmd+])"
+              disabled={navForward.length === 0}
+              onClick={navigateForwardFn}
+            >
+              →
+            </button>
+          </div>
+          <span className="dir-path">{state.dirPath}</span>
+        </div>
+        {hasMetadata && (
+          <MetadataSection
+            metadata={state.metadata}
+            navigateToSource={callbacks.navigateToSource}
+            uuidToFullPath={uuidToFullPath}
+          />
+        )}
         <h2>Papers</h2>
         {state.fileNames.map((fileName, paperIdx) => {
           const paperId = `paper-${paperIdx}`
@@ -445,6 +566,7 @@ export function App() {
                 content={content}
                 allSources={allSources}
                 uuidToReader={uuidToReader}
+                uuidToFullPath={uuidToFullPath}
                 fileName={fileName}
                 callbacks={callbacks}
                 canUndo={canUndo}

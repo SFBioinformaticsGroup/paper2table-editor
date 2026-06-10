@@ -12,6 +12,7 @@ interface Props {
   content: TablesFile
   allSources: Source[]
   uuidToReader: Map<string, string>
+  uuidToFullPath: Map<string, string | null>
   fileName: string
   callbacks: EditorCallbacks
   canUndo: boolean
@@ -19,16 +20,15 @@ interface Props {
   isDirty: boolean
 }
 
-function sourceCell(source: Source, key: string): string {
-  const value = String(source[key] ?? '')
-  if (key === 'uuid') {
-    const emoji = readerEmoji(source.reader)
-    return emoji ? `${emoji} ${value}` : value
-  }
-  return value
-}
-
-function PaperSources({ sources }: { sources: Source[] }) {
+function PaperSources({
+  sources,
+  navigateToSource,
+  uuidToFullPath
+}: {
+  sources: Source[]
+  navigateToSource: (uuid: string) => void
+  uuidToFullPath: Map<string, string | null>
+}) {
   if (sources.length === 0) return null
   const allKeys = new Set(sources.flatMap((s) => Object.keys(s)))
   const preferred = ['uuid', 'reader', 'path']
@@ -36,6 +36,28 @@ function PaperSources({ sources }: { sources: Source[] }) {
     ...preferred.filter((k) => allKeys.has(k)),
     ...[...allKeys].filter((k) => !preferred.includes(k)).sort()
   ]
+
+  function renderCell(source: Source, key: string) {
+    if (key === 'uuid' && source.uuid) {
+      const emoji = readerEmoji(source.reader)
+      const fullPath = uuidToFullPath.get(source.uuid)
+      const navigable = fullPath != null
+      return (
+        <td key={key}>
+          {emoji && <span style={{ marginRight: 4 }}>{emoji}</span>}
+          <button
+            className={`uuid-chip${navigable ? '' : ' uuid-chip-dead'}`}
+            title={fullPath ?? source.uuid}
+            disabled={!navigable}
+            onClick={navigable ? () => navigateToSource(source.uuid!) : undefined}
+          >
+            {source.uuid.slice(0, 8)}
+          </button>
+        </td>
+      )
+    }
+    return <td key={key}>{String(source[key] ?? '')}</td>
+  }
 
   return (
     <details className="paper-sources">
@@ -48,7 +70,7 @@ function PaperSources({ sources }: { sources: Source[] }) {
           <tbody>
             {sources.map((source, i) => (
               <tr key={i}>
-                {sourceKeys.map((k) => <td key={k}>{sourceCell(source, k)}</td>)}
+                {sourceKeys.map((k) => renderCell(source, k))}
               </tr>
             ))}
           </tbody>
@@ -64,6 +86,7 @@ export function PaperSection({
   content,
   allSources,
   uuidToReader,
+  uuidToFullPath,
   fileName,
   callbacks,
   canUndo,
@@ -134,7 +157,11 @@ export function PaperSection({
       </div>
 
       <p>Citation: {renderCitation(content.citation)}</p>
-      <PaperSources sources={paperSources} />
+      <PaperSources
+        sources={paperSources}
+        navigateToSource={callbacks.navigateToSource}
+        uuidToFullPath={uuidToFullPath}
+      />
 
       {content.tables.map((table, tableIdx) => {
         const fragments = getTableFragments(table)
@@ -178,6 +205,7 @@ export function PaperSection({
                   fragmentIdx={fragmentIdx}
                   fragment={fragment}
                   uuidToReader={uuidToReader}
+                  uuidToFullPath={uuidToFullPath}
                   anchorId={anchorId}
                   showFragmentHeading={hasMultipleFragments}
                   fileName={fileName}

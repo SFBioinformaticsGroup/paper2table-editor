@@ -41,5 +41,20 @@ contextBridge.exposeInMainWorld('api', {
     const handler = () => callback()
     ipcRenderer.on('redo-paper', handler)
     return () => ipcRenderer.removeListener('redo-paper', handler)
-  }
+  },
+  onNavigateBack: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('navigate-back', handler)
+    return () => ipcRenderer.removeListener('navigate-back', handler)
+  },
+  onNavigateForward: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('navigate-forward', handler)
+    return () => ipcRenderer.removeListener('navigate-forward', handler)
+  },
+  resolveSourcePath: (
+    dirPath: string,
+    sourcePath: string
+  ): Promise<{ fullPath: string; dir: string; file: string } | null> =>
+    ipcRenderer.invoke('resolve-source-path', dirPath, sourcePath)
 })

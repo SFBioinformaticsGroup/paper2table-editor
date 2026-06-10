@@ -17,5 +17,11 @@ interface Window {
     onSaveCurrentPaperAs: (callback: () => void) => (() => void)
     onUndoPaper: (callback: () => void) => (() => void)
     onRedoPaper: (callback: () => void) => (() => void)
+    onNavigateBack: (callback: () => void) => (() => void)
+    onNavigateForward: (callback: () => void) => (() => void)
+    resolveSourcePath: (
+      dirPath: string,
+      sourcePath: string
+    ) => Promise<{ fullPath: string; dir: string; file: string } | null>
   }
 }

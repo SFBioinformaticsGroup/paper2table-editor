@@ -14,6 +14,7 @@ interface Props {
   fragmentIdx: number      // 0-based fragment index
   fragment: TableFragment
   uuidToReader: Map<string, string>
+  uuidToFullPath: Map<string, string | null>
   anchorId: string | undefined  // undefined for single-fragment tables (anchor is on h4 in parent)
   showFragmentHeading: boolean  // true when parent table has multiple fragments
   fileName: string
@@ -26,6 +27,7 @@ export function FragmentTable({
   fragmentIdx,
   fragment,
   uuidToReader,
+  uuidToFullPath,
   anchorId,
   showFragmentHeading,
   fileName,
@@ -126,6 +128,28 @@ export function FragmentTable({
                         </button>
                       </td>
                       {columns.map((col) => {
+                        if (col === 'sources_') {
+                          const uuids = row.sources_ ?? []
+                          return (
+                            <td key={col} className="sources-cell">
+                              {uuids.map((uuid) => {
+                                const fullPath = uuidToFullPath.get(uuid)
+                                const navigable = fullPath != null
+                                return (
+                                  <button
+                                    key={uuid}
+                                    className={`uuid-chip${navigable ? '' : ' uuid-chip-dead'}`}
+                                    title={fullPath ?? uuid}
+                                    disabled={!navigable}
+                                    onClick={navigable ? () => callbacks.navigateToSource(uuid) : undefined}
+                                  >
+                                    {uuid.slice(0, 8)}
+                                  </button>
+                                )
+                              })}
+                            </td>
+                          )
+                        }
                         if (META_COLS.has(col)) {
                           return <td key={col}>{renderDataCell(row, col, uuidToReader)}</td>
                         }

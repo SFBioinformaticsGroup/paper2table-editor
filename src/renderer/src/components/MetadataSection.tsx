@@ -1,16 +1,45 @@
 import type { Metadata, Source } from '../types'
 import { flattenMetadataRows, readerEmoji } from '../tableUtils'
 
-function sourceCell(source: Source, key: string): string {
-  const value = String(source[key] ?? '')
-  if (key === 'uuid') {
-    const emoji = readerEmoji(source.reader)
-    return emoji ? `${emoji} ${value}` : value
-  }
-  return value
+interface Props {
+  metadata: Metadata
+  navigateToSource: (uuid: string) => void
+  uuidToFullPath: Map<string, string | null>
 }
 
-export function MetadataSection({ metadata }: { metadata: Metadata }) {
+function SourceCell({
+  source,
+  colKey,
+  navigateToSource,
+  uuidToFullPath
+}: {
+  source: Source
+  colKey: string
+  navigateToSource: (uuid: string) => void
+  uuidToFullPath: Map<string, string | null>
+}) {
+  if (colKey === 'uuid' && source.uuid) {
+    const emoji = readerEmoji(source.reader)
+    const fullPath = uuidToFullPath.get(source.uuid)
+    const navigable = fullPath != null
+    return (
+      <td>
+        {emoji && <span style={{ marginRight: 4 }}>{emoji}</span>}
+        <button
+          className={`uuid-chip${navigable ? '' : ' uuid-chip-dead'}`}
+          title={fullPath ?? source.uuid}
+          disabled={!navigable}
+          onClick={navigable ? () => navigateToSource(source.uuid!) : undefined}
+        >
+          {source.uuid.slice(0, 8)}
+        </button>
+      </td>
+    )
+  }
+  return <td>{String(source[colKey] ?? '')}</td>
+}
+
+export function MetadataSection({ metadata, navigateToSource, uuidToFullPath }: Props) {
   const rows = flattenMetadataRows(metadata)
   const sources = metadata.sources ?? []
   const allKeys = new Set(sources.flatMap((s) => Object.keys(s)))
@@ -48,7 +77,15 @@ export function MetadataSection({ metadata }: { metadata: Metadata }) {
               <tbody>
                 {sources.map((source, i) => (
                   <tr key={i}>
-                    {sourceKeys.map((k) => <td key={k}>{sourceCell(source, k)}</td>)}
+                    {sourceKeys.map((k) => (
+                      <SourceCell
+                        key={k}
+                        source={source}
+                        colKey={k}
+                        navigateToSource={navigateToSource}
+                        uuidToFullPath={uuidToFullPath}
+                      />
+                    ))}
                   </tr>
                 ))}
               </tbody>

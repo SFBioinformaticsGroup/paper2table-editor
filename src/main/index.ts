@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
-import { join } from 'path'
-import { readFileSync, readdirSync, writeFileSync, unlinkSync } from 'fs'
+import { join, dirname, basename } from 'path'
+import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync } from 'fs'
 import Ajv2020 from 'ajv/dist/2020'
 
 let validateTablesFile: ((data: unknown) => { valid: boolean; errors: string[] }) | null = null
@@ -53,6 +53,13 @@ function buildMenu(win: BrowserWindow): void {
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'Navigate',
+      submenu: [
+        { label: 'Back', accelerator: 'CmdOrCtrl+[', click: () => win.webContents.send('navigate-back') },
+        { label: 'Forward', accelerator: 'CmdOrCtrl+]', click: () => win.webContents.send('navigate-forward') }
       ]
     }
   ]
@@ -168,4 +175,15 @@ ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: s
   if (result.canceled || !result.filePath) return { ok: false, filePath: null }
   writeFileSync(result.filePath, content, 'utf-8')
   return { ok: true, filePath: result.filePath }
+})
+
+ipcMain.handle('resolve-source-path', async (_event, dirPath: string, sourcePath: string) => {
+  const candidates = [dirPath, dirname(dirPath), dirname(dirname(dirPath))]
+  for (const base of candidates) {
+    const full = join(base, sourcePath)
+    if (existsSync(full)) {
+      return { fullPath: full, dir: dirname(full), file: basename(full) }
+    }
+  }
+  return null
 })
