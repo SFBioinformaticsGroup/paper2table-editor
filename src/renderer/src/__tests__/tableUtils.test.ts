@@ -14,6 +14,7 @@ import {
   renderCitation,
   renderColumnValue,
   renderDataCell,
+  rowPaletteClass,
 } from '../tableUtils'
 import type { Row, Table, TableWithFragments, TableWithRows } from '../types'
 
@@ -338,6 +339,38 @@ describe('buildPaperAnchorIds', () => {
       'paper-0-table-2-page-10',
       'paper-0-table-2-page-11',
     ])
+  })
+})
+
+// ── rowPaletteClass ──────────────────────────────────────────────────────────
+
+describe('rowPaletteClass', () => {
+  it('returns "row-0" for row_ = 0', () => {
+    expect(rowPaletteClass({ row_: 0 })).toBe('row-0')
+  })
+
+  it('returns "row-4" for row_ = 4', () => {
+    expect(rowPaletteClass({ row_: 4 })).toBe('row-4')
+  })
+
+  it('wraps around at palette size 5: row_ = 5 gives "row-0"', () => {
+    expect(rowPaletteClass({ row_: 5 })).toBe('row-0')
+  })
+
+  it('wraps correctly for row_ = 7 giving "row-2"', () => {
+    expect(rowPaletteClass({ row_: 7 })).toBe('row-2')
+  })
+
+  it('returns undefined when row_ is absent', () => {
+    expect(rowPaletteClass({ name: 'aspirin' })).toBeUndefined()
+  })
+
+  it('returns undefined when row_ is null', () => {
+    expect(rowPaletteClass({ row_: null })).toBeUndefined()
+  })
+
+  it('returns undefined when row_ is a string', () => {
+    expect(rowPaletteClass({ row_: 'header' })).toBeUndefined()
   })
 })
 

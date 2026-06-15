@@ -61,5 +61,9 @@ contextBridge.exposeInMainWorld('api', {
     const handler = () => callback()
     ipcRenderer.on('focus-search-bar', handler)
     return () => ipcRenderer.removeListener('focus-search-bar', handler)
-  }
+  },
+  getRecentDirs: (): Promise<string[]> =>
+    ipcRenderer.invoke('get-recent-dirs'),
+  markDirOpened: (dirPath: string): Promise<void> =>
+    ipcRenderer.invoke('mark-dir-opened', dirPath)
 })

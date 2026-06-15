@@ -135,6 +135,13 @@ export function collectPaperSourceUuids(content: { tables: Table[] }): Set<strin
   return uuids
 }
 
+const ROW_PALETTE_SIZE = 5
+
+export function rowPaletteClass(row: Row): string | undefined {
+  const rowNum = typeof row['row_'] === 'number' ? row['row_'] : null
+  return rowNum !== null ? `row-${rowNum % ROW_PALETTE_SIZE}` : undefined
+}
+
 export function buildFragmentColumns(rows: Row[]): string[] {
   const hasAgreement = rows.some((r) => r.agreement_level_ != null)
   const hasSources = rows.some((r) => r.sources_ != null)

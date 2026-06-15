@@ -335,6 +335,32 @@ main {
   margin: 0;
 }
 
+.recent-dirs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 360px;
+}
+
+.recent-dir-btn {
+  padding: 8px 16px;
+  font-size: 0.9em;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fafafa;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #333;
+}
+
+.recent-dir-btn:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
 .open-dir-btn {
   padding: 10px 24px;
   font-size: 1em;

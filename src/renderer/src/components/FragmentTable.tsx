@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaTrash } from 'react-icons/fa6'
 import type { TableFragment } from '../types'
-import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderDataCell } from '../tableUtils'
+import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderDataCell, rowPaletteClass } from '../tableUtils'
 import { highlightText } from '../highlightUtils'
 
-const ROW_PALETTE_SIZE = 5
 import type { EditorCallbacks } from '../editorCallbacks'
 import { ColumnHeader } from './ColumnHeader'
 import { EditableCell } from './EditableCell'
@@ -109,7 +108,6 @@ export function FragmentTable({
               <tbody>
                 {rows.map((row, rowIdx) => {
                   const dataCols = columns.filter((c) => !META_COLS.has(c))
-                  const rowNum = typeof row['row_'] === 'number' ? row['row_'] : null
                   const cellRowspans = rowspanMatrix[rowIdx] ?? {}
                   return (
                     <tr key={rowIdx}>
@@ -187,15 +185,14 @@ export function FragmentTable({
                           )
                         }
                         if (META_COLS.has(col)) {
-                          const tdClass = col === 'agreement_level_' ? agreementClass(row.agreement_level_) : undefined
+                          let tdClass: string | undefined
+                          if (col === 'agreement_level_') tdClass = agreementClass(row.agreement_level_)
+                          else if (col === 'row_') tdClass = rowPaletteClass(row)
                           return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{highlightText(renderDataCell(row, col, uuidToReader), searchQuery ?? '')}</td>
                         }
                         const colIdx = dataCols.indexOf(col)
                         const isEditing =
                           editingCell?.rowIdx === rowIdx && editingCell?.colIdx === colIdx
-                        const paletteClass = col === 'row_' && rowNum !== null
-                          ? `row-${rowNum % ROW_PALETTE_SIZE}`
-                          : undefined
                         return (
                           <EditableCell
                             key={col}
@@ -206,7 +203,7 @@ export function FragmentTable({
                             rowIdx={rowIdx}
                             colName={col}
                             isEditing={isEditing}
-                            className={paletteClass}
+
                             rowSpan={rowSpanProp}
                             searchQuery={searchQuery}
                             onStartEdit={() => setEditingCell({ rowIdx, colIdx })}

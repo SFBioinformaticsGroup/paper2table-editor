@@ -235,6 +235,15 @@ ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: s
 })
 
 
+ipcMain.handle('get-recent-dirs', () => {
+  return readConfig().recentDirs.slice(0, 3)
+})
+
+ipcMain.handle('mark-dir-opened', (_event, dirPath: string) => {
+  addRecentDir(dirPath)
+  if (mainWindow) buildMenu(mainWindow)
+})
+
 ipcMain.handle('resolve-sources', async (
   _event,
   dirPath: string,

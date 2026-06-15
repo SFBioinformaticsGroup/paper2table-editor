@@ -119,6 +119,7 @@ function buildSectionAnchorIds(sectionKey: string, state: DirectoryState, histor
 
 export function App() {
   const [state, setState] = useState<DirectoryState | null>(null)
+  const [recentDirs, setRecentDirs] = useState<string[]>([])
   const [appLoading, setAppLoading] = useState(false)
   const [loadingPapers, setLoadingPapers] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState('')
@@ -220,6 +221,11 @@ export function App() {
     const path = await window.api.openDirectory()
     if (!path) return
     await loadDir(path)
+  }
+
+  async function openRecentResultSet(dirPath: string) {
+    await window.api.markDirOpened(dirPath)
+    await loadDir(dirPath)
   }
 
   // ── edit helpers ──────────────────────────────────────────────────────────
@@ -429,6 +435,10 @@ export function App() {
   // ── effects ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    window.api.getRecentDirs().then(setRecentDirs)
+  }, [])
+
+  useEffect(() => {
     return window.api.onDirectorySelected(loadDir)
   }, [])
 
@@ -609,9 +619,25 @@ export function App() {
           {appLoading ? (
             <span className="spinner" aria-label="Loading" />
           ) : (
-            <button className="open-dir-btn" onClick={openResultSet}>
-              Open ResultSet
-            </button>
+            <>
+              {recentDirs.length > 0 && (
+                <div className="recent-dirs">
+                  {recentDirs.map((dirPath) => (
+                    <button
+                      key={dirPath}
+                      className="recent-dir-btn"
+                      title={dirPath}
+                      onClick={() => openRecentResultSet(dirPath)}
+                    >
+                      {dirPath.split('/').pop() || dirPath}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button className="open-dir-btn" onClick={openResultSet}>
+                Open ResultSet
+              </button>
+            </>
           )}
         </div>
       </>
