@@ -62,8 +62,13 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('open-find-bar', handler)
     return () => ipcRenderer.removeListener('open-find-bar', handler)
   },
-  findInPage: (text: string): Promise<void> =>
-    ipcRenderer.invoke('find-in-page', text),
+  findInPage: (text: string, findNext?: boolean, forward?: boolean): Promise<void> =>
+    ipcRenderer.invoke('find-in-page', text, findNext, forward),
   stopFindInPage: (): Promise<void> =>
-    ipcRenderer.invoke('stop-find-in-page')
+    ipcRenderer.invoke('stop-find-in-page'),
+  onRefocusFindBar: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('refocus-find-bar', handler)
+    return () => ipcRenderer.removeListener('refocus-find-bar', handler)
+  }
 })

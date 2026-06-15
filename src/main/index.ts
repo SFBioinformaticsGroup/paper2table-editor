@@ -191,9 +191,15 @@ ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: s
   return { ok: true, filePath: result.filePath }
 })
 
-ipcMain.handle('find-in-page', async (event, text: string) => {
+ipcMain.handle('find-in-page', async (event, text: string, findNext?: boolean, forward?: boolean) => {
   if (text) {
-    event.sender.findInPage(text)
+    const options: Electron.FindInPageOptions = {}
+    if (findNext !== undefined) options.findNext = findNext
+    if (forward !== undefined) options.forward = forward
+    event.sender.once('found-in-page', () => {
+      event.sender.send('refocus-find-bar')
+    })
+    event.sender.findInPage(text, options)
   } else {
     event.sender.stopFindInPage('clearSelection')
   }

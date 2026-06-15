@@ -14,6 +14,12 @@ export function FindBar({ onClose }: FindBarProps) {
   }, [])
 
   useEffect(() => {
+    return window.api.onRefocusFindBar(() => {
+      inputRef.current?.focus()
+    })
+  }, [])
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
@@ -29,6 +35,13 @@ export function FindBar({ onClose }: FindBarProps) {
     }
   }, [query])
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' && query) {
+      e.preventDefault()
+      window.api.findInPage(query, true, !e.shiftKey)
+    }
+  }
+
   return (
     <div className="find-bar">
       <input
@@ -38,6 +51,7 @@ export function FindBar({ onClose }: FindBarProps) {
         placeholder="Find in page…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
       <button className="find-bar-close" onClick={onClose} title="Close (Esc)">
         <FaXmark />
