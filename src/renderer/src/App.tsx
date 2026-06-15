@@ -396,6 +396,8 @@ export function App() {
       savePaper: savePaperFn,
       savePaperAs: savePaperAsFn,
       navigateToSource: navigateToSourceFn,
+      reverseText: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => actions.reverseText(f, tableIdx)),
       deleteTable: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => actions.deleteTable(f, tableIdx)),
       deleteFragment: (fileName, tableIdx, fragmentIdx) =>
@@ -408,6 +410,8 @@ export function App() {
         applyEdit(fileName, (f) => actions.deleteRow(f, tableIdx, fragmentIdx, rowIdx)),
       promoteRowToHeader: (fileName, tableIdx, fragmentIdx, rowIdx) =>
         applyEdit(fileName, (f) => actions.promoteRowToHeader(f, tableIdx, fragmentIdx, rowIdx)),
+      mergeRow: (fileName, tableIdx, fragmentIdx, rowIdx, direction) =>
+        applyEdit(fileName, (f) => actions.mergeRows(f, tableIdx, fragmentIdx, rowIdx, direction)),
       deleteColumn: (fileName, tableIdx, colName) =>
         applyEdit(fileName, (f) => actions.deleteColumn(f, tableIdx, colName)),
       renameColumn: (fileName, tableIdx, oldName, newName) =>

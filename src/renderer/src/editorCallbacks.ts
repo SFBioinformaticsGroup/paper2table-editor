@@ -6,6 +6,7 @@ export interface EditorCallbacks {
   savePaperAs: (fileName: string) => void
   navigateToSource: (uuid: string, tableNumber?: number) => void
 
+  reverseText: (fileName: string, tableIdx: number) => void
   deleteTable: (fileName: string, tableIdx: number) => void
   deleteFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
   compactFragments: (fileName: string, tableIdx: number) => void
@@ -13,6 +14,7 @@ export interface EditorCallbacks {
 
   deleteRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
   promoteRowToHeader: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
+  mergeRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number, direction: 'next' | 'prev') => void
 
   deleteColumn: (fileName: string, tableIdx: number, colName: string) => void
   renameColumn: (fileName: string, tableIdx: number, oldName: string, newName: string) => void

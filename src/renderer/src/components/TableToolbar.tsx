@@ -1,4 +1,4 @@
-import { FaArrowDown, FaLayerGroup, FaTrash } from 'react-icons/fa6'
+import { FaArrowDown, FaArrowRightArrowLeft, FaLayerGroup, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 
 interface Props {
@@ -12,13 +12,6 @@ interface Props {
 export function TableToolbar({ fileName, tableIdx, hasFragments, isLastTable, callbacks }: Props) {
   return (
     <div className="table-toolbar">
-      <button
-        className="table-toolbar-btn danger"
-        title="Delete this table"
-        onClick={() => callbacks.deleteTable(fileName, tableIdx)}
-      >
-        <FaTrash /> Delete table
-      </button>
       {hasFragments && (
         <button
           className="table-toolbar-btn"
@@ -28,6 +21,13 @@ export function TableToolbar({ fileName, tableIdx, hasFragments, isLastTable, ca
           <FaLayerGroup /> Compact fragments
         </button>
       )}
+      <button
+        className="table-toolbar-btn"
+        title="Reverse all cell text in this table"
+        onClick={() => callbacks.reverseText(fileName, tableIdx)}
+      >
+        <FaArrowRightArrowLeft /> Reverse text
+      </button>
       {!isLastTable && (
         <button
           className="table-toolbar-btn"
@@ -37,6 +37,13 @@ export function TableToolbar({ fileName, tableIdx, hasFragments, isLastTable, ca
           <FaArrowDown /> Merge with next
         </button>
       )}
+      <button
+        className="table-toolbar-btn danger"
+        title="Delete this table"
+        onClick={() => callbacks.deleteTable(fileName, tableIdx)}
+      >
+        <FaTrash /> Delete table
+      </button>
     </div>
   )
 }

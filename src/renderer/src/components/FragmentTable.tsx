@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaArrowUp, FaTrash } from 'react-icons/fa6'
+import { FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaTrash } from 'react-icons/fa6'
 import type { TableFragment } from '../types'
 import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderDataCell } from '../tableUtils'
 import { highlightText } from '../highlightUtils'
@@ -9,7 +9,7 @@ import type { EditorCallbacks } from '../editorCallbacks'
 import { ColumnHeader } from './ColumnHeader'
 import { EditableCell } from './EditableCell'
 
-const META_COLS = new Set(['agreement_level_', 'readers_', 'sources_'])
+const META_COLS = new Set(['row_', 'agreement_level_', 'readers_', 'sources_'])
 
 interface Props {
   tableIdx: number         // 1-based display index
@@ -135,6 +135,26 @@ export function FragmentTable({
                         >
                           <FaArrowUp />
                         </button>
+                        {rowIdx > 0 && (
+                          <button
+                            title="Merge with previous row"
+                            onClick={() =>
+                              callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, rowIdx, 'prev')
+                            }
+                          >
+                            <FaArrowsUpToLine />
+                          </button>
+                        )}
+                        {rowIdx < rows.length - 1 && (
+                          <button
+                            title="Merge with next row"
+                            onClick={() =>
+                              callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, rowIdx, 'next')
+                            }
+                          >
+                            <FaArrowsDownToLine />
+                          </button>
+                        )}
                       </td>
                       {columns.map((col) => {
                         const span = cellRowspans[col] ?? 1
