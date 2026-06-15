@@ -1,7 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
-import { join, dirname, basename } from 'path'
+import { join, dirname } from 'path'
 import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync, statSync } from 'fs'
 import Ajv2020 from 'ajv/dist/2020'
+import { readConfig, writeConfig, addRecentDir } from './config'
 
 let validateTablesFile: ((data: unknown) => { valid: boolean; errors: string[] }) | null = null
 
@@ -23,19 +24,53 @@ function initValidator(): void {
   }
 }
 
+let mainWindow: BrowserWindow | null = null
+
 function buildMenu(win: BrowserWindow): void {
+  const config = readConfig()
+
   const openDir = async () => {
-    const result = await dialog.showOpenDialog(win, { properties: ['openDirectory'] })
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory'],
+      ...(config.lastOpenedParent ? { defaultPath: config.lastOpenedParent } : {})
+    })
     if (!result.canceled && result.filePaths.length > 0) {
+      addRecentDir(result.filePaths[0])
+      buildMenu(win)
       win.webContents.send('directory-selected', result.filePaths[0])
     }
   }
+
+  const recentItems: Electron.MenuItemConstructorOptions[] =
+    config.recentDirs.length > 0
+      ? [
+          ...config.recentDirs.map((dirPath): Electron.MenuItemConstructorOptions => ({
+            label: dirPath,
+            click: () => {
+              addRecentDir(dirPath)
+              buildMenu(win)
+              win.webContents.send('directory-selected', dirPath)
+            }
+          })),
+          { type: 'separator' },
+          {
+            label: 'Clear Recents',
+            click: () => {
+              const c = readConfig()
+              c.recentDirs = []
+              writeConfig(c)
+              buildMenu(win)
+            }
+          }
+        ]
+      : [{ label: 'No Recent Items', enabled: false }]
 
   const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: 'File',
       submenu: [
         { label: 'Open ResultSets…', accelerator: 'CmdOrCtrl+O', click: openDir },
+        { label: 'Open Recent', submenu: recentItems },
         { type: 'separator' },
         { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => win.webContents.send('save-current-paper') },
         { label: 'Save As…', accelerator: 'CmdOrCtrl+Shift+S', click: () => win.webContents.send('save-current-paper-as') },
@@ -97,7 +132,7 @@ function buildMenu(win: BrowserWindow): void {
 }
 
 function createWindow(): void {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 900,
     webPreferences: {
@@ -108,14 +143,14 @@ function createWindow(): void {
     }
   })
 
-  buildMenu(win)
+  buildMenu(mainWindow)
 
   if (process.env.ELECTRON_RENDERER_URL) {
-    win.loadURL(process.env.ELECTRON_RENDERER_URL)
-    win.webContents.openDevTools()
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
+    mainWindow.webContents.openDevTools()
   } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
-    win.webContents.openDevTools()
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.webContents.openDevTools()
   }
 }
 
@@ -133,9 +168,17 @@ app.on('activate', () => {
 })
 
 ipcMain.handle('open-directory', async () => {
-  const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+  if (!mainWindow) return null
+  const config = readConfig()
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+    ...(config.lastOpenedParent ? { defaultPath: config.lastOpenedParent } : {})
+  })
   if (result.canceled || result.filePaths.length === 0) return null
-  return result.filePaths[0]
+  const dirPath = result.filePaths[0]
+  addRecentDir(dirPath)
+  buildMenu(mainWindow)
+  return dirPath
 })
 
 ipcMain.handle('list-directory', async (_event, dirPath: string) => {
