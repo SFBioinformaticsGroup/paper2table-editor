@@ -56,5 +56,14 @@ contextBridge.exposeInMainWorld('api', {
     dirPath: string,
     sources: Array<{ uuid: string; path: string }>
   ): Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>> =>
-    ipcRenderer.invoke('resolve-sources', dirPath, sources)
+    ipcRenderer.invoke('resolve-sources', dirPath, sources),
+  onOpenFindBar: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('open-find-bar', handler)
+    return () => ipcRenderer.removeListener('open-find-bar', handler)
+  },
+  findInPage: (text: string): Promise<void> =>
+    ipcRenderer.invoke('find-in-page', text),
+  stopFindInPage: (): Promise<void> =>
+    ipcRenderer.invoke('stop-find-in-page')
 })

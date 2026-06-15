@@ -23,5 +23,8 @@ interface Window {
       dirPath: string,
       sources: Array<{ uuid: string; path: string }>
     ) => Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>>
+    onOpenFindBar: (callback: () => void) => (() => void)
+    findInPage: (text: string) => Promise<void>
+    stopFindInPage: () => Promise<void>
   }
 }

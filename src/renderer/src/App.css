@@ -678,3 +678,44 @@ a.uuid-chip:hover {
   color: #999;
   cursor: default;
 }
+
+.find-bar {
+  position: fixed;
+  top: 12px;
+  right: 20px;
+  z-index: 200;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+}
+
+.find-bar-input {
+  border: none;
+  outline: none;
+  font-size: 0.9em;
+  width: 220px;
+  padding: 2px 4px;
+  background: transparent;
+}
+
+.find-bar-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  height: 22px;
+  border-radius: 3px;
+}
+
+.find-bar-close:hover {
+  background: #eee;
+  color: #333;
+}

@@ -56,6 +56,16 @@ function buildMenu(win: BrowserWindow): void {
       ]
     },
     {
+      label: 'View',
+      submenu: [
+        { label: 'Zoom In', role: 'zoomIn' },
+        { label: 'Zoom Out', role: 'zoomOut' },
+        { label: 'Reset Zoom', role: 'resetZoom' },
+        { type: 'separator' },
+        { label: 'Find…', accelerator: 'CmdOrCtrl+F', click: () => win.webContents.send('open-find-bar') }
+      ]
+    },
+    {
       label: 'Navigate',
       submenu: [
         { label: 'Back', accelerator: 'CmdOrCtrl+[', click: () => win.webContents.send('navigate-back') },
@@ -177,6 +187,18 @@ ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: s
   if (result.canceled || !result.filePath) return { ok: false, filePath: null }
   writeFileSync(result.filePath, content, 'utf-8')
   return { ok: true, filePath: result.filePath }
+})
+
+ipcMain.handle('find-in-page', async (event, text: string) => {
+  if (text) {
+    event.sender.findInPage(text)
+  } else {
+    event.sender.stopFindInPage('clearSelection')
+  }
+})
+
+ipcMain.handle('stop-find-in-page', async (event) => {
+  event.sender.stopFindInPage('clearSelection')
 })
 
 ipcMain.handle('resolve-sources', async (

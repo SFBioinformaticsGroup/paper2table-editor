@@ -18,9 +18,6 @@
               },
               "page": {
                 "type": "integer"
-              },
-              "title": {
-                "type": "string"
               }
             },
             "required": [
@@ -52,9 +49,6 @@
                   ],
                   "additionalProperties": false
                 }
-              },
-              "title": {
-                "type": "string"
               }
             },
             "required": [
@@ -82,21 +76,39 @@
       ]
     },
     "metadata": {
-      "type": ["object", "null"],
+      "type": "object",
       "properties": {
         "filename": {
           "type": "string"
+        },
+        "curations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/curation"
+          }
         }
       },
       "additionalProperties": true
-    },
-    "uuid": {
-      "type": ["string", "null"]
     }
   },
-  "required": ["tables"],
   "additionalProperties": false,
   "$defs": {
+    "curation": {
+      "type": "object",
+      "properties": {
+        "curator": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": ["curator"],
+      "additionalProperties": false
+    },
     "valueWithAgreement": {
       "type": "object",
       "properties": {
@@ -116,9 +128,6 @@
     "columnValue": {
       "oneOf": [
         {
-          "type": "null"
-        },
-        {
           "type": "string"
         },
         {
@@ -132,20 +141,11 @@
     "row": {
       "type": "object",
       "patternProperties": {
+        "^(?!agreement_level_).*$": {
+          "$ref": "#/$defs/columnValue"
+        },
         "^agreement_level_$": {
           "type": "integer"
-        },
-        "^sources_$": {
-          "type": ["array", "null"],
-          "items": {
-            "type": "string"
-          }
-        },
-        "^row_$": {
-          "type": ["integer", "null"]
-        },
-        "^(?!(?:agreement_level_|sources_|row_)$).*$": {
-          "$ref": "#/$defs/columnValue"
         }
       },
       "additionalProperties": false

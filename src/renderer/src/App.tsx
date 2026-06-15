@@ -15,6 +15,7 @@ import type { EditorCallbacks } from './editorCallbacks'
 import { Toc } from './components/Toc'
 import { MetadataSection } from './components/MetadataSection'
 import { PaperSection } from './components/PaperSection'
+import { FindBar } from './components/FindBar'
 import './App.css'
 
 // ── history reducer ──────────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ export function App() {
   const [navBack, setNavBack] = useState<Array<{ dirPath: string; fileName: string; scrollY: number }>>([])
   const [navForward, setNavForward] = useState<Array<{ dirPath: string; fileName: string; scrollY: number }>>([])
   const [focusedFileName, setFocusedFileName] = useState('')
+  const [findBarOpen, setFindBarOpen] = useState(false)
   const anchorIdsRef = useRef<string[]>([])
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
@@ -444,8 +446,14 @@ export function App() {
     })
     const u5 = window.api.onNavigateBack(navigateBackFn)
     const u6 = window.api.onNavigateForward(navigateForwardFn)
-    return () => { u1(); u2(); u3(); u4(); u5(); u6() }
+    const u7 = window.api.onOpenFindBar(() => setFindBarOpen(true))
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7() }
   }, [savePaperFn, savePaperAsFn, navigateBackFn, navigateForwardFn])
+
+  const closeFindBar = useCallback(() => {
+    setFindBarOpen(false)
+    window.api.stopFindInPage()
+  }, [])
 
   // scroll spy
   useEffect(() => {
@@ -485,16 +493,19 @@ export function App() {
 
   if (!state) {
     return (
-      <div className="open-dir-screen">
-        <h1>Tables Editor</h1>
-        {appLoading ? (
-          <span className="spinner" aria-label="Loading" />
-        ) : (
-          <button className="open-dir-btn" onClick={openDirectory}>
-            Open directory…
-          </button>
-        )}
-      </div>
+      <>
+        {findBarOpen && <FindBar onClose={closeFindBar} />}
+        <div className="open-dir-screen">
+          <h1>Tables Editor</h1>
+          {appLoading ? (
+            <span className="spinner" aria-label="Loading" />
+          ) : (
+            <button className="open-dir-btn" onClick={openDirectory}>
+              Open directory…
+            </button>
+          )}
+        </div>
+      </>
     )
   }
 
@@ -517,6 +528,7 @@ export function App() {
 
   return (
     <>
+      {findBarOpen && <FindBar onClose={closeFindBar} />}
       <Toc
         fileNames={state.fileNames}
         papers={state.papers}
