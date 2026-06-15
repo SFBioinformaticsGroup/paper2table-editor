@@ -15,7 +15,8 @@ import type { EditorCallbacks } from './editorCallbacks'
 import { Toc } from './components/Toc'
 import { MetadataSection } from './components/MetadataSection'
 import { PaperSection } from './components/PaperSection'
-import { FindBar } from './components/FindBar'
+import { SearchBar } from './components/SearchBar'
+import type { SearchState } from './components/SearchBar'
 import './App.css'
 
 // ── history reducer ──────────────────────────────────────────────────────────
@@ -125,11 +126,13 @@ export function App() {
   const [navBack, setNavBack] = useState<Array<{ dirPath: string; sectionKey: string; scrollY: number }>>([])
   const [navForward, setNavForward] = useState<Array<{ dirPath: string; sectionKey: string; scrollY: number }>>([])
   const [focusedFileName, setFocusedFileName] = useState('')
-  const [findBarOpen, setFindBarOpen] = useState(false)
+  const [searchState, setSearchState] = useState<SearchState>({ query: '', includeNavTitles: false, includeAllSections: false })
   const [tocCollapsed, setTocCollapsed] = useState(false)
   const [activeSectionKey, setActiveSectionKey] = useState<string>('')
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
+  const searchBarInputRef = useRef<HTMLInputElement>(null)
+  const matchIndexRef = useRef(0)
   const pendingNavRef = useRef<{ sectionKey: string; scrollY: number } | null>(null)
   const sectionViewRef = useRef<HTMLDivElement>(null)
   const sectionScrollYRef = useRef<number>(0)
@@ -480,13 +483,13 @@ export function App() {
     })
     const u5 = window.api.onNavigateBack(navigateBackFn)
     const u6 = window.api.onNavigateForward(navigateForwardFn)
-    const u7 = window.api.onOpenFindBar(() => setFindBarOpen(true))
-    return () => { u1(); u2(); u3(); u4(); u5(); u6(); u7() }
+    return () => { u1(); u2(); u3(); u4(); u5(); u6() }
   }, [savePaperFn, savePaperAsFn, navigateBackFn, navigateForwardFn])
 
-  const closeFindBar = useCallback(() => {
-    setFindBarOpen(false)
-    window.api.stopFindInPage()
+  useEffect(() => {
+    return window.api.onFocusSearchBar(() => {
+      searchBarInputRef.current?.focus()
+    })
   }, [])
 
   useEffect(() => {
@@ -518,12 +521,51 @@ export function App() {
     return () => container.removeEventListener('scroll', handleScroll)
   }, [activeSectionKey, state, histories])
 
+  // ── search navigation ────────────────────────────────────────────────────
+
+  const navigateMatch = useCallback((direction: 'forward' | 'backward') => {
+    const marks = Array.from(document.querySelectorAll<HTMLElement>('.search-highlight'))
+    if (marks.length === 0) return
+    const current = matchIndexRef.current
+    const next = direction === 'forward'
+      ? (current + 1) % marks.length
+      : (current - 1 + marks.length) % marks.length
+    document.querySelectorAll<HTMLElement>('.search-highlight-active')
+      .forEach((el) => el.classList.remove('search-highlight-active'))
+    marks[next].classList.add('search-highlight-active')
+    marks[next].scrollIntoView({ block: 'center', behavior: 'smooth' })
+    matchIndexRef.current = next
+  }, [])
+
+  useEffect(() => {
+    matchIndexRef.current = 0
+    document.querySelectorAll<HTMLElement>('.search-highlight-active')
+      .forEach((el) => el.classList.remove('search-highlight-active'))
+  }, [searchState.query])
+
+  useEffect(() => {
+    if (!searchState.query) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return
+      const active = document.activeElement
+      const isEditingOtherField =
+        active !== null &&
+        active !== searchBarInputRef.current &&
+        (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')
+      if (!isEditingOtherField) {
+        e.preventDefault()
+        navigateMatch(e.shiftKey ? 'backward' : 'forward')
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [searchState.query, navigateMatch])
+
   // ── render ────────────────────────────────────────────────────────────────
 
   if (!state) {
     return (
       <>
-        {findBarOpen && <FindBar onClose={closeFindBar} />}
         <div className="open-dir-screen">
           <h1>Tables Editor</h1>
           {appLoading ? (
@@ -557,11 +599,12 @@ export function App() {
   const activePaperId = activePaperIdx !== -1 ? `paper-${activePaperIdx}` : ''
   const activeHistory = activeSectionKey ? histories[activeSectionKey] : undefined
   const activeContent = activeHistory?.present ?? (activeSectionKey ? state.papers[activeSectionKey] : null) ?? null
-  const activeIsLoading = Boolean(activeSectionKey && loadingPapers[activeSectionKey])
+
+  const searchQuery = searchState.query
+  const tocSearchQuery = searchState.includeNavTitles ? searchQuery : ''
 
   return (
     <>
-      {findBarOpen && <FindBar onClose={closeFindBar} />}
       <Toc
         fileNames={state.fileNames}
         papers={state.papers}
@@ -571,6 +614,7 @@ export function App() {
         dirtyFileNames={dirtyFileNames}
         collapsed={tocCollapsed}
         activeSectionKey={activeSectionKey}
+        searchQuery={tocSearchQuery}
         onToggleCollapse={() => setTocCollapsed((v) => !v)}
         onNavigateToSection={navigateToSection}
       />
@@ -621,6 +665,7 @@ export function App() {
             </button>
           </div>
         </div>
+        <SearchBar searchState={searchState} onChange={setSearchState} inputRef={searchBarInputRef} />
         <main>
           {appLoading && (
             <div className="loading-overlay">
@@ -628,65 +673,131 @@ export function App() {
             </div>
           )}
           <div className="section-view" ref={sectionViewRef}>
-            {(activeSectionKey === 'metadata' || activeSectionKey === 'sources') && (
-              <MetadataSection
-                metadata={state.metadata}
-                navigateToSource={callbacks.navigateToSource}
-                uuidToFullPath={uuidToFullPath}
-                section={activeSectionKey}
-              />
-            )}
-            {activePaperIdx !== -1 && (() => {
-              const fileName = activeSectionKey
-              const history = histories[fileName]
-              const content = activeContent
-              const isLoading = activeIsLoading
-
-              if (history?.present === null) return null
-
-              if (!content) {
-                return (
-                  <div key={fileName} className="paper-placeholder">
-                    <span className="spinner" aria-label="Loading" />
-                  </div>
-                )
-              }
-
-              const canUndo = (history?.past.length ?? 0) > 0
-              const canRedo = (history?.future.length ?? 0) > 0
-              const isDirty = dirtyFileNames.has(fileName)
-
-              return (
-                <div key={fileName}>
-                  {state.validationErrors[fileName] && (
-                    <details className="validation-errors" open>
-                      <summary>
-                        Schema validation errors in <code>{fileName}</code>{' '}
-                        ({state.validationErrors[fileName].length})
-                      </summary>
-                      <ul>
-                        {state.validationErrors[fileName].map((msg, i) => (
-                          <li key={i}><code>{msg}</code></li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                  <PaperSection
-                    paperId={activePaperId}
-                    paperName={fileName}
-                    content={content}
-                    allSources={allSources}
-                    uuidToReader={uuidToReader}
+            {searchState.includeAllSections ? (
+              <>
+                {hasMetadata && (
+                  <MetadataSection
+                    metadata={state.metadata}
+                    navigateToSource={callbacks.navigateToSource}
                     uuidToFullPath={uuidToFullPath}
-                    fileName={fileName}
-                    callbacks={callbacks}
-                    canUndo={canUndo}
-                    canRedo={canRedo}
-                    isDirty={isDirty}
+                    section="metadata"
+                    searchQuery={searchQuery}
                   />
-                </div>
-              )
-            })()}
+                )}
+                {(state.metadata.sources?.length ?? 0) > 0 && (
+                  <MetadataSection
+                    metadata={state.metadata}
+                    navigateToSource={callbacks.navigateToSource}
+                    uuidToFullPath={uuidToFullPath}
+                    section="sources"
+                    searchQuery={searchQuery}
+                  />
+                )}
+                {state.fileNames.map((fileName, fileIdx) => {
+                  const history = histories[fileName]
+                  const content = history?.present ?? state.papers[fileName]
+                  if (!content || history?.present === null) return null
+                  const paperId = `paper-${fileIdx}`
+                  const canUndo = (history?.past.length ?? 0) > 0
+                  const canRedo = (history?.future.length ?? 0) > 0
+                  const isDirty = dirtyFileNames.has(fileName)
+                  return (
+                    <div key={fileName}>
+                      {state.validationErrors[fileName] && (
+                        <details className="validation-errors" open>
+                          <summary>
+                            Schema validation errors in <code>{fileName}</code>{' '}
+                            ({state.validationErrors[fileName].length})
+                          </summary>
+                          <ul>
+                            {state.validationErrors[fileName].map((msg, i) => (
+                              <li key={i}><code>{msg}</code></li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                      <PaperSection
+                        paperId={paperId}
+                        paperName={fileName}
+                        content={content}
+                        allSources={allSources}
+                        uuidToReader={uuidToReader}
+                        uuidToFullPath={uuidToFullPath}
+                        fileName={fileName}
+                        callbacks={callbacks}
+                        canUndo={canUndo}
+                        canRedo={canRedo}
+                        isDirty={isDirty}
+                        searchQuery={searchQuery}
+                      />
+                    </div>
+                  )
+                })}
+              </>
+            ) : (
+              <>
+                {(activeSectionKey === 'metadata' || activeSectionKey === 'sources') && (
+                  <MetadataSection
+                    metadata={state.metadata}
+                    navigateToSource={callbacks.navigateToSource}
+                    uuidToFullPath={uuidToFullPath}
+                    section={activeSectionKey}
+                    searchQuery={searchQuery}
+                  />
+                )}
+                {activePaperIdx !== -1 && (() => {
+                  const fileName = activeSectionKey
+                  const history = histories[fileName]
+                  const content = activeContent
+
+                  if (history?.present === null) return null
+
+                  if (!content) {
+                    return (
+                      <div key={fileName} className="paper-placeholder">
+                        <span className="spinner" aria-label="Loading" />
+                      </div>
+                    )
+                  }
+
+                  const canUndo = (history?.past.length ?? 0) > 0
+                  const canRedo = (history?.future.length ?? 0) > 0
+                  const isDirty = dirtyFileNames.has(fileName)
+
+                  return (
+                    <div key={fileName}>
+                      {state.validationErrors[fileName] && (
+                        <details className="validation-errors" open>
+                          <summary>
+                            Schema validation errors in <code>{fileName}</code>{' '}
+                            ({state.validationErrors[fileName].length})
+                          </summary>
+                          <ul>
+                            {state.validationErrors[fileName].map((msg, i) => (
+                              <li key={i}><code>{msg}</code></li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                      <PaperSection
+                        paperId={activePaperId}
+                        paperName={fileName}
+                        content={content}
+                        allSources={allSources}
+                        uuidToReader={uuidToReader}
+                        uuidToFullPath={uuidToFullPath}
+                        fileName={fileName}
+                        callbacks={callbacks}
+                        canUndo={canUndo}
+                        canRedo={canRedo}
+                        isDirty={isDirty}
+                        searchQuery={searchQuery}
+                      />
+                    </div>
+                  )
+                })()}
+              </>
+            )}
           </div>
         </main>
       </div>

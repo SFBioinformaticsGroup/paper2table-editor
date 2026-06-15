@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FaArrowUp, FaTrash } from 'react-icons/fa6'
 import type { TableFragment } from '../types'
 import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderDataCell } from '../tableUtils'
+import { highlightText } from '../highlightUtils'
 
 const ROW_PALETTE_SIZE = 5
 import type { EditorCallbacks } from '../editorCallbacks'
@@ -21,6 +22,7 @@ interface Props {
   showFragmentHeading: boolean  // true when parent table has multiple fragments
   fileName: string
   callbacks: EditorCallbacks
+  searchQuery?: string
 }
 
 export function FragmentTable({
@@ -33,7 +35,8 @@ export function FragmentTable({
   anchorId,
   showFragmentHeading,
   fileName,
-  callbacks
+  callbacks,
+  searchQuery
 }: Props) {
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colIdx: number } | null>(null)
 
@@ -97,6 +100,7 @@ export function FragmentTable({
                         fileName={fileName}
                         tableIdx={tableIdxZero}
                         callbacks={callbacks}
+                        searchQuery={searchQuery}
                       />
                     )
                   )}
@@ -164,7 +168,7 @@ export function FragmentTable({
                         }
                         if (META_COLS.has(col)) {
                           const tdClass = col === 'agreement_level_' ? agreementClass(row.agreement_level_) : undefined
-                          return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{renderDataCell(row, col, uuidToReader)}</td>
+                          return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{highlightText(renderDataCell(row, col, uuidToReader), searchQuery ?? '')}</td>
                         }
                         const colIdx = dataCols.indexOf(col)
                         const isEditing =
@@ -184,6 +188,7 @@ export function FragmentTable({
                             isEditing={isEditing}
                             className={paletteClass}
                             rowSpan={rowSpanProp}
+                            searchQuery={searchQuery}
                             onStartEdit={() => setEditingCell({ rowIdx, colIdx })}
                             onConfirm={() => setEditingCell(null)}
                             onTabConfirm={() => advanceEdit(rowIdx, colIdx)}

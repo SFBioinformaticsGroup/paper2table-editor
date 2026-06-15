@@ -5,6 +5,7 @@ import { collectPaperSourceUuids, getTableFragments, readerEmoji, renderCitation
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
 import { TableToolbar } from './TableToolbar'
+import { highlightText } from '../highlightUtils'
 
 interface Props {
   paperId: string
@@ -18,6 +19,7 @@ interface Props {
   canUndo: boolean
   canRedo: boolean
   isDirty: boolean
+  searchQuery?: string
 }
 
 function PaperSources({
@@ -97,7 +99,8 @@ export function PaperSection({
   callbacks,
   canUndo,
   canRedo,
-  isDirty
+  isDirty,
+  searchQuery
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const paperUuids = collectPaperSourceUuids(content)
@@ -105,7 +108,7 @@ export function PaperSection({
 
   return (
     <div className="paper">
-      <h2 id={paperId}>{paperName}</h2>
+      <h2 id={paperId}>{highlightText(paperName, searchQuery ?? '')}</h2>
 
       <div className="paper-toolbar">
         <button
@@ -162,7 +165,7 @@ export function PaperSection({
         )}
       </div>
 
-      <p>Citation: {renderCitation(content.citation)}</p>
+      <p>Citation: {highlightText(renderCitation(content.citation), searchQuery ?? '')}</p>
       <PaperSources
         sources={paperSources}
         navigateToSource={callbacks.navigateToSource}
@@ -189,7 +192,7 @@ export function PaperSection({
 
         return (
           <div key={tableIdx} className="table-section">
-            <h3 id={tableAnchorId}>{headingText}</h3>
+            <h3 id={tableAnchorId}>{highlightText(headingText, searchQuery ?? '')}</h3>
 
             <TableToolbar
               fileName={fileName}
@@ -216,6 +219,7 @@ export function PaperSection({
                   showFragmentHeading={hasMultipleFragments}
                   fileName={fileName}
                   callbacks={callbacks}
+                  searchQuery={searchQuery}
                 />
               )
             })}

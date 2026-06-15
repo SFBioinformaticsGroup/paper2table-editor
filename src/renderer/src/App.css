@@ -726,43 +726,56 @@ a.uuid-chip:hover {
   cursor: default;
 }
 
-.find-bar {
-  position: fixed;
-  top: 12px;
-  right: 20px;
-  z-index: 200;
-  background: #fff;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #ddd;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.search-bar-icon {
+  color: #888;
+  flex-shrink: 0;
+}
+
+.search-bar-input {
+  flex: 1;
+  height: 26px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 0 6px;
+  font-size: 0.9em;
+  outline: none;
+  min-width: 0;
+}
+
+.search-bar-input:focus {
+  border-color: #4a9eff;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+}
+
+.search-bar-label {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 6px;
-}
-
-.find-bar-input {
-  border: none;
-  outline: none;
-  font-size: 0.9em;
-  width: 220px;
-  padding: 2px 4px;
-  background: transparent;
-}
-
-.find-bar-close {
-  background: none;
-  border: none;
+  font-size: 0.85em;
+  color: #555;
+  white-space: nowrap;
   cursor: pointer;
-  padding: 2px 4px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  height: 22px;
-  border-radius: 3px;
+  user-select: none;
 }
 
-.find-bar-close:hover {
-  background: #eee;
-  color: #333;
+.search-highlight {
+  background: #ffe066;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.search-highlight-active {
+  background: #ff9900;
+  outline: 2px solid #e07000;
+  border-radius: 2px;
 }

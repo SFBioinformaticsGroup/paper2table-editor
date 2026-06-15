@@ -1,11 +1,13 @@
 import type { Metadata, Source } from '../types'
 import { flattenMetadataRows, readerEmoji } from '../tableUtils'
+import { highlightText } from '../highlightUtils'
 
 interface Props {
   metadata: Metadata
   navigateToSource: (uuid: string) => void
   uuidToFullPath: Map<string, string | null>
   section: 'metadata' | 'sources'
+  searchQuery?: string
 }
 
 function SourceCell({
@@ -46,7 +48,7 @@ function SourceCell({
   return <td>{String(source[colKey] ?? '')}</td>
 }
 
-export function MetadataSection({ metadata, navigateToSource, uuidToFullPath, section }: Props) {
+export function MetadataSection({ metadata, navigateToSource, uuidToFullPath, section, searchQuery }: Props) {
   const rows = flattenMetadataRows(metadata)
   const sources = metadata.sources ?? []
   const allKeys = new Set(sources.flatMap((s) => Object.keys(s)))
@@ -95,8 +97,8 @@ export function MetadataSection({ metadata, navigateToSource, uuidToFullPath, se
             <tbody>
               {rows.map(([key, value], i) => (
                 <tr key={i}>
-                  <th>{key}</th>
-                  <td>{value}</td>
+                  <th>{highlightText(key, searchQuery ?? '')}</th>
+                  <td>{highlightText(value, searchQuery ?? '')}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FaEllipsisVertical, FaPencil, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
+import { highlightText } from '../highlightUtils'
 
 interface Props {
   colName: string
@@ -8,9 +9,10 @@ interface Props {
   fileName: string
   tableIdx: number
   callbacks: EditorCallbacks
+  searchQuery?: string
 }
 
-export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, callbacks }: Props) {
+export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, callbacks, searchQuery }: Props) {
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -74,7 +76,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
         />
       ) : (
         <span className="col-header-label">
-          {colName}
+          {highlightText(colName, searchQuery ?? '')}
           <span className="col-header-actions">
             <button
               className="col-header-icon-btn"

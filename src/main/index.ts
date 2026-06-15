@@ -99,7 +99,7 @@ function buildMenu(win: BrowserWindow): void {
         { role: 'zoomOut', accelerator: 'CmdOrCtrl+numsub', visible: false },
         { label: 'Reset Zoom', role: 'resetZoom' },
         { type: 'separator' },
-        { label: 'Find…', accelerator: 'CmdOrCtrl+F', click: () => win.webContents.send('open-find-bar') }
+        { label: 'Find…', accelerator: 'CmdOrCtrl+F', click: () => win.webContents.send('focus-search-bar') }
       ]
     },
     {
@@ -234,23 +234,6 @@ ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: s
   return { ok: true, filePath: result.filePath }
 })
 
-ipcMain.handle('find-in-page', async (event, text: string, findNext?: boolean, forward?: boolean) => {
-  if (text) {
-    const options: Electron.FindInPageOptions = {}
-    if (findNext !== undefined) options.findNext = findNext
-    if (forward !== undefined) options.forward = forward
-    event.sender.once('found-in-page', () => {
-      event.sender.send('refocus-find-bar')
-    })
-    event.sender.findInPage(text, options)
-  } else {
-    event.sender.stopFindInPage('clearSelection')
-  }
-})
-
-ipcMain.handle('stop-find-in-page', async (event) => {
-  event.sender.stopFindInPage('clearSelection')
-})
 
 ipcMain.handle('resolve-sources', async (
   _event,

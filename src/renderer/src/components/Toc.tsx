@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FaAnglesLeft, FaAnglesRight } from 'react-icons/fa6'
 import type { TablesFile } from '../types'
 import { getTableFragments } from '../tableUtils'
+import { highlightText } from '../highlightUtils'
 
 interface Props {
   fileNames: string[]
@@ -12,11 +13,12 @@ interface Props {
   dirtyFileNames: Set<string>
   collapsed: boolean
   activeSectionKey: string
+  searchQuery?: string
   onToggleCollapse: () => void
   onNavigateToSection: (sectionKey: string, anchor?: string) => void
 }
 
-export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, activeSectionKey, onToggleCollapse, onNavigateToSection }: Props) {
+export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, activeSectionKey, searchQuery, onToggleCollapse, onNavigateToSection }: Props) {
   const [papersExpanded, setPapersExpanded] = useState(true)
   const [collapsedPapers, setCollapsedPapers] = useState(new Set<string>())
   const [collapsedTables, setCollapsedTables] = useState(new Set<string>())
@@ -121,7 +123,7 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                           className={activeSectionKey === fileName && activeId === paperId ? 'active' : undefined}
                           onClick={(e) => { e.preventDefault(); onNavigateToSection(fileName) }}
                         >
-                          {dirtyFileNames.has(fileName) ? '• ' : ''}{fileName}
+                          {dirtyFileNames.has(fileName) ? '• ' : ''}{highlightText(fileName, searchQuery ?? '')}
                         </a>
                       </div>
 
@@ -151,7 +153,7 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                                     className={tableIsActive ? 'active' : undefined}
                                     onClick={(e) => { e.preventDefault(); onNavigateToSection(fileName, tableAnchor) }}
                                   >
-                                    Table {tableIdx}
+                                    {highlightText(`Table ${tableIdx}`, searchQuery ?? '')}
                                   </a>
                                 </div>
 
