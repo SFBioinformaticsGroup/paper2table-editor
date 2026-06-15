@@ -99,6 +99,16 @@ export function flattenMetadataRows(metadata: Metadata): [string, string][] {
   return rows
 }
 
+export function findTableAnchorId(content: { tables: Table[] }, paperId: string, tableNumber: number): string | null {
+  const tableIdx = tableNumber - 1
+  if (tableIdx < 0 || tableIdx >= content.tables.length) return null
+  const fragments = getTableFragments(content.tables[tableIdx])
+  if (fragments.length > 1) return `${paperId}-table-${tableNumber}`
+  const page = fragments[0]?.page
+  if (page == null) return null
+  return `${paperId}-table-${tableNumber}-page-${page}`
+}
+
 export function buildPaperAnchorIds(paperId: string, tables: Table[]): string[] {
   const ids: string[] = [paperId]
   tables.forEach((table, tableIdx) => {

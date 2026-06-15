@@ -4,7 +4,7 @@ export interface EditorCallbacks {
   redo: (fileName: string) => void
   savePaper: (fileName: string) => void
   savePaperAs: (fileName: string) => void
-  navigateToSource: (uuid: string) => void
+  navigateToSource: (uuid: string, tableNumber?: number) => void
 
   deleteTable: (fileName: string, tableIdx: number) => void
   deleteFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void

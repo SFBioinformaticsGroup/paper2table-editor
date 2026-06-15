@@ -9,7 +9,7 @@ import type {
   ResolvedSource,
   TablesFile
 } from './types'
-import { buildPaperAnchorIds } from './tableUtils'
+import { buildPaperAnchorIds, findTableAnchorId } from './tableUtils'
 import * as actions from './editorActions'
 import type { EditorCallbacks } from './editorCallbacks'
 import { Toc } from './components/Toc'
@@ -137,6 +137,7 @@ export function App() {
   const sectionViewRef = useRef<HTMLDivElement>(null)
   const sectionScrollYRef = useRef<number>(0)
   const pendingAnchorRef = useRef<string | null>(null)
+  const pendingSourceTableNumRef = useRef<number | null>(null)
   const pendingScrollYRef = useRef<number | null>(null)
   const activeSectionKeyRef = useRef<string>('')
 
@@ -299,7 +300,7 @@ export function App() {
   }
 
   const navigateToSourceFn = useCallback(
-    (uuid: string) => {
+    (uuid: string, tableNumber?: number) => {
       if (!state) return
       const info = state.resolvedSources[uuid]
       if (!info) return
@@ -317,13 +318,15 @@ export function App() {
       setNavForward([])
 
       const normalizedDir = state.dirPath.replace(/\/$/, '')
+      const currentPaperName = activeSectionKeyRef.current
 
       if (info.isDir) {
         if (info.fullPath === normalizedDir) {
           if (state.fileNames.length > 0) navigateToSection(state.fileNames[0])
           return
         }
-        pendingNavRef.current = { sectionKey: '__first__', scrollY: 0 }
+        if (tableNumber !== undefined) pendingSourceTableNumRef.current = tableNumber
+        pendingNavRef.current = { sectionKey: currentPaperName, scrollY: 0 }
         loadDir(info.fullPath)
       } else {
         const lastSlash = info.fullPath.lastIndexOf('/')
@@ -333,8 +336,21 @@ export function App() {
           if (!state.papers[targetFile] && !histories[targetFile]) {
             loadPaper(state.dirPath, targetFile)
           }
-          navigateToSection(targetFile)
+          if (tableNumber !== undefined) {
+            const content = histories[targetFile]?.present ?? state.papers[targetFile]
+            const paperIdx = state.fileNames.indexOf(targetFile)
+            if (content && paperIdx !== -1) {
+              const anchorId = findTableAnchorId(content, `paper-${paperIdx}`, tableNumber) ?? undefined
+              navigateToSection(targetFile, anchorId)
+            } else {
+              pendingSourceTableNumRef.current = tableNumber
+              navigateToSection(targetFile)
+            }
+          } else {
+            navigateToSection(targetFile)
+          }
         } else {
+          if (tableNumber !== undefined) pendingSourceTableNumRef.current = tableNumber
           pendingNavRef.current = { sectionKey: targetFile, scrollY: 0 }
           loadDir(targetDir)
         }
@@ -442,17 +458,38 @@ export function App() {
   }, [activeSectionKey])
 
   useEffect(() => {
+    const tableNum = pendingSourceTableNumRef.current
+    if (tableNum === null || !state || !activeSectionKey) return
+    const content = histories[activeSectionKey]?.present ?? state.papers[activeSectionKey]
+    if (!content) return
+    pendingSourceTableNumRef.current = null
+    const paperIdx = state.fileNames.indexOf(activeSectionKey)
+    if (paperIdx === -1) return
+    const anchorId = findTableAnchorId(content, `paper-${paperIdx}`, tableNum)
+    if (!anchorId) return
+    requestAnimationFrame(() => {
+      const el = document.getElementById(anchorId)
+      if (el && sectionViewRef.current) {
+        sectionViewRef.current.scrollTop += el.getBoundingClientRect().top - sectionViewRef.current.getBoundingClientRect().top
+      }
+    })
+  }, [activeSectionKey, state, histories])
+
+  useEffect(() => {
     const pending = pendingNavRef.current
     if (!state || !pending) return
     pendingNavRef.current = null
-    const sectionKey = pending.sectionKey === '__first__'
+    const resolvedKey = pending.sectionKey === '__first__' || !state.fileNames.includes(pending.sectionKey)
       ? (state.fileNames[0] ?? '')
       : pending.sectionKey
-    if (sectionKey && state.fileNames.includes(sectionKey) && !requestedRef.current.has(sectionKey)) {
-      loadPaper(state.dirPath, sectionKey)
+    if (!state.fileNames.includes(pending.sectionKey) && pending.sectionKey !== '__first__') {
+      pendingSourceTableNumRef.current = null
+    }
+    if (resolvedKey && state.fileNames.includes(resolvedKey) && !requestedRef.current.has(resolvedKey)) {
+      loadPaper(state.dirPath, resolvedKey)
     }
     pendingScrollYRef.current = pending.scrollY
-    setActiveSectionKey(sectionKey || (state.fileNames.length > 0 ? state.fileNames[0] : 'metadata'))
+    setActiveSectionKey(resolvedKey || (state.fileNames.length > 0 ? state.fileNames[0] : 'metadata'))
   }, [state?.dirPath])
 
   useEffect(() => {

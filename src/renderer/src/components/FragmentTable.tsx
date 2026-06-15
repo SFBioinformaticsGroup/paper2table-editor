@@ -153,7 +153,7 @@ export function FragmentTable({
                                     className="uuid-chip"
                                     title={fullPath}
                                     href="#"
-                                    onClick={(e) => { e.preventDefault(); callbacks.navigateToSource(uuid) }}
+                                    onClick={(e) => { e.preventDefault(); callbacks.navigateToSource(uuid, tableIdxZero + 1) }}
                                   >
                                     {uuid.slice(0, 8)}
                                   </a>
