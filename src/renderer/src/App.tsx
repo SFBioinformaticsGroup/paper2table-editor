@@ -318,7 +318,6 @@ export function App() {
       setNavForward([])
 
       const normalizedDir = state.dirPath.replace(/\/$/, '')
-      const currentPaperName = activeSectionKeyRef.current
 
       if (info.isDir) {
         if (info.fullPath === normalizedDir) {
@@ -326,7 +325,7 @@ export function App() {
           return
         }
         if (tableNumber !== undefined) pendingSourceTableNumRef.current = tableNumber
-        pendingNavRef.current = { sectionKey: currentPaperName, scrollY: 0 }
+        pendingNavRef.current = { sectionKey: activeSectionKeyRef.current, scrollY: 0 }
         loadDir(info.fullPath)
       } else {
         const lastSlash = info.fullPath.lastIndexOf('/')
@@ -339,13 +338,11 @@ export function App() {
           if (tableNumber !== undefined) {
             const content = histories[targetFile]?.present ?? state.papers[targetFile]
             const paperIdx = state.fileNames.indexOf(targetFile)
-            if (content && paperIdx !== -1) {
-              const anchorId = findTableAnchorId(content, `paper-${paperIdx}`, tableNumber) ?? undefined
-              navigateToSection(targetFile, anchorId)
-            } else {
-              pendingSourceTableNumRef.current = tableNumber
-              navigateToSection(targetFile)
-            }
+            const anchorId = content && paperIdx !== -1
+              ? findTableAnchorId(content, `paper-${paperIdx}`, tableNumber) ?? undefined
+              : undefined
+            if (anchorId === undefined) pendingSourceTableNumRef.current = tableNumber
+            navigateToSection(targetFile, anchorId)
           } else {
             navigateToSection(targetFile)
           }
@@ -473,16 +470,16 @@ export function App() {
         sectionViewRef.current.scrollTop += el.getBoundingClientRect().top - sectionViewRef.current.getBoundingClientRect().top
       }
     })
-  }, [activeSectionKey, state, histories])
+  }, [activeSectionKey, state, histories[activeSectionKey]])
 
   useEffect(() => {
     const pending = pendingNavRef.current
     if (!state || !pending) return
     pendingNavRef.current = null
-    const resolvedKey = pending.sectionKey === '__first__' || !state.fileNames.includes(pending.sectionKey)
-      ? (state.fileNames[0] ?? '')
-      : pending.sectionKey
-    if (!state.fileNames.includes(pending.sectionKey) && pending.sectionKey !== '__first__') {
+    const resolvedKey = state.fileNames.includes(pending.sectionKey)
+      ? pending.sectionKey
+      : (state.fileNames[0] ?? '')
+    if (pending.sectionKey !== '__first__' && resolvedKey !== pending.sectionKey) {
       pendingSourceTableNumRef.current = null
     }
     if (resolvedKey && state.fileNames.includes(resolvedKey) && !requestedRef.current.has(resolvedKey)) {
