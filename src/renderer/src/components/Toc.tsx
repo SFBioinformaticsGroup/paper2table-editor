@@ -93,12 +93,15 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                     ? content.tables.map((table, tableIdx) => {
                         const fragments = getTableFragments(table)
                         const tableKey = `${fileName}-${tableIdx}`
-                        const firstAnchor = `${paperId}-table-${tableIdx + 1}-page-${fragments[0]?.page}`
+                        const hasMultipleFragments = fragments.length > 1
+                        const tableAnchor = hasMultipleFragments
+                          ? `${paperId}-table-${tableIdx + 1}`
+                          : `${paperId}-table-${tableIdx + 1}-page-${fragments[0]?.page}`
                         const fragmentItems = fragments.map((fragment) => ({
                           page: fragment.page,
                           anchorId: `${paperId}-table-${tableIdx + 1}-page-${fragment.page}`
                         }))
-                        return { tableIdx: tableIdx + 1, tableKey, firstAnchor, fragmentItems }
+                        return { tableIdx: tableIdx + 1, tableKey, tableAnchor, fragmentItems }
                       })
                     : []
 
@@ -124,10 +127,11 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
 
                       {!isPaperCollapsed && tableItems.length > 0 && (
                         <ul className="toc-tables">
-                          {tableItems.map(({ tableIdx, tableKey, firstAnchor, fragmentItems }) => {
+                          {tableItems.map(({ tableIdx, tableKey, tableAnchor, fragmentItems }) => {
                             const isTableCollapsed = collapsedTables.has(tableKey)
-                            const tableIsActive = activeSectionKey === fileName && activeId.startsWith(
-                              `${paperId}-table-${tableIdx}-page`
+                            const tableIsActive = activeSectionKey === fileName && (
+                              activeId === `${paperId}-table-${tableIdx}` ||
+                              activeId.startsWith(`${paperId}-table-${tableIdx}-page`)
                             )
 
                             return (
@@ -145,7 +149,7 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                                   <a
                                     href="#"
                                     className={tableIsActive ? 'active' : undefined}
-                                    onClick={(e) => { e.preventDefault(); onNavigateToSection(fileName, firstAnchor) }}
+                                    onClick={(e) => { e.preventDefault(); onNavigateToSection(fileName, tableAnchor) }}
                                   >
                                     Table {tableIdx}
                                   </a>

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   agreementClass,
   buildFragmentColumns,
+  buildPaperAnchorIds,
   collectPaperSourceUuids,
   columnNames,
   computeRowspans,
@@ -14,7 +15,7 @@ import {
   renderColumnValue,
   renderDataCell,
 } from '../tableUtils'
-import type { Row, TableWithFragments, TableWithRows } from '../types'
+import type { Row, Table, TableWithFragments, TableWithRows } from '../types'
 
 // ── getTableFragments ────────────────────────────────────────────────────────
 
@@ -284,10 +285,75 @@ describe('collectPaperSourceUuids', () => {
   })
 })
 
+// ── buildPaperAnchorIds ──────────────────────────────────────────────────────
+
+describe('buildPaperAnchorIds', () => {
+  it('returns only the paper anchor when there are no tables', () => {
+    expect(buildPaperAnchorIds('paper-0', [])).toEqual(['paper-0'])
+  })
+
+  it('produces page anchors for single-fragment tables (no table-level anchor inserted)', () => {
+    const tables: Table[] = [
+      { rows: [{ name: 'A' }], page: 3 },
+      { rows: [{ name: 'B' }], page: 7 },
+    ]
+    expect(buildPaperAnchorIds('paper-0', tables)).toEqual([
+      'paper-0',
+      'paper-0-table-1-page-3',
+      'paper-0-table-2-page-7',
+    ])
+  })
+
+  it('inserts a table-level anchor before the fragment page anchors for multi-fragment tables', () => {
+    const tables: Table[] = [
+      {
+        table_fragments: [
+          { rows: [{ name: 'A' }], page: 1 },
+          { rows: [{ name: 'B' }], page: 2 },
+        ],
+      },
+    ]
+    expect(buildPaperAnchorIds('paper-1', tables)).toEqual([
+      'paper-1',
+      'paper-1-table-1',
+      'paper-1-table-1-page-1',
+      'paper-1-table-1-page-2',
+    ])
+  })
+
+  it('handles a mix of single-fragment and multi-fragment tables', () => {
+    const tables: Table[] = [
+      { rows: [{ name: 'A' }], page: 5 },
+      {
+        table_fragments: [
+          { rows: [{ name: 'B' }], page: 10 },
+          { rows: [{ name: 'C' }], page: 11 },
+        ],
+      },
+    ]
+    expect(buildPaperAnchorIds('paper-0', tables)).toEqual([
+      'paper-0',
+      'paper-0-table-1-page-5',
+      'paper-0-table-2',
+      'paper-0-table-2-page-10',
+      'paper-0-table-2-page-11',
+    ])
+  })
+})
+
 // ── buildFragmentColumns ─────────────────────────────────────────────────────
 
 describe('buildFragmentColumns', () => {
-  it('puts agreement_level_ first when present, readers_/sources_ last', () => {
+  it('puts row_ first, then agreement_level_, then data cols, then readers_/sources_ last', () => {
+    const rows: Row[] = [
+      { row_: 0, agreement_level_: 2, sources_: ['u1'], name: 'A', dose: '5mg' },
+      { row_: 1, agreement_level_: 1, sources_: ['u2'], name: 'B', dose: '10mg' },
+    ]
+    const cols = buildFragmentColumns(rows)
+    expect(cols).toEqual(['row_', 'agreement_level_', 'name', 'dose', 'readers_', 'sources_'])
+  })
+
+  it('puts agreement_level_ first when row_ is absent', () => {
     const rows: Row[] = [
       { agreement_level_: 2, sources_: ['u1'], name: 'A', dose: '5mg' },
       { agreement_level_: 1, sources_: ['u2'], name: 'B', dose: '10mg' },

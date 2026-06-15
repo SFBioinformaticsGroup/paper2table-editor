@@ -99,6 +99,18 @@ export function flattenMetadataRows(metadata: Metadata): [string, string][] {
   return rows
 }
 
+export function buildPaperAnchorIds(paperId: string, tables: Table[]): string[] {
+  const ids: string[] = [paperId]
+  tables.forEach((table, tableIdx) => {
+    const fragments = getTableFragments(table)
+    if (fragments.length > 1) ids.push(`${paperId}-table-${tableIdx + 1}`)
+    for (const fragment of fragments) {
+      ids.push(`${paperId}-table-${tableIdx + 1}-page-${fragment.page}`)
+    }
+  })
+  return ids
+}
+
 export function collectPaperSourceUuids(content: { tables: Table[] }): Set<string> {
   const uuids = new Set<string>()
   for (const table of content.tables) {
@@ -120,10 +132,13 @@ export function buildFragmentColumns(rows: Row[]): string[] {
   const rowColSets = rows.map((r) => new Set(Object.keys(getRowColumns(r))))
   const commonCols = allColNames.filter((c) => rowColSets.every((s) => s.has(c)))
   const extraCols = allColNames.filter((c) => !commonCols.includes(c))
+  const dataCols = [...commonCols, ...extraCols].filter((c) => c !== 'row_')
+  const hasRow = allColNames.includes('row_')
 
   const cols: string[] = []
+  if (hasRow) cols.push('row_')
   if (hasAgreement) cols.push('agreement_level_')
-  cols.push(...commonCols, ...extraCols)
+  cols.push(...dataCols)
   if (hasSources) cols.push('readers_', 'sources_')
   return cols
 }
