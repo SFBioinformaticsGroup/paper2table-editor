@@ -4,6 +4,7 @@ import {
   buildFragmentColumns,
   collectPaperSourceUuids,
   columnNames,
+  computeRowspans,
   flattenMetadataRows,
   getRowColumns,
   getTableFragments,
@@ -304,6 +305,68 @@ describe('buildFragmentColumns', () => {
     ]
     const cols = buildFragmentColumns(rows)
     expect(cols).toEqual(['name', 'dose'])
+  })
+})
+
+// ── computeRowspans ──────────────────────────────────────────────────────────
+
+describe('computeRowspans', () => {
+  const noReaders = new Map<string, string>()
+
+  it('returns rowspan 1 for all cells when rows have no row_ values', () => {
+    const rows: Row[] = [{ family: 'Apiaceae' }, { family: 'Apiaceae' }]
+    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([{ family: 1 }, { family: 1 }])
+  })
+
+  it('returns rowspan 1 when consecutive rows have different row_ values', () => {
+    const rows: Row[] = [
+      { family: 'Apiaceae', row_: 0 },
+      { family: 'Apiaceae', row_: 1 },
+    ]
+    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([{ family: 1 }, { family: 1 }])
+  })
+
+  it('merges consecutive rows with same row_ and same value', () => {
+    const rows: Row[] = [
+      { family: 'Apiaceae', row_: 0 },
+      { family: 'Apiaceae', row_: 0 },
+    ]
+    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([{ family: 2 }, { family: 0 }])
+  })
+
+  it('merges per-column independently when values differ across columns', () => {
+    const rows: Row[] = [
+      { family: 'Apiaceae', species: 'Ammi majus', row_: 0 },
+      { family: 'Apiaceae', species: 'Carum carvi', row_: 0 },
+    ]
+    expect(computeRowspans(rows, ['family', 'species'], noReaders)).toEqual([
+      { family: 2, species: 1 },
+      { family: 0, species: 1 },
+    ])
+  })
+
+  it('merges three consecutive rows with the same row_ and same value', () => {
+    const rows: Row[] = [
+      { family: 'Apiaceae', row_: 0 },
+      { family: 'Apiaceae', row_: 0 },
+      { family: 'Apiaceae', row_: 0 },
+    ]
+    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([
+      { family: 3 },
+      { family: 0 },
+      { family: 0 },
+    ])
+  })
+
+  it('never merges the agreement_level_ column', () => {
+    const rows: Row[] = [
+      { family: 'Apiaceae', agreement_level_: 2, row_: 0 },
+      { family: 'Apiaceae', agreement_level_: 2, row_: 0 },
+    ]
+    expect(computeRowspans(rows, ['agreement_level_', 'family'], noReaders)).toEqual([
+      { agreement_level_: 1, family: 2 },
+      { agreement_level_: 1, family: 0 },
+    ])
   })
 })
 

@@ -232,6 +232,26 @@ main {
   background-color: #dfd;
 }
 
+.row-0 {
+  background-color: #aed6f1;
+}
+
+.row-1 {
+  background-color: #a9dfbf;
+}
+
+.row-2 {
+  background-color: #f9e79f;
+}
+
+.row-3 {
+  background-color: #f5cba7;
+}
+
+.row-4 {
+  background-color: #d7bde2;
+}
+
 .spinner {
   display: inline-block;
   width: 22px;

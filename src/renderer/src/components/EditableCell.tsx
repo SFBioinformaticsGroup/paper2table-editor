@@ -10,6 +10,8 @@ interface Props {
   rowIdx: number
   colName: string
   isEditing: boolean
+  className?: string
+  rowSpan?: number
   onStartEdit: () => void
   onConfirm: (newValue: string) => void  // confirms and stops editing (Enter/blur)
   onTabConfirm: (newValue: string) => void  // confirms and advances to next cell (Tab)
@@ -25,6 +27,8 @@ export function EditableCell({
   rowIdx,
   colName,
   isEditing,
+  className,
+  rowSpan,
   onStartEdit,
   onConfirm,
   onTabConfirm,
@@ -81,7 +85,7 @@ export function EditableCell({
 
   if (isEditing) {
     return (
-      <td className="editable-cell editing">
+      <td className={['editable-cell editing', className].filter(Boolean).join(' ')} rowSpan={rowSpan}>
         <textarea
           ref={textareaRef}
           className="cell-edit-textarea"
@@ -96,7 +100,7 @@ export function EditableCell({
   }
 
   return (
-    <td className="editable-cell">
+    <td className={['editable-cell', className].filter(Boolean).join(' ')} rowSpan={rowSpan}>
       {displayValue}
       <button className="cell-edit-btn" title="Edit cell" onClick={onStartEdit}>
         <FaPencil />
