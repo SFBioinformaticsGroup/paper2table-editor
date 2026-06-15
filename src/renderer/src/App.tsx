@@ -133,6 +133,7 @@ export function App() {
   const [navForward, setNavForward] = useState<Array<{ dirPath: string; fileName: string; scrollY: number }>>([])
   const [focusedFileName, setFocusedFileName] = useState('')
   const [findBarOpen, setFindBarOpen] = useState(false)
+  const [tocCollapsed, setTocCollapsed] = useState(false)
   const anchorIdsRef = useRef<string[]>([])
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
@@ -536,6 +537,8 @@ export function App() {
         hasMetadata={hasMetadata}
         hasSources={hasSources}
         dirtyFileNames={dirtyFileNames}
+        collapsed={tocCollapsed}
+        onToggleCollapse={() => setTocCollapsed((v) => !v)}
         onSelectPaper={(fileName) => loadPaper(state.dirPath, fileName)}
       />
       <div className="main-wrapper">

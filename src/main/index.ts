@@ -59,7 +59,9 @@ function buildMenu(win: BrowserWindow): void {
       label: 'View',
       submenu: [
         { label: 'Zoom In', role: 'zoomIn' },
+        { role: 'zoomIn', accelerator: 'CmdOrCtrl+numadd', visible: false },
         { label: 'Zoom Out', role: 'zoomOut' },
+        { role: 'zoomOut', accelerator: 'CmdOrCtrl+numsub', visible: false },
         { label: 'Reset Zoom', role: 'resetZoom' },
         { type: 'separator' },
         { label: 'Find…', accelerator: 'CmdOrCtrl+F', click: () => win.webContents.send('open-find-bar') }

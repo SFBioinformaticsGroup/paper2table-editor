@@ -25,11 +25,46 @@ body {
   border-right: 1px solid #ddd;
   background: #f5f5f5;
   padding: 12px;
+  transition: width 0.15s ease;
 }
 
-#toc-inner b {
-  display: block;
+#toc.toc-collapsed {
+  width: 36px;
+  padding: 8px 4px;
+  overflow: hidden;
+}
+
+#toc.toc-collapsed #toc-inner {
+  display: none;
+}
+
+.toc-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 8px;
+}
+
+.toc-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  padding: 3px 4px;
+  border-radius: 3px;
+  font-size: 0.8em;
+}
+
+.toc-sidebar-toggle:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.toc-title {
   color: #555;
   font-size: 0.82em;
   text-transform: uppercase;

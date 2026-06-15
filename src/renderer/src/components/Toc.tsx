@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FaAnglesLeft, FaAnglesRight } from 'react-icons/fa6'
 import type { TablesFile } from '../types'
 import { getTableFragments } from '../tableUtils'
 
@@ -9,10 +10,12 @@ interface Props {
   hasMetadata: boolean
   hasSources: boolean
   dirtyFileNames: Set<string>
+  collapsed: boolean
+  onToggleCollapse: () => void
   onSelectPaper: (fileName: string) => void
 }
 
-export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, onSelectPaper }: Props) {
+export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, onToggleCollapse, onSelectPaper }: Props) {
   const [papersExpanded, setPapersExpanded] = useState(true)
   const [collapsedPapers, setCollapsedPapers] = useState(new Set<string>())
   const [collapsedTables, setCollapsedTables] = useState(new Set<string>())
@@ -36,9 +39,18 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
   }
 
   return (
-    <nav id="toc">
+    <nav id="toc" className={collapsed ? 'toc-collapsed' : undefined}>
+      <div className="toc-header">
+        <button
+          className="toc-sidebar-toggle"
+          onClick={onToggleCollapse}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <FaAnglesRight /> : <FaAnglesLeft />}
+        </button>
+        {!collapsed && <b className="toc-title">Contents</b>}
+      </div>
       <div id="toc-inner">
-        <b>Contents</b>
         <ul>
           {hasMetadata && (
             <li>
