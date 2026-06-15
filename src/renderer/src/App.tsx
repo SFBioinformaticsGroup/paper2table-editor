@@ -212,7 +212,7 @@ export function App() {
     }
   }
 
-  async function openDirectory() {
+  async function openResultSet() {
     const path = await window.api.openDirectory()
     if (!path) return
     await loadDir(path)
@@ -529,8 +529,8 @@ export function App() {
           {appLoading ? (
             <span className="spinner" aria-label="Loading" />
           ) : (
-            <button className="open-dir-btn" onClick={openDirectory}>
-              Open directory…
+            <button className="open-dir-btn" onClick={openResultSet}>
+              Open ResultSet
             </button>
           )}
         </div>

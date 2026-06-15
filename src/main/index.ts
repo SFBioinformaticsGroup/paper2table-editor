@@ -35,7 +35,7 @@ function buildMenu(win: BrowserWindow): void {
     {
       label: 'File',
       submenu: [
-        { label: 'Open Directory…', accelerator: 'CmdOrCtrl+O', click: openDir },
+        { label: 'Open ResultSets…', accelerator: 'CmdOrCtrl+O', click: openDir },
         { type: 'separator' },
         { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => win.webContents.send('save-current-paper') },
         { label: 'Save As…', accelerator: 'CmdOrCtrl+Shift+S', click: () => win.webContents.send('save-current-paper-as') },

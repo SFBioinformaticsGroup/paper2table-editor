@@ -25,7 +25,7 @@ This opens the app in development mode with hot reload.
 > npm run electron:download
 > ```
 
-Once open, click **Open directory…** and select a folder that contains one or more `.tables.json` files produced by `paper2table` or `tablemerge`. A `tables.metadata.json` file in the same directory is optional but enables the metadata panel and per-row source tracking.
+Once open, click **Open ResultSet** and select a folder that contains one or more `.tables.json` files produced by `paper2table` or `tablemerge`. A `tables.metadata.json` file in the same directory is optional but enables the metadata panel and per-row source tracking.
 
 ## Type-check
 
