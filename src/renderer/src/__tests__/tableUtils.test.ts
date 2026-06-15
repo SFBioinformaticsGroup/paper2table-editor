@@ -248,6 +248,10 @@ describe('flattenMetadataRows', () => {
       ['agreement_method', 'simple-count'],
     ])
   })
+
+  it('returns an empty array for an empty metadata object', () => {
+    expect(flattenMetadataRows({})).toEqual([])
+  })
 })
 
 // ── collectPaperSourceUuids ──────────────────────────────────────────────────
@@ -298,6 +302,12 @@ describe('buildFragmentColumns', () => {
     expect(cols).toEqual(['name'])
   })
 
+  it('adds readers_ and sources_ when sources_ is present but no agreement_level_', () => {
+    const rows: Row[] = [{ sources_: ['u1'], name: 'A' }]
+    const cols = buildFragmentColumns(rows)
+    expect(cols).toEqual(['name', 'readers_', 'sources_'])
+  })
+
   it('places columns not present in every row after the common columns', () => {
     const rows: Row[] = [
       { name: 'A', dose: '5mg' },
@@ -305,6 +315,10 @@ describe('buildFragmentColumns', () => {
     ]
     const cols = buildFragmentColumns(rows)
     expect(cols).toEqual(['name', 'dose'])
+  })
+
+  it('returns an empty array for an empty row list', () => {
+    expect(buildFragmentColumns([])).toEqual([])
   })
 })
 
@@ -416,5 +430,15 @@ describe('renderDataCell', () => {
   it('returns empty string for a missing column', () => {
     const row: Row = { name: 'A' }
     expect(renderDataCell(row, 'dose', uuidToReader)).toBe('')
+  })
+
+  it('returns empty string for readers_ when the row has no sources_', () => {
+    const row: Row = { name: 'A' }
+    expect(renderDataCell(row, 'readers_', uuidToReader)).toBe('')
+  })
+
+  it('omits UUIDs from readers_ that have no matching reader in the map', () => {
+    const row: Row = { sources_: ['unknown-uuid'] }
+    expect(renderDataCell(row, 'readers_', uuidToReader)).toBe('')
   })
 })

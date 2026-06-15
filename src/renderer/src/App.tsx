@@ -103,20 +103,19 @@ function buildUuidToFullPath(resolvedSources: Record<string, ResolvedSource>): M
   return map
 }
 
-function buildAnchorIds(state: DirectoryState, histories: EditHistories): string[] {
-  const ids: string[] = []
-  if (Object.keys(state.metadata).length > 0) ids.push('metadata')
-  if ((state.metadata.sources?.length ?? 0) > 0) ids.push('sources')
-  state.fileNames.forEach((fileName, paperIdx) => {
-    const paperId = `paper-${paperIdx}`
-    ids.push(paperId)
-    const content = histories[fileName]?.present ?? state.papers[fileName]
-    if (!content) return
-    content.tables.forEach((table, tableIdx) => {
-      for (const fragment of getTableFragments(table)) {
-        ids.push(`${paperId}-table-${tableIdx + 1}-page-${fragment.page}`)
-      }
-    })
+function buildSectionAnchorIds(sectionKey: string, state: DirectoryState, histories: EditHistories): string[] {
+  if (sectionKey === 'metadata') return ['metadata']
+  if (sectionKey === 'sources') return ['sources']
+  const paperIdx = state.fileNames.indexOf(sectionKey)
+  if (paperIdx === -1) return []
+  const paperId = `paper-${paperIdx}`
+  const ids: string[] = [paperId]
+  const content = histories[sectionKey]?.present ?? state.papers[sectionKey]
+  if (!content) return ids
+  content.tables.forEach((table, tableIdx) => {
+    for (const fragment of getTableFragments(table)) {
+      ids.push(`${paperId}-table-${tableIdx + 1}-page-${fragment.page}`)
+    }
   })
   return ids
 }
@@ -129,17 +128,21 @@ export function App() {
   const [loadingPapers, setLoadingPapers] = useState<Record<string, boolean>>({})
   const [activeId, setActiveId] = useState('')
   const [histories, dispatchHistory] = useReducer(historyReducer, {})
-  const [navBack, setNavBack] = useState<Array<{ dirPath: string; fileName: string; scrollY: number }>>([])
-  const [navForward, setNavForward] = useState<Array<{ dirPath: string; fileName: string; scrollY: number }>>([])
+  const [navBack, setNavBack] = useState<Array<{ dirPath: string; sectionKey: string; scrollY: number }>>([])
+  const [navForward, setNavForward] = useState<Array<{ dirPath: string; sectionKey: string; scrollY: number }>>([])
   const [focusedFileName, setFocusedFileName] = useState('')
   const [findBarOpen, setFindBarOpen] = useState(false)
   const [tocCollapsed, setTocCollapsed] = useState(false)
-  const anchorIdsRef = useRef<string[]>([])
+  const [activeSectionKey, setActiveSectionKey] = useState<string>('')
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
-  const pendingScrollRef = useRef<{ fileName: string; scrollY: number } | null>(null)
+  const pendingNavRef = useRef<{ sectionKey: string; scrollY: number } | null>(null)
+  const sectionViewRef = useRef<HTMLDivElement>(null)
+  const sectionScrollYRef = useRef<number>(0)
+  const pendingAnchorRef = useRef<string | null>(null)
+  const pendingScrollYRef = useRef<number | null>(null)
+  const activeSectionKeyRef = useRef<string>('')
 
-  // current visible content for a paper (edited or original)
   const getPaperContent = useCallback(
     (fileName: string, st: DirectoryState): TablesFile | null => {
       const present = histories[fileName]?.present
@@ -197,6 +200,7 @@ export function App() {
       for (const { uuid, fullPath, isDir } of resolved) {
         resolvedSources[uuid] = { fullPath, isDir }
       }
+      const hasMetadata = Object.keys(listing.metadata).length > 0
       setState({
         dirPath,
         metadata: listing.metadata,
@@ -205,6 +209,7 @@ export function App() {
         papers: {},
         validationErrors: {}
       })
+      setActiveSectionKey(hasMetadata ? 'metadata' : listing.fileNames[0] ?? '')
       if (listing.fileNames.length > 0) {
         loadPaper(dirPath, listing.fileNames[0])
       }
@@ -278,12 +283,22 @@ export function App() {
 
   // ── navigation ────────────────────────────────────────────────────────────
 
-  function scrollToPaper(fileName: string) {
+  function navigateToSection(sectionKey: string, anchorId?: string) {
     if (!state) return
-    const idx = state.fileNames.indexOf(fileName)
-    if (idx === -1) return
-    const el = document.getElementById(`paper-${idx}`)
-    el?.scrollIntoView({ behavior: 'smooth' })
+    if (state.fileNames.includes(sectionKey)) loadPaper(state.dirPath, sectionKey)
+    if (sectionKey === activeSectionKey) {
+      if (anchorId) {
+        const container = sectionViewRef.current
+        const el = document.getElementById(anchorId)
+        if (container && el) {
+          container.scrollTop += el.getBoundingClientRect().top - container.getBoundingClientRect().top
+        }
+      }
+      return
+    }
+    pendingAnchorRef.current = anchorId ?? null
+    pendingScrollYRef.current = null
+    setActiveSectionKey(sectionKey)
   }
 
   const navigateToSourceFn = useCallback(
@@ -300,18 +315,16 @@ export function App() {
         !window.confirm(`You have ${dirtyCount} unsaved paper(s). Navigate anyway?`)
       ) return
 
-      const entry = { dirPath: state.dirPath, fileName: focusedPaperRef.current, scrollY: window.scrollY }
+      const entry = { dirPath: state.dirPath, sectionKey: activeSectionKeyRef.current, scrollY: sectionScrollYRef.current }
       setNavBack((prev) => [...prev, entry])
       setNavForward([])
 
       const normalizedDir = state.dirPath.replace(/\/$/, '')
 
       if (info.isDir) {
-        // Source path is a directory — load it directly
-        if (info.fullPath === normalizedDir) return  // already here
+        if (info.fullPath === normalizedDir) return
         loadDir(info.fullPath)
       } else {
-        // Source path is a file
         const lastSlash = info.fullPath.lastIndexOf('/')
         const targetDir = info.fullPath.substring(0, lastSlash)
         const targetFile = info.fullPath.substring(lastSlash + 1)
@@ -319,43 +332,43 @@ export function App() {
           if (!state.papers[targetFile] && !histories[targetFile]) {
             loadPaper(state.dirPath, targetFile)
           }
-          setTimeout(() => scrollToPaper(targetFile), 80)
+          navigateToSection(targetFile)
         } else {
-          pendingScrollRef.current = { fileName: targetFile, scrollY: 0 }
+          pendingNavRef.current = { sectionKey: targetFile, scrollY: 0 }
           loadDir(targetDir)
         }
       }
     },
-    [state, histories]
+    [state, histories, activeSectionKey]
   )
 
   const navigateBackFn = useCallback(() => {
     if (!state || navBack.length === 0) return
     const entry = navBack[navBack.length - 1]
-    const current = { dirPath: state.dirPath, fileName: focusedPaperRef.current, scrollY: window.scrollY }
+    const current = { dirPath: state.dirPath, sectionKey: activeSectionKeyRef.current, scrollY: sectionScrollYRef.current }
     setNavBack((prev) => prev.slice(0, -1))
     setNavForward((prev) => [current, ...prev])
     if (entry.dirPath !== state.dirPath) {
-      pendingScrollRef.current = { fileName: entry.fileName, scrollY: entry.scrollY }
+      pendingNavRef.current = { sectionKey: entry.sectionKey, scrollY: entry.scrollY }
       loadDir(entry.dirPath)
     } else {
-      scrollToPaper(entry.fileName)
-      setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+      pendingScrollYRef.current = entry.scrollY
+      setActiveSectionKey(entry.sectionKey)
     }
   }, [navBack, state])
 
   const navigateForwardFn = useCallback(() => {
     if (!state || navForward.length === 0) return
     const entry = navForward[0]
-    const current = { dirPath: state.dirPath, fileName: focusedPaperRef.current, scrollY: window.scrollY }
+    const current = { dirPath: state.dirPath, sectionKey: activeSectionKeyRef.current, scrollY: sectionScrollYRef.current }
     setNavForward((prev) => prev.slice(1))
     setNavBack((prev) => [...prev, current])
     if (entry.dirPath !== state.dirPath) {
-      pendingScrollRef.current = { fileName: entry.fileName, scrollY: entry.scrollY }
+      pendingNavRef.current = { sectionKey: entry.sectionKey, scrollY: entry.scrollY }
       loadDir(entry.dirPath)
     } else {
-      scrollToPaper(entry.fileName)
-      setTimeout(() => window.scrollTo({ top: entry.scrollY, behavior: 'smooth' }), 80)
+      pendingScrollYRef.current = entry.scrollY
+      setActiveSectionKey(entry.sectionKey)
     }
   }, [navForward, state])
 
@@ -401,21 +414,41 @@ export function App() {
     return window.api.onDirectorySelected(loadDir)
   }, [])
 
-  // After cross-dir navigation: load target paper and scroll to it
   useEffect(() => {
-    const pending = pendingScrollRef.current
-    if (!state || !pending) return
-    pendingScrollRef.current = null
-    if (!state.papers[pending.fileName] && !requestedRef.current.has(pending.fileName)) {
-      loadPaper(state.dirPath, pending.fileName)
+    activeSectionKeyRef.current = activeSectionKey
+    const fn = state?.fileNames.includes(activeSectionKey) ? activeSectionKey : ''
+    focusedPaperRef.current = fn
+    setFocusedFileName(fn)
+  }, [activeSectionKey, state])
+
+  useEffect(() => {
+    const container = sectionViewRef.current
+    if (!container) return
+    const anchor = pendingAnchorRef.current
+    const scrollY = pendingScrollYRef.current
+    pendingAnchorRef.current = null
+    pendingScrollYRef.current = null
+    if (anchor) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(anchor)
+        if (el && sectionViewRef.current) {
+          sectionViewRef.current.scrollTop += el.getBoundingClientRect().top - sectionViewRef.current.getBoundingClientRect().top
+        }
+      })
+    } else {
+      container.scrollTop = scrollY ?? 0
     }
-    const targetScrollY = pending.scrollY
-    setTimeout(() => {
-      scrollToPaper(pending.fileName)
-      if (targetScrollY > 0) {
-        setTimeout(() => window.scrollTo({ top: targetScrollY, behavior: 'smooth' }), 80)
-      }
-    }, 80)
+  }, [activeSectionKey])
+
+  useEffect(() => {
+    const pending = pendingNavRef.current
+    if (!state || !pending) return
+    pendingNavRef.current = null
+    if (state.fileNames.includes(pending.sectionKey) && !requestedRef.current.has(pending.sectionKey)) {
+      loadPaper(state.dirPath, pending.sectionKey)
+    }
+    pendingScrollYRef.current = pending.scrollY
+    setActiveSectionKey(pending.sectionKey)
   }, [state?.dirPath])
 
   useEffect(() => {
@@ -427,7 +460,6 @@ export function App() {
       : 'Tables Editor'
   }, [state?.dirPath, histories])
 
-  // IPC-triggered save/undo/redo (from menu)
   useEffect(() => {
     const u1 = window.api.onSaveCurrentPaper(() => {
       const name = focusedPaperRef.current
@@ -456,39 +488,34 @@ export function App() {
     window.api.stopFindInPage()
   }, [])
 
-  // scroll spy
   useEffect(() => {
-    if (!state) return
-    anchorIdsRef.current = buildAnchorIds(state, histories)
+    if (!state || !activeSectionKey) return
+    if (!state.fileNames.includes(activeSectionKey)) return
+    if (requestedRef.current.has(activeSectionKey)) return
+    loadPaper(state.dirPath, activeSectionKey)
+  }, [activeSectionKey, state?.dirPath])
+
+  useEffect(() => {
+    const container = sectionViewRef.current
+    if (!state || !container) return
+    const anchorIds = buildSectionAnchorIds(activeSectionKey, state, histories)
+    setActiveId(anchorIds[0] ?? '')
     const handleScroll = () => {
-      const scrollY = window.scrollY + 8
-      let active = ''
-      for (const id of anchorIdsRef.current) {
+      sectionScrollYRef.current = container.scrollTop
+      const containerTop = container.getBoundingClientRect().top
+      let active = anchorIds[0] ?? ''
+      for (const id of anchorIds) {
         const el = document.getElementById(id)
         if (!el) continue
-        if (el.getBoundingClientRect().top + window.scrollY <= scrollY) active = id
+        if (el.getBoundingClientRect().top - containerTop <= 8) active = id
         else break
       }
       setActiveId(active)
-
-      // track focused paper for menu shortcuts and toolbar buttons
-      let newFocused = focusedPaperRef.current
-      for (const [i, fileName] of state.fileNames.entries()) {
-        const el = document.getElementById(`paper-${i}`)
-        if (!el) continue
-        if (el.getBoundingClientRect().top + window.scrollY <= scrollY + 200) {
-          newFocused = fileName
-        }
-      }
-      if (newFocused !== focusedPaperRef.current) {
-        focusedPaperRef.current = newFocused
-        setFocusedFileName(newFocused)
-      }
     }
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    container.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [state, histories])
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [activeSectionKey, state, histories])
 
   // ── render ────────────────────────────────────────────────────────────────
 
@@ -514,7 +541,6 @@ export function App() {
   const uuidToFullPath = buildUuidToFullPath(state.resolvedSources)
   const allSources = state.metadata.sources ?? []
   const hasMetadata = Object.keys(state.metadata).length > 0
-  const hasSources = (state.metadata.sources?.length ?? 0) > 0
 
   const dirtyFileNames = new Set(
     Object.entries(histories)
@@ -525,7 +551,12 @@ export function App() {
   const focusedEntry = histories[focusedFileName]
   const canUndoFocused = (focusedEntry?.past.length ?? 0) > 0
   const focusedDirty = dirtyFileNames.has(focusedFileName)
-  const hasFocused = Boolean(focusedFileName)
+
+  const activePaperIdx = state.fileNames.indexOf(activeSectionKey)
+  const activePaperId = activePaperIdx !== -1 ? `paper-${activePaperIdx}` : ''
+  const activeHistory = activeSectionKey ? histories[activeSectionKey] : undefined
+  const activeContent = activeHistory?.present ?? (activeSectionKey ? state.papers[activeSectionKey] : null) ?? null
+  const activeIsLoading = Boolean(activeSectionKey && loadingPapers[activeSectionKey])
 
   return (
     <>
@@ -535,11 +566,12 @@ export function App() {
         papers={state.papers}
         activeId={activeId}
         hasMetadata={hasMetadata}
-        hasSources={hasSources}
+        hasSources={(state.metadata.sources?.length ?? 0) > 0}
         dirtyFileNames={dirtyFileNames}
         collapsed={tocCollapsed}
+        activeSectionKey={activeSectionKey}
         onToggleCollapse={() => setTocCollapsed((v) => !v)}
-        onSelectPaper={(fileName) => loadPaper(state.dirPath, fileName)}
+        onNavigateToSection={navigateToSection}
       />
       <div className="main-wrapper">
         <div className="dir-header">
@@ -589,76 +621,72 @@ export function App() {
           </div>
         </div>
         <main>
-        {appLoading && (
-          <div className="loading-overlay">
-            <span className="spinner" aria-label="Loading" />
-          </div>
-        )}
-        {hasMetadata && (
-          <MetadataSection
-            metadata={state.metadata}
-            navigateToSource={callbacks.navigateToSource}
-            uuidToFullPath={uuidToFullPath}
-          />
-        )}
-        <h2>Papers</h2>
-        {state.fileNames.map((fileName, paperIdx) => {
-          const paperId = `paper-${paperIdx}`
-          const history = histories[fileName]
-          const content = history?.present ?? state.papers[fileName]
-          const isLoading = loadingPapers[fileName]
-
-          // paper deleted
-          if (history?.present === null) return null
-
-          if (!content) {
-            return (
-              <div
-                key={fileName}
-                id={paperId}
-                data-paper-file={fileName}
-                className={isLoading ? 'paper-placeholder loading' : 'paper-placeholder'}
-              >
-                {isLoading && <span className="spinner" aria-label="Loading" />}
-              </div>
-            )
-          }
-
-          const canUndo = (history?.past.length ?? 0) > 0
-          const canRedo = (history?.future.length ?? 0) > 0
-          const isDirty = dirtyFileNames.has(fileName)
-
-          return (
-            <div key={fileName}>
-              {state.validationErrors[fileName] && (
-                <details className="validation-errors" open>
-                  <summary>
-                    Schema validation errors in <code>{fileName}</code>{' '}
-                    ({state.validationErrors[fileName].length})
-                  </summary>
-                  <ul>
-                    {state.validationErrors[fileName].map((msg, i) => (
-                      <li key={i}><code>{msg}</code></li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-              <PaperSection
-                paperId={paperId}
-                paperName={fileName}
-                content={content}
-                allSources={allSources}
-                uuidToReader={uuidToReader}
-                uuidToFullPath={uuidToFullPath}
-                fileName={fileName}
-                callbacks={callbacks}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                isDirty={isDirty}
-              />
+          {appLoading && (
+            <div className="loading-overlay">
+              <span className="spinner" aria-label="Loading" />
             </div>
-          )
-        })}
+          )}
+          <div className="section-view" ref={sectionViewRef}>
+            {(activeSectionKey === 'metadata' || activeSectionKey === 'sources') && (
+              <MetadataSection
+                metadata={state.metadata}
+                navigateToSource={callbacks.navigateToSource}
+                uuidToFullPath={uuidToFullPath}
+                section={activeSectionKey}
+              />
+            )}
+            {activePaperIdx !== -1 && (() => {
+              const fileName = activeSectionKey
+              const history = histories[fileName]
+              const content = activeContent
+              const isLoading = activeIsLoading
+
+              if (history?.present === null) return null
+
+              if (!content) {
+                return (
+                  <div key={fileName} className="paper-placeholder">
+                    <span className="spinner" aria-label="Loading" />
+                  </div>
+                )
+              }
+
+              const canUndo = (history?.past.length ?? 0) > 0
+              const canRedo = (history?.future.length ?? 0) > 0
+              const isDirty = dirtyFileNames.has(fileName)
+
+              return (
+                <div key={fileName}>
+                  {state.validationErrors[fileName] && (
+                    <details className="validation-errors" open>
+                      <summary>
+                        Schema validation errors in <code>{fileName}</code>{' '}
+                        ({state.validationErrors[fileName].length})
+                      </summary>
+                      <ul>
+                        {state.validationErrors[fileName].map((msg, i) => (
+                          <li key={i}><code>{msg}</code></li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                  <PaperSection
+                    paperId={activePaperId}
+                    paperName={fileName}
+                    content={content}
+                    allSources={allSources}
+                    uuidToReader={uuidToReader}
+                    uuidToFullPath={uuidToFullPath}
+                    fileName={fileName}
+                    callbacks={callbacks}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    isDirty={isDirty}
+                  />
+                </div>
+              )
+            })()}
+          </div>
         </main>
       </div>
     </>

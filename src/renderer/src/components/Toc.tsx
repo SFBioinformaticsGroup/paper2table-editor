@@ -11,11 +11,12 @@ interface Props {
   hasSources: boolean
   dirtyFileNames: Set<string>
   collapsed: boolean
+  activeSectionKey: string
   onToggleCollapse: () => void
-  onSelectPaper: (fileName: string) => void
+  onNavigateToSection: (sectionKey: string, anchor?: string) => void
 }
 
-export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, onToggleCollapse, onSelectPaper }: Props) {
+export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, activeSectionKey, onToggleCollapse, onNavigateToSection }: Props) {
   const [papersExpanded, setPapersExpanded] = useState(true)
   const [collapsedPapers, setCollapsedPapers] = useState(new Set<string>())
   const [collapsedTables, setCollapsedTables] = useState(new Set<string>())
@@ -54,14 +55,22 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
         <ul>
           {hasMetadata && (
             <li>
-              <a href="#metadata" className={activeId === 'metadata' ? 'active' : undefined}>
+              <a
+                href="#"
+                className={activeSectionKey === 'metadata' ? 'active' : undefined}
+                onClick={(e) => { e.preventDefault(); onNavigateToSection('metadata') }}
+              >
                 Metadata
               </a>
             </li>
           )}
           {hasSources && (
             <li>
-              <a href="#sources" className={activeId === 'sources' ? 'active' : undefined}>
+              <a
+                href="#"
+                className={activeSectionKey === 'sources' ? 'active' : undefined}
+                onClick={(e) => { e.preventDefault(); onNavigateToSection('sources') }}
+              >
                 Sources
               </a>
             </li>
@@ -84,9 +93,7 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                     ? content.tables.map((table, tableIdx) => {
                         const fragments = getTableFragments(table)
                         const tableKey = `${fileName}-${tableIdx}`
-                        const firstAnchor = fragments.length > 1
-                          ? `${paperId}-table-${tableIdx + 1}`
-                          : `${paperId}-table-${tableIdx + 1}-page-${fragments[0]?.page}`
+                        const firstAnchor = `${paperId}-table-${tableIdx + 1}-page-${fragments[0]?.page}`
                         const fragmentItems = fragments.map((fragment) => ({
                           page: fragment.page,
                           anchorId: `${paperId}-table-${tableIdx + 1}-page-${fragment.page}`
@@ -107,9 +114,9 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                           {content ? (isPaperCollapsed ? '▸' : '▾') : '·'}
                         </button>
                         <a
-                          href={`#${paperId}`}
-                          className={activeId === paperId ? 'active' : undefined}
-                          onClick={() => onSelectPaper(fileName)}
+                          href="#"
+                          className={activeSectionKey === fileName && activeId === paperId ? 'active' : undefined}
+                          onClick={(e) => { e.preventDefault(); onNavigateToSection(fileName) }}
                         >
                           {dirtyFileNames.has(fileName) ? '• ' : ''}{fileName}
                         </a>
@@ -119,7 +126,7 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                         <ul className="toc-tables">
                           {tableItems.map(({ tableIdx, tableKey, firstAnchor, fragmentItems }) => {
                             const isTableCollapsed = collapsedTables.has(tableKey)
-                            const tableIsActive = activeId.startsWith(
+                            const tableIsActive = activeSectionKey === fileName && activeId.startsWith(
                               `${paperId}-table-${tableIdx}-page`
                             )
 
@@ -136,8 +143,9 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                                       : '·'}
                                   </button>
                                   <a
-                                    href={`#${firstAnchor}`}
+                                    href="#"
                                     className={tableIsActive ? 'active' : undefined}
+                                    onClick={(e) => { e.preventDefault(); onNavigateToSection(fileName, firstAnchor) }}
                                   >
                                     Table {tableIdx}
                                   </a>
@@ -148,8 +156,9 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                                     {fragmentItems.map(({ page, anchorId }) => (
                                       <li key={anchorId}>
                                         <a
-                                          href={`#${anchorId}`}
-                                          className={activeId === anchorId ? 'active' : undefined}
+                                          href="#"
+                                          className={activeSectionKey === fileName && activeId === anchorId ? 'active' : undefined}
+                                          onClick={(e) => { e.preventDefault(); onNavigateToSection(fileName, anchorId) }}
                                         >
                                           Table {tableIdx}, p.&nbsp;{page}
                                         </a>

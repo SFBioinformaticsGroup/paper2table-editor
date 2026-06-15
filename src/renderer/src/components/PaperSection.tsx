@@ -105,7 +105,7 @@ export function PaperSection({
 
   return (
     <div className="paper">
-      <h3 id={paperId}>{paperName}</h3>
+      <h2 id={paperId}>{paperName}</h2>
 
       <div className="paper-toolbar">
         <button
@@ -189,7 +189,7 @@ export function PaperSection({
 
         return (
           <div key={tableIdx} className="table-section">
-            <h4 id={tableAnchorId}>{headingText}</h4>
+            <h3 id={tableAnchorId}>{headingText}</h3>
 
             <TableToolbar
               fileName={fileName}

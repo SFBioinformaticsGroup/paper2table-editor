@@ -5,6 +5,7 @@ interface Props {
   metadata: Metadata
   navigateToSource: (uuid: string) => void
   uuidToFullPath: Map<string, string | null>
+  section: 'metadata' | 'sources'
 }
 
 function SourceCell({
@@ -45,7 +46,7 @@ function SourceCell({
   return <td>{String(source[colKey] ?? '')}</td>
 }
 
-export function MetadataSection({ metadata, navigateToSource, uuidToFullPath }: Props) {
+export function MetadataSection({ metadata, navigateToSource, uuidToFullPath, section }: Props) {
   const rows = flattenMetadataRows(metadata)
   const sources = metadata.sources ?? []
   const allKeys = new Set(sources.flatMap((s) => Object.keys(s)))
@@ -54,6 +55,36 @@ export function MetadataSection({ metadata, navigateToSource, uuidToFullPath }: 
     ...preferred.filter((k) => allKeys.has(k)),
     ...[...allKeys].filter((k) => !preferred.includes(k)).sort()
   ]
+
+  if (section === 'sources') {
+    return (
+      <>
+        <h2 id="sources">Sources</h2>
+        <div className="table-wrapper">
+          <table className="table">
+            <thead>
+              <tr>{sourceKeys.map((k) => <th key={k}>{k}</th>)}</tr>
+            </thead>
+            <tbody>
+              {sources.map((source, i) => (
+                <tr key={i}>
+                  {sourceKeys.map((k) => (
+                    <SourceCell
+                      key={k}
+                      source={source}
+                      colKey={k}
+                      navigateToSource={navigateToSource}
+                      uuidToFullPath={uuidToFullPath}
+                    />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -71,33 +102,6 @@ export function MetadataSection({ metadata, navigateToSource, uuidToFullPath }: 
             </tbody>
           </table>
         </div>
-      )}
-      {sources.length > 0 && (
-        <>
-          <h3 id="sources">Sources</h3>
-          <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>{sourceKeys.map((k) => <th key={k}>{k}</th>)}</tr>
-              </thead>
-              <tbody>
-                {sources.map((source, i) => (
-                  <tr key={i}>
-                    {sourceKeys.map((k) => (
-                      <SourceCell
-                        key={k}
-                        source={source}
-                        colKey={k}
-                        navigateToSource={navigateToSource}
-                        uuidToFullPath={uuidToFullPath}
-                      />
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
       )}
     </>
   )

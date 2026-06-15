@@ -111,6 +111,12 @@ describe('compactFragments', () => {
     const result = compactFragments(file, 0)
     expect(result.tables[1]).toBe(other)
   })
+
+  it('applied to a flat table returns an equivalent flat table', () => {
+    const file = makeFile(flatTable([{ name: 'A' }, { name: 'B' }], 7))
+    const result = compactFragments(file, 0)
+    expect(result.tables[0]).toEqual({ rows: [{ name: 'A' }, { name: 'B' }], page: 7 })
+  })
 })
 
 // ── mergeWithNextTable ────────────────────────────────────────────────────────
@@ -134,6 +140,22 @@ describe('mergeWithNextTable', () => {
   it('is a no-op when tableIdx is the last table', () => {
     const file = makeFile(flatTable([{ name: 'A' }]))
     expect(mergeWithNextTable(file, 0)).toBe(file)
+  })
+
+  it('merges all fragments of a multi-fragment table with the next flat table', () => {
+    const file = makeFile(
+      fragmentedTable([{ name: 'A' }], [{ name: 'B' }]),
+      flatTable([{ name: 'C' }], 3)
+    )
+    const result = mergeWithNextTable(file, 0)
+    expect(result.tables).toHaveLength(1)
+    expect(result.tables[0]).toEqual({
+      table_fragments: [
+        { rows: [{ name: 'A' }], page: 1 },
+        { rows: [{ name: 'B' }], page: 2 },
+        { rows: [{ name: 'C' }], page: 3 },
+      ],
+    })
   })
 })
 
@@ -262,6 +284,15 @@ describe('renameColumn', () => {
     const result = renameColumn(file, 0, 'col1', 'col2')
     const row = (result.tables[0] as { rows: Row[] }).rows[0]
     expect(row).toEqual({ col2_2: 'A', col2: 'B', col3: 'C' })
+  })
+
+  it('increments suffix beyond _2 when _2 is also taken', () => {
+    const file = makeFile(
+      flatTable([{ col1: 'A', col2: 'B', col2_2: 'C' }])
+    )
+    const result = renameColumn(file, 0, 'col1', 'col2')
+    const row = (result.tables[0] as { rows: Row[] }).rows[0]
+    expect(row).toEqual({ col2_3: 'A', col2: 'B', col2_2: 'C' })
   })
 
   it('renames across all fragments', () => {
