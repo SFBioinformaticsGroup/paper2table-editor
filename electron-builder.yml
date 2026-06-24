@@ -1,0 +1,39 @@
+appId: org.paper2table.tables-editor
+productName: Tables Editor
+copyright: Copyright © 2024
+
+directories:
+  output: dist
+  buildResources: resources
+
+files:
+  - out/**
+  - resources/tablesfile.schema.json
+  - package.json
+  - "!out/**/*.map"
+
+linux:
+  target:
+    - target: deb
+      arch:
+        - x64
+    - target: AppImage
+      arch:
+        - x64
+  category: Utility
+
+deb:
+  packageCategory: utils
+  priority: optional
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
