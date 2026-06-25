@@ -1,4 +1,4 @@
-import { FaArrowDown, FaArrowRightArrowLeft, FaLayerGroup, FaTrash } from 'react-icons/fa6'
+import { FaArrowDown, FaArrowRightArrowLeft, FaLayerGroup, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 
 interface Props {
@@ -27,6 +27,13 @@ export function TableToolbar({ fileName, tableIdx, hasFragments, isLastTable, ca
         onClick={() => callbacks.reverseText(fileName, tableIdx)}
       >
         <FaArrowRightArrowLeft /> Reverse text
+      </button>
+      <button
+        className="table-toolbar-btn"
+        title="Transpose: convert rows into columns and columns into rows"
+        onClick={() => callbacks.transposeTable(fileName, tableIdx)}
+      >
+        <FaTableColumns /> Transpose
       </button>
       {!isLastTable && (
         <button

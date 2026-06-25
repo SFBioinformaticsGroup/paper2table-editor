@@ -234,6 +234,22 @@ export function mergeRows(
   })
 }
 
+export function transposeTable(file: TablesFile, tableIdx: number): TablesFile {
+  return mapTableFragments(file, tableIdx, (fragment) => {
+    const cols = columnNames(fragment.rows)
+    if (cols.length === 0) return fragment
+    const rowCount = fragment.rows.length
+    const newRows: Row[] = cols.map((col) => {
+      const row: Row = { '0': col }
+      for (let ri = 0; ri < rowCount; ri++) {
+        row[String(ri + 1)] = renderColumnValue(fragment.rows[ri][col] as ColumnValue)
+      }
+      return row
+    })
+    return { ...fragment, rows: newRows }
+  })
+}
+
 function reverseColumnValue(value: ColumnValue): ColumnValue {
   if (value === null || typeof value === 'number') return value
   if (typeof value === 'string') return value.split('').reverse().join('')

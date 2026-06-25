@@ -7,6 +7,7 @@ export interface EditorCallbacks {
   navigateToSource: (uuid: string, tableNumber?: number) => void
 
   reverseText: (fileName: string, tableIdx: number) => void
+  transposeTable: (fileName: string, tableIdx: number) => void
   deleteTable: (fileName: string, tableIdx: number) => void
   deleteFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
   compactFragments: (fileName: string, tableIdx: number) => void

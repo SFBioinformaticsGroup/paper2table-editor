@@ -404,6 +404,8 @@ export function App() {
       navigateToSource: navigateToSourceFn,
       reverseText: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => actions.reverseText(f, tableIdx)),
+      transposeTable: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => actions.transposeTable(f, tableIdx)),
       deleteTable: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => actions.deleteTable(f, tableIdx)),
       deleteFragment: (fileName, tableIdx, fragmentIdx) =>
@@ -664,6 +666,12 @@ export function App() {
   const activeHistory = activeSectionKey ? histories[activeSectionKey] : undefined
   const activeContent = activeHistory?.present ?? (activeSectionKey ? state.papers[activeSectionKey] : null) ?? null
 
+  const tocPapers: Record<string, TablesFile> = {}
+  for (const fileName of state.fileNames) {
+    const content = histories[fileName]?.present ?? state.papers[fileName]
+    if (content) tocPapers[fileName] = content
+  }
+
   const searchQuery = searchState.query
   const tocSearchQuery = searchState.includeNavTitles ? searchQuery : ''
 
@@ -671,7 +679,7 @@ export function App() {
     <>
       <Toc
         fileNames={state.fileNames}
-        papers={state.papers}
+        papers={tocPapers}
         activeId={activeId}
         hasMetadata={hasMetadata}
         hasSources={(state.metadata.sources?.length ?? 0) > 0}
