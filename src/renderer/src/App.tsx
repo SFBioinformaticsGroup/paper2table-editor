@@ -130,6 +130,7 @@ export function App() {
   const [searchState, setSearchState] = useState<SearchState>({ query: '', includeNavTitles: false, includeAllSections: false })
   const [tocCollapsed, setTocCollapsed] = useState(false)
   const [activeSectionKey, setActiveSectionKey] = useState<string>('')
+  const [showEmptyRows, setShowEmptyRows] = useState(false)
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
   const searchBarInputRef = useRef<HTMLInputElement>(null)
@@ -420,12 +421,16 @@ export function App() {
         applyEdit(fileName, (f) => actions.promoteRowToHeader(f, tableIdx, fragmentIdx, rowIdx)),
       mergeRow: (fileName, tableIdx, fragmentIdx, rowIdx, direction) =>
         applyEdit(fileName, (f) => actions.mergeRows(f, tableIdx, fragmentIdx, rowIdx, direction)),
+      addRow: (fileName, tableIdx, fragmentIdx, afterRowIdx) =>
+        applyEdit(fileName, (f) => actions.addRow(f, tableIdx, fragmentIdx, afterRowIdx)),
       deleteColumn: (fileName, tableIdx, colName) =>
         applyEdit(fileName, (f) => actions.deleteColumn(f, tableIdx, colName)),
       renameColumn: (fileName, tableIdx, oldName, newName) =>
         applyEdit(fileName, (f) => actions.renameColumn(f, tableIdx, oldName, newName)),
       mergeColumns: (fileName, tableIdx, keepCol, dropCol) =>
         applyEdit(fileName, (f) => actions.mergeColumns(f, tableIdx, keepCol, dropCol)),
+      addColumn: (fileName, tableIdx, columnName, afterColName) =>
+        applyEdit(fileName, (f) => actions.addColumn(f, tableIdx, columnName, afterColName)),
       editCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName, newValue) =>
         applyEdit(fileName, (f) =>
           actions.editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
@@ -540,6 +545,10 @@ export function App() {
     return window.api.onFocusSearchBar(() => {
       searchBarInputRef.current?.focus()
     })
+  }, [])
+
+  useEffect(() => {
+    return window.api.onSetShowEmptyRows((show) => setShowEmptyRows(show))
   }, [])
 
   useEffect(() => {
@@ -801,6 +810,7 @@ export function App() {
                         canRedo={canRedo}
                         isDirty={isDirty}
                         searchQuery={searchQuery}
+                        showEmptyRows={showEmptyRows}
                       />
                     </div>
                   )
@@ -864,6 +874,7 @@ export function App() {
                         canRedo={canRedo}
                         isDirty={isDirty}
                         searchQuery={searchQuery}
+                        showEmptyRows={showEmptyRows}
                       />
                     </div>
                   )

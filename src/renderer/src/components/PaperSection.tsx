@@ -20,6 +20,7 @@ interface Props {
   canRedo: boolean
   isDirty: boolean
   searchQuery?: string
+  showEmptyRows: boolean
 }
 
 function PaperSources({
@@ -100,7 +101,8 @@ export function PaperSection({
   canUndo,
   canRedo,
   isDirty,
-  searchQuery
+  searchQuery,
+  showEmptyRows
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const paperUuids = collectPaperSourceUuids(content)
@@ -220,6 +222,7 @@ export function PaperSection({
                   fileName={fileName}
                   callbacks={callbacks}
                   searchQuery={searchQuery}
+                  showEmptyRows={showEmptyRows}
                 />
               )
             })}

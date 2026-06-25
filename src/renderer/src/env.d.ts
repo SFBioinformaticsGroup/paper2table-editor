@@ -24,6 +24,7 @@ interface Window {
       sources: Array<{ uuid: string; path: string }>
     ) => Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>>
     onFocusSearchBar: (callback: () => void) => (() => void)
+    onSetShowEmptyRows: (callback: (show: boolean) => void) => (() => void)
     getRecentDirs: () => Promise<string[]>
     markDirOpened: (dirPath: string) => Promise<void>
   }

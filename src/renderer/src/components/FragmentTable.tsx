@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaTrash } from 'react-icons/fa6'
+import { FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
 import type { TableFragment } from '../types'
 import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderDataCell, rowPaletteClass } from '../tableUtils'
 import { highlightText } from '../highlightUtils'
@@ -22,6 +22,7 @@ interface Props {
   fileName: string
   callbacks: EditorCallbacks
   searchQuery?: string
+  showEmptyRows: boolean
 }
 
 export function FragmentTable({
@@ -35,24 +36,33 @@ export function FragmentTable({
   showFragmentHeading,
   fileName,
   callbacks,
-  searchQuery
+  searchQuery,
+  showEmptyRows
 }: Props) {
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colIdx: number } | null>(null)
 
   const allRows = fragment.rows
-  const rows = allRows.filter((r) => !isEmptyRow(r))
-  const skipped = allRows.length - rows.length
 
-  const columns = rows.length > 0 ? buildFragmentColumns(rows) : []
-  const allDataCols = columnNames(rows)
-  const rowspanMatrix = rows.length > 0 ? computeRowspans(rows, columns, uuidToReader) : []
+  // Track original fragment indices alongside displayed rows so callbacks get the right index.
+  const displayedRows: { row: typeof allRows[0]; originalIdx: number }[] = allRows.flatMap(
+    (row, originalIdx) =>
+      !showEmptyRows && isEmptyRow(row) ? [] : [{ row, originalIdx }]
+  )
+
+  const columns = displayedRows.length > 0
+    ? buildFragmentColumns(displayedRows.map((r) => r.row))
+    : []
+  const allDataCols = columnNames(displayedRows.map((r) => r.row))
+  const rowspanMatrix = displayedRows.length > 0
+    ? computeRowspans(displayedRows.map((r) => r.row), columns, uuidToReader)
+    : []
 
   function advanceEdit(rowIdx: number, colIdx: number) {
     const dataCols = columns.filter((c) => !META_COLS.has(c))
     const nextColIdx = colIdx + 1
     if (nextColIdx < dataCols.length) {
       setEditingCell({ rowIdx, colIdx: nextColIdx })
-    } else if (rowIdx + 1 < rows.length) {
+    } else if (rowIdx + 1 < displayedRows.length) {
       setEditingCell({ rowIdx: rowIdx + 1, colIdx: 0 })
     } else {
       setEditingCell(null)
@@ -76,153 +86,164 @@ export function FragmentTable({
         </>
       )}
 
-      {rows.length === 0 ? (
-        <>
-          <p><i>No rows</i></p>
-          {skipped > 0 && <p><i>({skipped} empty rows not shown)</i></p>}
-        </>
-      ) : (
-        <>
-          <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th className="row-actions-header" />
-                  {columns.map((col) =>
-                    META_COLS.has(col) ? (
-                      <th key={col}>{col}</th>
-                    ) : (
-                      <ColumnHeader
-                        key={col}
-                        colName={col}
-                        allDataColumns={allDataCols}
-                        fileName={fileName}
-                        tableIdx={tableIdxZero}
-                        callbacks={callbacks}
-                        searchQuery={searchQuery}
-                      />
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, rowIdx) => {
-                  const dataCols = columns.filter((c) => !META_COLS.has(c))
-                  const cellRowspans = rowspanMatrix[rowIdx] ?? {}
-                  return (
-                    <tr key={rowIdx}>
-                      <td className="row-actions">
-                        <button
-                          title="Delete row"
-                          onClick={() =>
-                            callbacks.deleteRow(fileName, tableIdxZero, fragmentIdx, rowIdx)
-                          }
-                        >
-                          <FaTrash />
-                        </button>
-                        <button
-                          title="Promote row to header"
-                          onClick={() =>
-                            callbacks.promoteRowToHeader(
-                              fileName,
-                              tableIdxZero,
-                              fragmentIdx,
-                              rowIdx
-                            )
-                          }
-                        >
-                          <FaArrowUp />
-                        </button>
-                        {rowIdx > 0 && (
-                          <button
-                            title="Merge with previous row"
-                            onClick={() =>
-                              callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, rowIdx, 'prev')
-                            }
-                          >
-                            <FaArrowsUpToLine />
-                          </button>
-                        )}
-                        {rowIdx < rows.length - 1 && (
-                          <button
-                            title="Merge with next row"
-                            onClick={() =>
-                              callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, rowIdx, 'next')
-                            }
-                          >
-                            <FaArrowsDownToLine />
-                          </button>
-                        )}
-                      </td>
-                      {columns.map((col) => {
-                        const span = cellRowspans[col] ?? 1
-                        if (span === 0) return null
-                        const rowSpanProp = span > 1 ? span : undefined
-                        if (col === 'sources_') {
-                          const uuids = row.sources_ ?? []
-                          return (
-                            <td key={col} className="sources-cell" rowSpan={rowSpanProp}>
-                              {uuids.map((uuid) => {
-                                const fullPath = uuidToFullPath.get(uuid)
-                                const navigable = fullPath != null
-                                return navigable ? (
-                                  <a
-                                    key={uuid}
-                                    className="uuid-chip"
-                                    title={fullPath}
-                                    href="#"
-                                    onClick={(e) => { e.preventDefault(); callbacks.navigateToSource(uuid, tableIdxZero + 1) }}
-                                  >
-                                    {uuid.slice(0, 8)}
-                                  </a>
-                                ) : (
-                                  <span key={uuid} className="uuid-chip uuid-chip-dead" title={uuid}>
-                                    {uuid.slice(0, 8)}
-                                  </span>
-                                )
-                              })}
-                            </td>
+      <div className="table-wrapper">
+        <table className="table">
+          <thead>
+            <tr>
+              <th className="row-actions-header">
+                <button
+                  className="add-first-row-btn"
+                  title="Add row at top"
+                  onClick={() => callbacks.addRow(fileName, tableIdxZero, fragmentIdx, -1)}
+                >
+                  <FaPlus />
+                </button>
+              </th>
+              {columns.map((col) =>
+                META_COLS.has(col) ? (
+                  <th key={col}>{col}</th>
+                ) : (
+                  <ColumnHeader
+                    key={col}
+                    colName={col}
+                    allDataColumns={allDataCols}
+                    fileName={fileName}
+                    tableIdx={tableIdxZero}
+                    callbacks={callbacks}
+                    searchQuery={searchQuery}
+                  />
+                )
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {displayedRows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length + 1} className="no-rows-cell">
+                  <i>No rows</i>
+                </td>
+              </tr>
+            ) : (
+              displayedRows.map(({ row, originalIdx }, displayIdx) => {
+                const dataCols = columns.filter((c) => !META_COLS.has(c))
+                const cellRowspans = rowspanMatrix[displayIdx] ?? {}
+                return (
+                  <tr key={originalIdx}>
+                    <td className="row-actions">
+                      <button
+                        title="Delete row"
+                        onClick={() =>
+                          callbacks.deleteRow(fileName, tableIdxZero, fragmentIdx, originalIdx)
+                        }
+                      >
+                        <FaTrash />
+                      </button>
+                      <button
+                        title="Promote row to header"
+                        onClick={() =>
+                          callbacks.promoteRowToHeader(
+                            fileName,
+                            tableIdxZero,
+                            fragmentIdx,
+                            originalIdx
                           )
                         }
-                        if (META_COLS.has(col)) {
-                          let tdClass: string | undefined
-                          if (col === 'agreement_level_') tdClass = agreementClass(row.agreement_level_)
-                          else if (col === 'row_') tdClass = rowPaletteClass(row)
-                          return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{highlightText(renderDataCell(row, col, uuidToReader), searchQuery ?? '')}</td>
-                        }
-                        const colIdx = dataCols.indexOf(col)
-                        const isEditing =
-                          editingCell?.rowIdx === rowIdx && editingCell?.colIdx === colIdx
+                      >
+                        <FaArrowUp />
+                      </button>
+                      {displayIdx > 0 && (
+                        <button
+                          title="Merge with previous row"
+                          onClick={() =>
+                            callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, originalIdx, 'prev')
+                          }
+                        >
+                          <FaArrowsUpToLine />
+                        </button>
+                      )}
+                      {displayIdx < displayedRows.length - 1 && (
+                        <button
+                          title="Merge with next row"
+                          onClick={() =>
+                            callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, originalIdx, 'next')
+                          }
+                        >
+                          <FaArrowsDownToLine />
+                        </button>
+                      )}
+                      <button
+                        title="Add row after"
+                        onClick={() => callbacks.addRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}
+                      >
+                        <FaPlus />
+                      </button>
+                    </td>
+                    {columns.map((col) => {
+                      const span = cellRowspans[col] ?? 1
+                      if (span === 0) return null
+                      const rowSpanProp = span > 1 ? span : undefined
+                      if (col === 'sources_') {
+                        const uuids = row.sources_ ?? []
                         return (
-                          <EditableCell
-                            key={col}
-                            displayValue={renderDataCell(row, col, uuidToReader)}
-                            fileName={fileName}
-                            tableIdx={tableIdxZero}
-                            fragmentIdx={fragmentIdx}
-                            rowIdx={rowIdx}
-                            colName={col}
-                            isEditing={isEditing}
-
-                            rowSpan={rowSpanProp}
-                            searchQuery={searchQuery}
-                            onStartEdit={() => setEditingCell({ rowIdx, colIdx })}
-                            onConfirm={() => setEditingCell(null)}
-                            onTabConfirm={() => advanceEdit(rowIdx, colIdx)}
-                            onCancel={() => setEditingCell(null)}
-                            callbacks={callbacks}
-                          />
+                          <td key={col} className="sources-cell" rowSpan={rowSpanProp}>
+                            {uuids.map((uuid) => {
+                              const fullPath = uuidToFullPath.get(uuid)
+                              const navigable = fullPath != null
+                              return navigable ? (
+                                <a
+                                  key={uuid}
+                                  className="uuid-chip"
+                                  title={fullPath}
+                                  href="#"
+                                  onClick={(e) => { e.preventDefault(); callbacks.navigateToSource(uuid, tableIdxZero + 1) }}
+                                >
+                                  {uuid.slice(0, 8)}
+                                </a>
+                              ) : (
+                                <span key={uuid} className="uuid-chip uuid-chip-dead" title={uuid}>
+                                  {uuid.slice(0, 8)}
+                                </span>
+                              )
+                            })}
+                          </td>
                         )
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          {skipped > 0 && <p><i>({skipped} empty rows not shown)</i></p>}
-        </>
-      )}
+                      }
+                      if (META_COLS.has(col)) {
+                        let tdClass: string | undefined
+                        if (col === 'agreement_level_') tdClass = agreementClass(row.agreement_level_)
+                        else if (col === 'row_') tdClass = rowPaletteClass(row)
+                        return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{highlightText(renderDataCell(row, col, uuidToReader), searchQuery ?? '')}</td>
+                      }
+                      const colIdx = dataCols.indexOf(col)
+                      const isEditing =
+                        editingCell?.rowIdx === displayIdx && editingCell?.colIdx === colIdx
+                      return (
+                        <EditableCell
+                          key={col}
+                          displayValue={renderDataCell(row, col, uuidToReader)}
+                          fileName={fileName}
+                          tableIdx={tableIdxZero}
+                          fragmentIdx={fragmentIdx}
+                          rowIdx={originalIdx}
+                          colName={col}
+                          isEditing={isEditing}
+                          rowSpan={rowSpanProp}
+                          searchQuery={searchQuery}
+                          onStartEdit={() => setEditingCell({ rowIdx: displayIdx, colIdx })}
+                          onConfirm={() => setEditingCell(null)}
+                          onTabConfirm={() => advanceEdit(displayIdx, colIdx)}
+                          onCancel={() => setEditingCell(null)}
+                          callbacks={callbacks}
+                        />
+                      )
+                    })}
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

@@ -62,6 +62,11 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('focus-search-bar', handler)
     return () => ipcRenderer.removeListener('focus-search-bar', handler)
   },
+  onSetShowEmptyRows: (callback: (show: boolean) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, show: boolean) => callback(show)
+    ipcRenderer.on('set-show-empty-rows', handler)
+    return () => ipcRenderer.removeListener('set-show-empty-rows', handler)
+  },
   getRecentDirs: (): Promise<string[]> =>
     ipcRenderer.invoke('get-recent-dirs'),
   markDirOpened: (dirPath: string): Promise<void> =>

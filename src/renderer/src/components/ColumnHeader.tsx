@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FaEllipsisVertical, FaPencil, FaTrash } from 'react-icons/fa6'
+import { FaEllipsisVertical, FaPencil, FaPlus, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { highlightText } from '../highlightUtils'
 
@@ -17,19 +17,22 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
   const [renameValue, setRenameValue] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [mergeOpen, setMergeOpen] = useState(false)
+  const [addAfterOpen, setAddAfterOpen] = useState(false)
+  const [addAfterName, setAddAfterName] = useState('')
   const thRef = useRef<HTMLTableCellElement>(null)
 
   useEffect(() => {
-    if (!menuOpen) return
+    if (!menuOpen && !addAfterOpen) return
     function handleMouseDown(e: MouseEvent) {
       if (thRef.current && !thRef.current.contains(e.target as Node)) {
         setMenuOpen(false)
         setMergeOpen(false)
+        setAddAfterOpen(false)
       }
     }
     document.addEventListener('mousedown', handleMouseDown)
     return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [menuOpen])
+  }, [menuOpen, addAfterOpen])
 
   function startRename() {
     setRenameValue(colName)
@@ -61,6 +64,25 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
     callbacks.mergeColumns(fileName, tableIdx, colName, target)
   }
 
+  function openAddAfter() {
+    setAddAfterOpen(true)
+    setMenuOpen(false)
+    setMergeOpen(false)
+    setAddAfterName('')
+  }
+
+  function confirmAddAfter() {
+    const trimmed = addAfterName.trim()
+    if (trimmed) callbacks.addColumn(fileName, tableIdx, trimmed, colName)
+    setAddAfterOpen(false)
+    setAddAfterName('')
+  }
+
+  function cancelAddAfter() {
+    setAddAfterOpen(false)
+    setAddAfterName('')
+  }
+
   const otherCols = allDataColumns.filter((c) => c !== colName)
 
   return (
@@ -87,13 +109,36 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
             </button>
             <button
               className="col-header-icon-btn"
+              title="Add column after"
+              onClick={openAddAfter}
+            >
+              <FaPlus />
+            </button>
+            <button
+              className="col-header-icon-btn"
               title="More actions"
-              onClick={() => { setMenuOpen((v) => !v); setMergeOpen(false) }}
+              onClick={() => { setMenuOpen((v) => !v); setMergeOpen(false); setAddAfterOpen(false) }}
             >
               <FaEllipsisVertical />
             </button>
           </span>
         </span>
+      )}
+      {addAfterOpen && (
+        <div className="col-header-add-after">
+          <input
+            className="add-col-input"
+            autoFocus
+            placeholder="New column name"
+            value={addAfterName}
+            onChange={(e) => setAddAfterName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') confirmAddAfter()
+              if (e.key === 'Escape') cancelAddAfter()
+            }}
+            onBlur={confirmAddAfter}
+          />
+        </div>
       )}
       {menuOpen && (
         <div className="col-header-menu">

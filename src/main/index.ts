@@ -25,6 +25,7 @@ function initValidator(): void {
 }
 
 let mainWindow: BrowserWindow | null = null
+let showEmptyRows = false
 
 function buildMenu(win: BrowserWindow): void {
   const config = readConfig()
@@ -99,7 +100,18 @@ function buildMenu(win: BrowserWindow): void {
         { role: 'zoomOut', accelerator: 'CmdOrCtrl+numsub', visible: false },
         { label: 'Reset Zoom', role: 'resetZoom' },
         { type: 'separator' },
-        { label: 'Find…', accelerator: 'CmdOrCtrl+F', click: () => win.webContents.send('focus-search-bar') }
+        { label: 'Find…', accelerator: 'CmdOrCtrl+F', click: () => win.webContents.send('focus-search-bar') },
+        { type: 'separator' },
+        {
+          type: 'checkbox',
+          label: 'Show Empty Rows',
+          checked: showEmptyRows,
+          click: () => {
+            showEmptyRows = !showEmptyRows
+            buildMenu(win)
+            win.webContents.send('set-show-empty-rows', showEmptyRows)
+          }
+        }
       ]
     },
     {

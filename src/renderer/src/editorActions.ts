@@ -161,6 +161,33 @@ export function renameColumn(
   }))
 }
 
+export function addColumn(
+  file: TablesFile,
+  tableIdx: number,
+  columnName: string,
+  afterColName?: string
+): TablesFile {
+  const table = file.tables[tableIdx]
+  const allCols = new Set(getTableFragments(table).flatMap((f) => columnNames(f.rows)))
+  const safeName = uniqueName(columnName, allCols)
+  return mapTableFragments(file, tableIdx, (fragment) => ({
+    ...fragment,
+    rows: fragment.rows.map((row) => {
+      const newRow: Row = {}
+      let inserted = false
+      for (const [k, v] of Object.entries(row)) {
+        newRow[k] = v as ColumnValue
+        if (!inserted && k === afterColName) {
+          newRow[safeName] = null
+          inserted = true
+        }
+      }
+      if (!inserted) newRow[safeName] = null
+      return newRow
+    })
+  }))
+}
+
 export function mergeColumns(
   file: TablesFile,
   tableIdx: number,
@@ -230,6 +257,25 @@ export function mergeRows(
     return {
       ...fragment,
       rows: [...rows.slice(0, firstIdx), mergedRow, ...rows.slice(secondIdx + 1)]
+    }
+  })
+}
+
+export function addRow(
+  file: TablesFile,
+  tableIdx: number,
+  fragmentIdx: number,
+  afterRowIdx?: number
+): TablesFile {
+  return mapTableFragments(file, tableIdx, (fragment, fi) => {
+    if (fi !== fragmentIdx) return fragment
+    const cols = columnNames(fragment.rows)
+    const emptyRow: Row = {}
+    for (const col of cols) emptyRow[col] = null
+    const insertAt = afterRowIdx !== undefined ? afterRowIdx + 1 : fragment.rows.length
+    return {
+      ...fragment,
+      rows: [...fragment.rows.slice(0, insertAt), emptyRow, ...fragment.rows.slice(insertAt)]
     }
   })
 }

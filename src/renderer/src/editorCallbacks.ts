@@ -16,10 +16,12 @@ export interface EditorCallbacks {
   deleteRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
   promoteRowToHeader: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
   mergeRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number, direction: 'next' | 'prev') => void
+  addRow: (fileName: string, tableIdx: number, fragmentIdx: number, afterRowIdx?: number) => void
 
   deleteColumn: (fileName: string, tableIdx: number, colName: string) => void
   renameColumn: (fileName: string, tableIdx: number, oldName: string, newName: string) => void
   mergeColumns: (fileName: string, tableIdx: number, keepCol: string, dropCol: string) => void
+  addColumn: (fileName: string, tableIdx: number, columnName: string, afterColName?: string) => void
 
   editCell: (
     fileName: string,
