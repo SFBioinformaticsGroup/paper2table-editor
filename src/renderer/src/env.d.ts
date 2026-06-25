@@ -28,6 +28,10 @@ interface Window {
     getUserName: () => Promise<string>
     setUserName: (name: string) => Promise<void>
     onEditUserName: (callback: () => void) => (() => void)
+    getPinnedPapers: (dirPath: string) => Promise<string[]>
+    setPinnedPapers: (dirPath: string, fileNames: string[]) => Promise<void>
+    getArchivedPapers: (dirPath: string) => Promise<string[]>
+    setArchivedPapers: (dirPath: string, fileNames: string[]) => Promise<void>
     getRecentDirs: () => Promise<string[]>
     markDirOpened: (dirPath: string) => Promise<void>
   }

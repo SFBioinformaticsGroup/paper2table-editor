@@ -151,6 +151,70 @@ body {
   color: #bbb;
 }
 
+.toc-pin-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  width: 18px;
+  cursor: pointer;
+  font-size: 0.65em;
+  color: #bbb;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+}
+
+.toc-row:hover .toc-pin-btn,
+.toc-pin-btn--active {
+  opacity: 1;
+}
+
+.toc-pin-btn--active {
+  color: #f5a623;
+}
+
+.toc-pin-btn:hover {
+  color: #888;
+}
+
+.toc-pin-btn--active:hover {
+  color: #c8821a;
+}
+
+.toc-archive-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  width: 18px;
+  cursor: pointer;
+  font-size: 0.65em;
+  color: #bbb;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+}
+
+.toc-row:hover .toc-archive-btn,
+.toc-archive-btn--active {
+  opacity: 1;
+}
+
+.toc-archive-btn--active {
+  color: #4a90d9;
+}
+
+.toc-archive-btn:hover {
+  color: #888;
+}
+
+.toc-archive-btn--active:hover {
+  color: #2e6fad;
+}
+
 .toc-section-label {
   font-size: 0.82em;
   color: #555;

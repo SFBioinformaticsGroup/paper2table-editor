@@ -11,6 +11,7 @@ import type {
   TablesFile
 } from './types'
 import { buildPaperAnchorIds, findTableAnchorId } from './tableUtils'
+import { sortByPinnedAndArchived, togglePinned, toggleArchived } from './pinnedUtils'
 import * as actions from './editorActions'
 import type { EditorCallbacks } from './editorCallbacks'
 import { Toc } from './components/Toc'
@@ -107,10 +108,10 @@ function buildUuidToFullPath(resolvedSources: Record<string, ResolvedSource>): M
   return map
 }
 
-function buildSectionAnchorIds(sectionKey: string, state: DirectoryState, histories: EditHistories): string[] {
+function buildSectionAnchorIds(sectionKey: string, fileNames: string[], state: DirectoryState, histories: EditHistories): string[] {
   if (sectionKey === 'metadata') return ['metadata']
   if (sectionKey === 'sources') return ['sources']
-  const paperIdx = state.fileNames.indexOf(sectionKey)
+  const paperIdx = fileNames.indexOf(sectionKey)
   if (paperIdx === -1) return []
   const paperId = `paper-${paperIdx}`
   const content = histories[sectionKey]?.present ?? state.papers[sectionKey]
@@ -204,7 +205,11 @@ export function App() {
       const sourcesInput = (listing.metadata.sources ?? [])
         .filter((s) => s.uuid && s.path)
         .map((s) => ({ uuid: String(s.uuid), path: String(s.path) }))
-      const resolved = await window.api.resolveSources(dirPath, sourcesInput)
+      const [resolved, pinnedPapers, archivedPapers] = await Promise.all([
+        window.api.resolveSources(dirPath, sourcesInput),
+        window.api.getPinnedPapers(dirPath),
+        window.api.getArchivedPapers(dirPath)
+      ])
       const resolvedSources: Record<string, ResolvedSource> = {}
       for (const { uuid, fullPath, isDir } of resolved) {
         resolvedSources[uuid] = { fullPath, isDir }
@@ -215,6 +220,8 @@ export function App() {
         metadata: listing.metadata,
         resolvedSources,
         fileNames: listing.fileNames,
+        pinnedPapers,
+        archivedPapers,
         papers: {},
         validationErrors: {}
       })
@@ -252,6 +259,20 @@ export function App() {
   const applyDelete = useCallback((fileName: string) => {
     dispatchHistory({ type: 'APPLY', fileName, newState: null })
   }, [])
+
+  const togglePin = useCallback((fileName: string) => {
+    if (!state) return
+    const next = togglePinned(state.pinnedPapers, fileName)
+    setState((prev) => prev ? { ...prev, pinnedPapers: next } : prev)
+    window.api.setPinnedPapers(state.dirPath, next)
+  }, [state])
+
+  const toggleArchive = useCallback((fileName: string) => {
+    if (!state) return
+    const next = toggleArchived(state.archivedPapers, fileName)
+    setState((prev) => prev ? { ...prev, archivedPapers: next } : prev)
+    window.api.setArchivedPapers(state.dirPath, next)
+  }, [state])
 
   // ── save/load ─────────────────────────────────────────────────────────────
 
@@ -620,7 +641,7 @@ export function App() {
   useEffect(() => {
     const container = sectionViewRef.current
     if (!state || !container) return
-    const anchorIds = buildSectionAnchorIds(activeSectionKey, state, histories)
+    const anchorIds = buildSectionAnchorIds(activeSectionKey, sortByPinnedAndArchived(state.fileNames, state.pinnedPapers, state.archivedPapers), state, histories)
     setActiveId(anchorIds[0] ?? '')
     const handleScroll = () => {
       sectionScrollYRef.current = container.scrollTop
@@ -729,7 +750,11 @@ export function App() {
   const canUndoFocused = (focusedEntry?.past.length ?? 0) > 0
   const focusedDirty = dirtyFileNames.has(focusedFileName)
 
-  const activePaperIdx = state.fileNames.indexOf(activeSectionKey)
+  const sortedFileNames = sortByPinnedAndArchived(state.fileNames, state.pinnedPapers, state.archivedPapers)
+  const pinnedSet = new Set(state.pinnedPapers)
+  const archivedSet = new Set(state.archivedPapers)
+
+  const activePaperIdx = sortedFileNames.indexOf(activeSectionKey)
   const activePaperId = activePaperIdx !== -1 ? `paper-${activePaperIdx}` : ''
   const activeHistory = activeSectionKey ? histories[activeSectionKey] : undefined
   const activeContent = activeHistory?.present ?? (activeSectionKey ? state.papers[activeSectionKey] : null) ?? null
@@ -746,7 +771,7 @@ export function App() {
   return (
     <>
       <Toc
-        fileNames={state.fileNames}
+        fileNames={sortedFileNames}
         papers={tocPapers}
         activeId={activeId}
         hasMetadata={hasMetadata}
@@ -755,8 +780,12 @@ export function App() {
         collapsed={tocCollapsed}
         activeSectionKey={activeSectionKey}
         searchQuery={tocSearchQuery}
+        pinnedPapers={pinnedSet}
+        archivedPapers={archivedSet}
         onToggleCollapse={() => setTocCollapsed((v) => !v)}
         onNavigateToSection={navigateToSection}
+        onTogglePin={togglePin}
+        onToggleArchive={toggleArchive}
       />
       <div className="main-wrapper">
         <div className="dir-header">
@@ -833,7 +862,7 @@ export function App() {
                     searchQuery={searchQuery}
                   />
                 )}
-                {state.fileNames.map((fileName, fileIdx) => {
+                {sortedFileNames.map((fileName, fileIdx) => {
                   const history = histories[fileName]
                   const content = history?.present ?? state.papers[fileName]
                   if (!content || history?.present === null) return null

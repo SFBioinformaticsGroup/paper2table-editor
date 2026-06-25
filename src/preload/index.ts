@@ -76,6 +76,14 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('edit-user-name', handler)
     return () => ipcRenderer.removeListener('edit-user-name', handler)
   },
+  getPinnedPapers: (dirPath: string): Promise<string[]> =>
+    ipcRenderer.invoke('get-pinned-papers', dirPath),
+  setPinnedPapers: (dirPath: string, fileNames: string[]): Promise<void> =>
+    ipcRenderer.invoke('set-pinned-papers', dirPath, fileNames),
+  getArchivedPapers: (dirPath: string): Promise<string[]> =>
+    ipcRenderer.invoke('get-archived-papers', dirPath),
+  setArchivedPapers: (dirPath: string, fileNames: string[]): Promise<void> =>
+    ipcRenderer.invoke('set-archived-papers', dirPath, fileNames),
   getRecentDirs: (): Promise<string[]> =>
     ipcRenderer.invoke('get-recent-dirs'),
   markDirOpened: (dirPath: string): Promise<void> =>

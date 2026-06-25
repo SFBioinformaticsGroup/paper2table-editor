@@ -3,6 +3,8 @@ import { FaAnglesLeft, FaAnglesRight } from 'react-icons/fa6'
 import type { TablesFile } from '../types'
 import { getTableFragments } from '../tableUtils'
 import { highlightText } from '../highlightUtils'
+import { PinButton } from './PinButton'
+import { ArchiveButton } from './ArchiveButton'
 
 interface Props {
   fileNames: string[]
@@ -14,11 +16,15 @@ interface Props {
   collapsed: boolean
   activeSectionKey: string
   searchQuery?: string
+  pinnedPapers: Set<string>
+  archivedPapers: Set<string>
   onToggleCollapse: () => void
   onNavigateToSection: (sectionKey: string, anchor?: string) => void
+  onTogglePin: (fileName: string) => void
+  onToggleArchive: (fileName: string) => void
 }
 
-export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, activeSectionKey, searchQuery, onToggleCollapse, onNavigateToSection }: Props) {
+export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, activeSectionKey, searchQuery, pinnedPapers, archivedPapers, onToggleCollapse, onNavigateToSection, onTogglePin, onToggleArchive }: Props) {
   const [papersExpanded, setPapersExpanded] = useState(true)
   const [collapsedPapers, setCollapsedPapers] = useState(new Set<string>())
   const [collapsedTables, setCollapsedTables] = useState(new Set<string>())
@@ -125,6 +131,8 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                         >
                           {dirtyFileNames.has(fileName) ? '• ' : ''}{highlightText(fileName, searchQuery ?? '')}
                         </a>
+                        <PinButton pinned={pinnedPapers.has(fileName)} onToggle={() => onTogglePin(fileName)} />
+                        <ArchiveButton archived={archivedPapers.has(fileName)} onToggle={() => onToggleArchive(fileName)} />
                       </div>
 
                       {!isPaperCollapsed && tableItems.length > 0 && (

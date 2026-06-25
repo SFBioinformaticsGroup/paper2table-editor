@@ -67,6 +67,8 @@ export interface DirectoryState {
   metadata: Metadata
   resolvedSources: Record<string, ResolvedSource>  // keyed by uuid
   fileNames: string[]
+  pinnedPapers: string[]
+  archivedPapers: string[]
   papers: Record<string, TablesFile>
   validationErrors: Record<string, string[]>
 }

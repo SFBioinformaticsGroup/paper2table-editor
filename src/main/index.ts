@@ -249,6 +249,26 @@ ipcMain.handle('save-paper-as', async (_event, dirPath: string, suggestedName: s
 })
 
 
+ipcMain.handle('get-pinned-papers', (_event, dirPath: string) => {
+  return readConfig().pinnedPapers?.[dirPath] ?? []
+})
+
+ipcMain.handle('set-pinned-papers', (_event, dirPath: string, fileNames: string[]) => {
+  const config = readConfig()
+  config.pinnedPapers = { ...(config.pinnedPapers ?? {}), [dirPath]: fileNames }
+  writeConfig(config)
+})
+
+ipcMain.handle('get-archived-papers', (_event, dirPath: string) => {
+  return readConfig().archivedPapers?.[dirPath] ?? []
+})
+
+ipcMain.handle('set-archived-papers', (_event, dirPath: string, fileNames: string[]) => {
+  const config = readConfig()
+  config.archivedPapers = { ...(config.archivedPapers ?? {}), [dirPath]: fileNames }
+  writeConfig(config)
+})
+
 ipcMain.handle('get-recent-dirs', () => {
   return readConfig().recentDirs.slice(0, 3)
 })
