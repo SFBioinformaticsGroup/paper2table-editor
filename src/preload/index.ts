@@ -67,6 +67,15 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('set-show-empty-rows', handler)
     return () => ipcRenderer.removeListener('set-show-empty-rows', handler)
   },
+  getUserName: (): Promise<string> =>
+    ipcRenderer.invoke('get-user-name'),
+  setUserName: (name: string): Promise<void> =>
+    ipcRenderer.invoke('set-user-name', name),
+  onEditUserName: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('edit-user-name', handler)
+    return () => ipcRenderer.removeListener('edit-user-name', handler)
+  },
   getRecentDirs: (): Promise<string[]> =>
     ipcRenderer.invoke('get-recent-dirs'),
   markDirOpened: (dirPath: string): Promise<void> =>

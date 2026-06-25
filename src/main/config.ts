@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync } from 'fs'
 export interface AppConfig {
   recentDirs: string[]
   lastOpenedParent: string
+  userName?: string
 }
 
 const MAX_RECENT = 10
@@ -17,7 +18,7 @@ export function readConfig(): AppConfig {
   try {
     return JSON.parse(readFileSync(configPath(), 'utf-8')) as AppConfig
   } catch {
-    return { recentDirs: [], lastOpenedParent: '' }
+    return { recentDirs: [], lastOpenedParent: '', userName: '' }
   }
 }
 

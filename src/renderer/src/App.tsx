@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { FaChevronLeft, FaChevronRight, FaFloppyDisk, FaRotateLeft } from 'react-icons/fa6'
 import type {
+  Curation,
   DirectoryState,
   EditHistories,
   Metadata,
@@ -131,6 +132,13 @@ export function App() {
   const [tocCollapsed, setTocCollapsed] = useState(false)
   const [activeSectionKey, setActiveSectionKey] = useState<string>('')
   const [showEmptyRows, setShowEmptyRows] = useState(false)
+  const [userName, setUserName] = useState('')
+  const [pendingSave, setPendingSave] = useState<{ fileName: string; isAs: boolean } | null>(null)
+  const [showNameModal, setShowNameModal] = useState(false)
+  const [nameDraft, setNameDraft] = useState('')
+  const [nameModalIsPresave, setNameModalIsPresave] = useState(false)
+  const [showCurationModal, setShowCurationModal] = useState(false)
+  const [curationDraft, setCurationDraft] = useState('')
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
   const searchBarInputRef = useRef<HTMLInputElement>(null)
@@ -142,6 +150,7 @@ export function App() {
   const pendingSourceTableNumRef = useRef<number | null>(null)
   const pendingScrollYRef = useRef<number | null>(null)
   const activeSectionKeyRef = useRef<string>('')
+  const initiateSaveRef = useRef<(fileName: string, isAs: boolean) => void>(() => {})
 
   const getPaperContent = useCallback(
     (fileName: string, st: DirectoryState): TablesFile | null => {
@@ -246,45 +255,96 @@ export function App() {
 
   // ── save/load ─────────────────────────────────────────────────────────────
 
-  const savePaperFn = useCallback(
-    async (fileName: string) => {
-      if (!state) return
-      const entry = histories[fileName]
-      if (!entry) return
-      if (entry.present === null) {
-        await window.api.deletePaper(state.dirPath, fileName)
-        dispatchHistory({ type: 'MARK_SAVED', fileName })
-        setState((prev) => {
-          if (!prev) return prev
-          return { ...prev, fileNames: prev.fileNames.filter((f) => f !== fileName) }
-        })
-      } else {
-        const content = JSON.stringify(entry.present, null, 2)
-        await window.api.savePaper(state.dirPath, fileName, content)
-        dispatchHistory({ type: 'MARK_SAVED', fileName })
-      }
-    },
-    [state, histories]
-  )
+  async function runDelete(fileName: string) {
+    if (!state) return
+    await window.api.deletePaper(state.dirPath, fileName)
+    dispatchHistory({ type: 'MARK_SAVED', fileName })
+    setState((prev) => {
+      if (!prev) return prev
+      return { ...prev, fileNames: prev.fileNames.filter((f) => f !== fileName) }
+    })
+  }
 
-  const savePaperAsFn = useCallback(
-    async (fileName: string) => {
-      if (!state) return
-      const entry = histories[fileName]
-      if (!entry || entry.present === null) return
-      const content = JSON.stringify(entry.present, null, 2)
-      const result = await window.api.savePaperAs(state.dirPath, fileName, content)
-      if (!result.ok || !result.filePath) return
-      const newName = result.filePath.split('/').pop()!
-      setState((prev) => {
-        if (!prev) return prev
-        if (prev.fileNames.includes(newName)) return prev
-        return { ...prev, fileNames: [...prev.fileNames, newName] }
-      })
-      dispatchHistory({ type: 'RESET', fileName: newName, fresh: entry.present as TablesFile })
-    },
-    [state, histories]
-  )
+  function initiateSave(fileName: string, isAs: boolean) {
+    const entry = histories[fileName]
+    if (!entry) return
+    if (entry.present === null) {
+      runDelete(fileName)
+      return
+    }
+    setPendingSave({ fileName, isAs })
+    if (!userName) {
+      setNameDraft('')
+      setNameModalIsPresave(true)
+      setShowNameModal(true)
+    } else {
+      setCurationDraft('')
+      setShowCurationModal(true)
+    }
+  }
+
+  initiateSaveRef.current = initiateSave
+
+  async function onNameConfirm(name: string) {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    await window.api.setUserName(trimmed)
+    setUserName(trimmed)
+    setShowNameModal(false)
+    setNameDraft('')
+    if (nameModalIsPresave) {
+      setCurationDraft('')
+      setShowCurationModal(true)
+    }
+  }
+
+  function onNameCancel() {
+    setShowNameModal(false)
+    setNameDraft('')
+    if (nameModalIsPresave) setPendingSave(null)
+  }
+
+  async function onCurationConfirm(description: string) {
+    if (!pendingSave || !state) return
+    const { fileName, isAs } = pendingSave
+    const entry = histories[fileName]
+    if (!entry?.present) return
+
+    const curation: Curation = {
+      name: userName,
+      date: new Date().toISOString().slice(0, 10),
+      description: description.trim()
+    }
+    const updated = actions.appendCuration(entry.present, curation)
+    dispatchHistory({ type: 'APPLY', fileName, newState: updated })
+
+    const contentStr = JSON.stringify(updated, null, 2)
+    if (isAs) {
+      const result = await window.api.savePaperAs(state.dirPath, fileName, contentStr)
+      if (result.ok && result.filePath) {
+        const newName = result.filePath.split('/').pop()!
+        setState((prev) =>
+          prev && !prev.fileNames.includes(newName)
+            ? { ...prev, fileNames: [...prev.fileNames, newName] }
+            : prev
+        )
+        dispatchHistory({ type: 'RESET', fileName: newName, fresh: updated })
+      }
+    } else {
+      await window.api.savePaper(state.dirPath, fileName, contentStr)
+      dispatchHistory({ type: 'MARK_SAVED', fileName })
+    }
+
+    setShowCurationModal(false)
+    setPendingSave(null)
+    setCurationDraft('')
+  }
+
+  function onCurationCancel() {
+    setShowCurationModal(false)
+    setPendingSave(null)
+    setCurationDraft('')
+  }
 
   // ── navigation ────────────────────────────────────────────────────────────
 
@@ -400,8 +460,8 @@ export function App() {
       deletePaper: applyDelete,
       undo: (fileName) => dispatchHistory({ type: 'UNDO', fileName }),
       redo: (fileName) => dispatchHistory({ type: 'REDO', fileName }),
-      savePaper: savePaperFn,
-      savePaperAs: savePaperAsFn,
+      savePaper: (fileName) => initiateSaveRef.current(fileName, false),
+      savePaperAs: (fileName) => initiateSaveRef.current(fileName, true),
       navigateToSource: navigateToSourceFn,
       reverseText: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => actions.reverseText(f, tableIdx)),
@@ -436,13 +496,14 @@ export function App() {
           actions.editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
         )
     }),
-    [applyEdit, applyDelete, savePaperFn, savePaperAsFn, navigateToSourceFn]
+    [applyEdit, applyDelete, navigateToSourceFn]
   )
 
   // ── effects ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     window.api.getRecentDirs().then(setRecentDirs)
+    window.api.getUserName().then(setUserName)
   }, [])
 
   useEffect(() => {
@@ -522,11 +583,11 @@ export function App() {
   useEffect(() => {
     const u1 = window.api.onSaveCurrentPaper(() => {
       const name = focusedPaperRef.current
-      if (name) savePaperFn(name)
+      if (name) initiateSaveRef.current(name, false)
     })
     const u2 = window.api.onSaveCurrentPaperAs(() => {
       const name = focusedPaperRef.current
-      if (name) savePaperAsFn(name)
+      if (name) initiateSaveRef.current(name, true)
     })
     const u3 = window.api.onUndoPaper(() => {
       const name = focusedPaperRef.current
@@ -539,7 +600,7 @@ export function App() {
     const u5 = window.api.onNavigateBack(navigateBackFn)
     const u6 = window.api.onNavigateForward(navigateForwardFn)
     return () => { u1(); u2(); u3(); u4(); u5(); u6() }
-  }, [savePaperFn, savePaperAsFn, navigateBackFn, navigateForwardFn])
+  }, [navigateBackFn, navigateForwardFn])
 
   useEffect(() => {
     return window.api.onFocusSearchBar(() => {
@@ -550,6 +611,14 @@ export function App() {
   useEffect(() => {
     return window.api.onSetShowEmptyRows((show) => setShowEmptyRows(show))
   }, [])
+
+  useEffect(() => {
+    return window.api.onEditUserName(() => {
+      setNameDraft(userName)
+      setNameModalIsPresave(false)
+      setShowNameModal(true)
+    })
+  }, [userName])
 
   useEffect(() => {
     if (!state || !activeSectionKey) return
@@ -884,6 +953,61 @@ export function App() {
           </div>
         </main>
       </div>
+      {showNameModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3>Your Name</h3>
+            <input
+              type="text"
+              className="modal-input"
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onNameConfirm(nameDraft)
+                if (e.key === 'Escape') onNameCancel()
+              }}
+              autoFocus
+              placeholder="Full name"
+            />
+            <div className="modal-actions">
+              <button className="toolbar-btn" onClick={onNameCancel}>Cancel</button>
+              <button
+                className="toolbar-btn"
+                onClick={() => onNameConfirm(nameDraft)}
+                disabled={!nameDraft.trim()}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCurationModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3>Save Note</h3>
+            <textarea
+              className="modal-textarea"
+              value={curationDraft}
+              onChange={(e) => setCurationDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  onCurationConfirm(curationDraft)
+                }
+                if (e.key === 'Escape') onCurationCancel()
+              }}
+              autoFocus
+              placeholder="Description (optional)"
+              rows={3}
+            />
+            <div className="modal-actions">
+              <button className="toolbar-btn" onClick={onCurationCancel}>Cancel</button>
+              <button className="toolbar-btn" onClick={() => onCurationConfirm(curationDraft)}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -88,7 +88,9 @@ function buildMenu(win: BrowserWindow): void {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
-        { role: 'selectAll' }
+        { role: 'selectAll' },
+        { type: 'separator' },
+        { label: 'Edit Name…', click: () => win.webContents.send('edit-user-name') }
       ]
     },
     {
@@ -254,6 +256,14 @@ ipcMain.handle('get-recent-dirs', () => {
 ipcMain.handle('mark-dir-opened', (_event, dirPath: string) => {
   addRecentDir(dirPath)
   if (mainWindow) buildMenu(mainWindow)
+})
+
+ipcMain.handle('get-user-name', () => readConfig().userName ?? '')
+
+ipcMain.handle('set-user-name', (_event, name: string) => {
+  const c = readConfig()
+  c.userName = name
+  writeConfig(c)
 })
 
 ipcMain.handle('resolve-sources', async (

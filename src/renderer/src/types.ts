@@ -51,6 +51,12 @@ export interface Metadata {
   [key: string]: unknown
 }
 
+export interface Curation {
+  name: string
+  date: string
+  description: string
+}
+
 export interface ResolvedSource {
   fullPath: string
   isDir: boolean

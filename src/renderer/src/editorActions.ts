@@ -1,4 +1,4 @@
-import type { ColumnValue, Row, Table, TableFragment, TablesFile } from './types'
+import type { ColumnValue, Curation, Row, Table, TableFragment, TablesFile } from './types'
 import { columnNames, getTableFragments, renderColumnValue } from './tableUtils'
 
 function tableToFragments(table: Table): { table_fragments: TableFragment[] } {
@@ -317,6 +317,16 @@ export function reverseText(file: TablesFile, tableIdx: number): TablesFile {
       return next
     })
   }))
+}
+
+export function appendCuration(file: TablesFile, curation: Curation): TablesFile {
+  const existingCurations = Array.isArray(file.metadata?.['curations'])
+    ? (file.metadata!['curations'] as Curation[])
+    : []
+  return {
+    ...file,
+    metadata: { ...(file.metadata ?? {}), curations: [...existingCurations, curation] }
+  }
 }
 
 export function editCell(
