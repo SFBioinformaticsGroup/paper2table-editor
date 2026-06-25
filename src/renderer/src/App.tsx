@@ -18,6 +18,8 @@ import { MetadataSection } from './components/MetadataSection'
 import { PaperSection } from './components/PaperSection'
 import { SearchBar } from './components/SearchBar'
 import type { SearchState } from './components/SearchBar'
+import { NameModal } from './components/NameModal'
+import { CurationModal } from './components/CurationModal'
 import './App.css'
 
 // ── history reducer ──────────────────────────────────────────────────────────
@@ -135,10 +137,8 @@ export function App() {
   const [userName, setUserName] = useState('')
   const [pendingSave, setPendingSave] = useState<{ fileName: string; isAs: boolean } | null>(null)
   const [showNameModal, setShowNameModal] = useState(false)
-  const [nameDraft, setNameDraft] = useState('')
   const [nameModalIsPresave, setNameModalIsPresave] = useState(false)
   const [showCurationModal, setShowCurationModal] = useState(false)
-  const [curationDraft, setCurationDraft] = useState('')
   const requestedRef = useRef(new Set<string>())
   const focusedPaperRef = useRef<string>('')
   const searchBarInputRef = useRef<HTMLInputElement>(null)
@@ -274,11 +274,9 @@ export function App() {
     }
     setPendingSave({ fileName, isAs })
     if (!userName) {
-      setNameDraft('')
       setNameModalIsPresave(true)
       setShowNameModal(true)
     } else {
-      setCurationDraft('')
       setShowCurationModal(true)
     }
   }
@@ -291,16 +289,11 @@ export function App() {
     await window.api.setUserName(trimmed)
     setUserName(trimmed)
     setShowNameModal(false)
-    setNameDraft('')
-    if (nameModalIsPresave) {
-      setCurationDraft('')
-      setShowCurationModal(true)
-    }
+    if (nameModalIsPresave) setShowCurationModal(true)
   }
 
   function onNameCancel() {
     setShowNameModal(false)
-    setNameDraft('')
     if (nameModalIsPresave) setPendingSave(null)
   }
 
@@ -337,13 +330,11 @@ export function App() {
 
     setShowCurationModal(false)
     setPendingSave(null)
-    setCurationDraft('')
   }
 
   function onCurationCancel() {
     setShowCurationModal(false)
     setPendingSave(null)
-    setCurationDraft('')
   }
 
   // ── navigation ────────────────────────────────────────────────────────────
@@ -614,11 +605,10 @@ export function App() {
 
   useEffect(() => {
     return window.api.onEditUserName(() => {
-      setNameDraft(userName)
       setNameModalIsPresave(false)
       setShowNameModal(true)
     })
-  }, [userName])
+  }, [])
 
   useEffect(() => {
     if (!state || !activeSectionKey) return
@@ -954,59 +944,17 @@ export function App() {
         </main>
       </div>
       {showNameModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <h3>Your Name</h3>
-            <input
-              type="text"
-              className="modal-input"
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') onNameConfirm(nameDraft)
-                if (e.key === 'Escape') onNameCancel()
-              }}
-              autoFocus
-              placeholder="Full name"
-            />
-            <div className="modal-actions">
-              <button className="toolbar-btn" onClick={onNameCancel}>Cancel</button>
-              <button
-                className="toolbar-btn"
-                onClick={() => onNameConfirm(nameDraft)}
-                disabled={!nameDraft.trim()}
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
+        <NameModal
+          initialDraft={userName}
+          onConfirm={onNameConfirm}
+          onCancel={onNameCancel}
+        />
       )}
       {showCurationModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <h3>Save Note</h3>
-            <textarea
-              className="modal-textarea"
-              value={curationDraft}
-              onChange={(e) => setCurationDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  onCurationConfirm(curationDraft)
-                }
-                if (e.key === 'Escape') onCurationCancel()
-              }}
-              autoFocus
-              placeholder="Description (optional)"
-              rows={3}
-            />
-            <div className="modal-actions">
-              <button className="toolbar-btn" onClick={onCurationCancel}>Cancel</button>
-              <button className="toolbar-btn" onClick={() => onCurationConfirm(curationDraft)}>OK</button>
-            </div>
-          </div>
-        </div>
+        <CurationModal
+          onConfirm={onCurationConfirm}
+          onCancel={onCurationCancel}
+        />
       )}
     </>
   )

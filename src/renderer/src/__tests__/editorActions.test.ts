@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  appendCuration,
   compactFragments,
   deleteColumn,
   deleteFragment,
@@ -11,7 +12,7 @@ import {
   promoteRowToHeader,
   renameColumn,
 } from '../editorActions'
-import type { Row, TablesFile } from '../types'
+import type { Curation, Row, TablesFile } from '../types'
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,69 @@ function fragmentedTable(...groups: Row[][]): TablesFile['tables'][number] {
     table_fragments: groups.map((rows, i) => ({ rows, page: i + 1 })),
   }
 }
+
+// ── appendCuration ────────────────────────────────────────────────────────────
+
+describe('appendCuration', () => {
+  const curation: Curation = { name: 'Alice', date: '2024-06-25', description: 'first pass' }
+
+  it('adds the curation to metadata.curations when no curations exist yet', () => {
+    const file = makeFile(flatTable([{ drug: 'aspirin' }]))
+    const result = appendCuration(file, curation)
+    expect(result.metadata).toEqual({
+      curations: [{ name: 'Alice', date: '2024-06-25', description: 'first pass' }],
+    })
+  })
+
+  it('appends to an existing curations array, preserving earlier entries', () => {
+    const earlier: Curation = { name: 'Bob', date: '2024-01-01', description: 'initial' }
+    const file: TablesFile = { tables: [], metadata: { curations: [earlier] } }
+    const result = appendCuration(file, curation)
+    expect(result.metadata?.['curations']).toEqual([
+      { name: 'Bob', date: '2024-01-01', description: 'initial' },
+      { name: 'Alice', date: '2024-06-25', description: 'first pass' },
+    ])
+  })
+
+  it('preserves other metadata fields alongside curations', () => {
+    const file: TablesFile = {
+      tables: [],
+      metadata: { reader: 'tablemerge', agreement_method: 'simple-count' },
+    }
+    const result = appendCuration(file, curation)
+    expect(result.metadata?.reader).toBe('tablemerge')
+    expect(result.metadata?.agreement_method).toBe('simple-count')
+    expect(Array.isArray(result.metadata?.['curations'])).toBe(true)
+  })
+
+  it('creates a metadata object when the file has none', () => {
+    const file = makeFile(flatTable([]))
+    const result = appendCuration(file, { name: 'Alice', date: '2024-06-25', description: '' })
+    expect(result.metadata).toEqual({
+      curations: [{ name: 'Alice', date: '2024-06-25', description: '' }],
+    })
+  })
+
+  it('does not mutate the original file metadata', () => {
+    const file: TablesFile = { tables: [], metadata: {} }
+    appendCuration(file, curation)
+    expect(file.metadata).toEqual({})
+  })
+
+  it('does not mutate the original curations array', () => {
+    const originalCurations: Curation[] = [{ name: 'Bob', date: '2024-01-01', description: 'old' }]
+    const file: TablesFile = { tables: [], metadata: { curations: originalCurations } }
+    appendCuration(file, curation)
+    expect(originalCurations).toHaveLength(1)
+  })
+
+  it('accepts an empty description', () => {
+    const file = makeFile(flatTable([]))
+    const result = appendCuration(file, { name: 'Alice', date: '2024-06-25', description: '' })
+    const curations = result.metadata?.['curations'] as Curation[]
+    expect(curations[0].description).toBe('')
+  })
+})
 
 // ── deleteTable ───────────────────────────────────────────────────────────────
 
