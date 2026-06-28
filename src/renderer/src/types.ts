@@ -52,8 +52,8 @@ export interface Metadata {
 }
 
 export interface Curation {
-  name: string
-  date: string
+  curator: string
+  timestamp: string
   description: string
 }
 

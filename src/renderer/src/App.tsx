@@ -325,8 +325,8 @@ export function App() {
     if (!entry?.present) return
 
     const curation: Curation = {
-      name: userName,
-      date: new Date().toISOString().slice(0, 10),
+      curator: userName,
+      timestamp: new Date().toISOString().slice(0, 10),
       description: description.trim()
     }
     const updated = actions.appendCuration(entry.present, curation)
