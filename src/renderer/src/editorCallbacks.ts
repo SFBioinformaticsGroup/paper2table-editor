@@ -31,4 +31,12 @@ export interface EditorCallbacks {
     colName: string,
     newValue: string
   ) => void
+
+  replicateCell: (
+    fileName: string,
+    tableIdx: number,
+    fragmentIdx: number,
+    rowIdx: number,
+    colName: string
+  ) => void
 }

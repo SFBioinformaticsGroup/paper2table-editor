@@ -506,6 +506,10 @@ export function App() {
       editCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName, newValue) =>
         applyEdit(fileName, (f) =>
           actions.editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
+        ),
+      replicateCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName) =>
+        applyEdit(fileName, (f) =>
+          actions.replicateCell(f, tableIdx, fragmentIdx, rowIdx, colName)
         )
     }),
     [applyEdit, applyDelete, navigateToSourceFn]

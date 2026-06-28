@@ -788,6 +788,10 @@ th:hover .col-header-actions {
   padding-right: 20px !important;
 }
 
+.editable-cell.has-replicate {
+  padding-right: 36px !important;
+}
+
 .cell-edit-btn {
   opacity: 0;
   position: absolute;
@@ -804,11 +808,29 @@ th:hover .col-header-actions {
   line-height: 1;
 }
 
-.editable-cell:hover .cell-edit-btn {
+.cell-replicate-btn {
+  opacity: 0;
+  position: absolute;
+  top: 3px;
+  right: 19px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #bbb;
+  font-size: 0.75em;
+  padding: 1px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.editable-cell:hover .cell-edit-btn,
+.editable-cell:hover .cell-replicate-btn {
   opacity: 1;
 }
 
-.cell-edit-btn:hover {
+.cell-edit-btn:hover,
+.cell-replicate-btn:hover {
   color: #555;
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FaPencil } from 'react-icons/fa6'
+import { FaAnglesDown, FaPencil } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { highlightText } from '../highlightUtils'
 
@@ -14,10 +14,12 @@ interface Props {
   className?: string
   rowSpan?: number
   searchQuery?: string
+  canReplicate?: boolean
   onStartEdit: () => void
   onConfirm: (newValue: string) => void  // confirms and stops editing (Enter/blur)
   onTabConfirm: (newValue: string) => void  // confirms and advances to next cell (Tab)
   onCancel: () => void  // cancels and stops editing (Escape)
+  onReplicate?: () => void
   callbacks: EditorCallbacks
 }
 
@@ -32,10 +34,12 @@ export function EditableCell({
   className,
   rowSpan,
   searchQuery,
+  canReplicate,
   onStartEdit,
   onConfirm,
   onTabConfirm,
   onCancel,
+  onReplicate,
   callbacks
 }: Props) {
   const [draft, setDraft] = useState(displayValue)
@@ -103,8 +107,13 @@ export function EditableCell({
   }
 
   return (
-    <td className={['editable-cell', className].filter(Boolean).join(' ')} rowSpan={rowSpan}>
+    <td className={['editable-cell', canReplicate && 'has-replicate', className].filter(Boolean).join(' ')} rowSpan={rowSpan}>
       {searchQuery ? highlightText(displayValue, searchQuery) : displayValue}
+      {canReplicate && (
+        <button className="cell-replicate-btn" title="Replicate down" onClick={onReplicate}>
+          <FaAnglesDown />
+        </button>
+      )}
       <button className="cell-edit-btn" title="Edit cell" onClick={onStartEdit}>
         <FaPencil />
       </button>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
-import type { TableFragment } from '../types'
-import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderDataCell, rowPaletteClass } from '../tableUtils'
+import type { ColumnValue, TableFragment } from '../types'
+import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderColumnValue, renderDataCell, rowPaletteClass } from '../tableUtils'
 import { highlightText } from '../highlightUtils'
 
 import type { EditorCallbacks } from '../editorCallbacks'
@@ -217,6 +217,12 @@ export function FragmentTable({
                       const colIdx = dataCols.indexOf(col)
                       const isEditing =
                         editingCell?.rowIdx === displayIdx && editingCell?.colIdx === colIdx
+                      const cellValue = renderColumnValue(row[col] as ColumnValue)
+                      const nextOriginalIdx = originalIdx + 1
+                      const cellCanReplicate =
+                        cellValue !== '' &&
+                        nextOriginalIdx < allRows.length &&
+                        renderColumnValue(allRows[nextOriginalIdx][col] as ColumnValue) === ''
                       return (
                         <EditableCell
                           key={col}
@@ -229,10 +235,12 @@ export function FragmentTable({
                           isEditing={isEditing}
                           rowSpan={rowSpanProp}
                           searchQuery={searchQuery}
+                          canReplicate={cellCanReplicate}
                           onStartEdit={() => setEditingCell({ rowIdx: displayIdx, colIdx })}
                           onConfirm={() => setEditingCell(null)}
                           onTabConfirm={() => advanceEdit(displayIdx, colIdx)}
                           onCancel={() => setEditingCell(null)}
+                          onReplicate={() => callbacks.replicateCell(fileName, tableIdxZero, fragmentIdx, originalIdx, col)}
                           callbacks={callbacks}
                         />
                       )
