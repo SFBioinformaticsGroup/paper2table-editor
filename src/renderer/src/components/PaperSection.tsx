@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaFloppyDisk, FaFolderOpen, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
+import { FaArrowsRotate, FaFloppyDisk, FaFolderOpen, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
 import type { TablesFile, Source } from '../types'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
@@ -143,6 +143,13 @@ export function PaperSection({
           onClick={() => callbacks.savePaperAs(fileName)}
         >
           <FaFolderOpen /> Save As…
+        </button>
+        <button
+          className="toolbar-btn"
+          title="Reload from disk (discards unsaved changes)"
+          onClick={() => callbacks.reloadPaper(fileName)}
+        >
+          <FaArrowsRotate /> Reload
         </button>
         {confirmDelete ? (
           <span className="delete-confirm">

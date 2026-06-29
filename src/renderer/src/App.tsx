@@ -171,6 +171,7 @@ export function App() {
   const pendingScrollYRef = useRef<number | null>(null)
   const activeSectionKeyRef = useRef<string>('')
   const initiateSaveRef = useRef<(fileName: string, isAs: boolean) => void>(() => { })
+  const reloadPaperRef = useRef<(fileName: string) => void>(() => { })
 
   const getPaperContent = useCallback(
     (fileName: string, st: DirectoryState): TablesFile | null => {
@@ -322,6 +323,14 @@ export function App() {
   }
 
   initiateSaveRef.current = initiateSave
+
+  function reloadPaper(fileName: string) {
+    if (!state) return
+    requestedRef.current.delete(fileName)
+    loadPaper(state.dirPath, fileName)
+  }
+
+  reloadPaperRef.current = reloadPaper
 
   async function onNameConfirm(name: string) {
     const trimmed = name.trim()
@@ -493,6 +502,7 @@ export function App() {
       redo: (fileName) => dispatchHistory({ type: 'REDO', fileName }),
       savePaper: (fileName) => initiateSaveRef.current(fileName, false),
       savePaperAs: (fileName) => initiateSaveRef.current(fileName, true),
+      reloadPaper: (fileName) => reloadPaperRef.current(fileName),
       navigateToSource: navigateToSourceFn,
       reverseText: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => reverseText(f, tableIdx)),
