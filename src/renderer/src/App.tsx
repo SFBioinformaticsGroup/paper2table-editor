@@ -31,6 +31,7 @@ import { deleteRow } from './actions/deleteRow'
 import { deleteTable } from './actions/deleteTable'
 import { editCell } from './actions/editCell'
 import { mergeColumns } from './actions/mergeColumns'
+import { mergeLastRowWithNextFragment } from './actions/mergeLastRowWithNextFragment'
 import { mergeRows } from './actions/mergeRows'
 import { mergeWithNextTable } from './actions/mergeWithNextTable'
 import { promoteRowToHeader } from './actions/promoteRowToHeader'
@@ -511,6 +512,8 @@ export function App() {
         applyEdit(fileName, (f) => promoteRowToHeader(f, tableIdx, fragmentIdx, rowIdx)),
       mergeRow: (fileName, tableIdx, fragmentIdx, rowIdx, direction) =>
         applyEdit(fileName, (f) => mergeRows(f, tableIdx, fragmentIdx, rowIdx, direction)),
+      mergeLastRowWithNextFragment: (fileName, tableIdx, fragmentIdx) =>
+        applyEdit(fileName, (f) => mergeLastRowWithNextFragment(f, tableIdx, fragmentIdx)),
       addRow: (fileName, tableIdx, fragmentIdx, afterRowIdx) =>
         applyEdit(fileName, (f) => addRow(f, tableIdx, fragmentIdx, afterRowIdx)),
       deleteColumn: (fileName, tableIdx, colName) =>

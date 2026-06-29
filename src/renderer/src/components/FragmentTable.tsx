@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
+import { FaAnglesDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
 import type { ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
 
@@ -23,6 +23,7 @@ interface Props {
   callbacks: EditorCallbacks
   searchQuery?: string
   showEmptyRows: boolean
+  hasNextFragment: boolean
 }
 
 export function FragmentTable({
@@ -37,7 +38,8 @@ export function FragmentTable({
   fileName,
   callbacks,
   searchQuery,
-  showEmptyRows
+  showEmptyRows,
+  hasNextFragment
 }: Props) {
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colIdx: number } | null>(null)
 
@@ -169,6 +171,16 @@ export function FragmentTable({
                           }
                         >
                           <FaArrowsDownToLine />
+                        </button>
+                      )}
+                      {displayIdx === displayedRows.length - 1 && hasNextFragment && (
+                        <button
+                          title="Merge with first row of next fragment"
+                          onClick={() =>
+                            callbacks.mergeLastRowWithNextFragment(fileName, tableIdxZero, fragmentIdx)
+                          }
+                        >
+                          <FaAnglesDown />
                         </button>
                       )}
                       <button

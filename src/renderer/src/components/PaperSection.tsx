@@ -224,6 +224,7 @@ export function PaperSection({
                   callbacks={callbacks}
                   searchQuery={searchQuery}
                   showEmptyRows={showEmptyRows}
+                  hasNextFragment={fragmentIdx < fragments.length - 1}
                 />
               )
             })}
