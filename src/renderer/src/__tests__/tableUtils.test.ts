@@ -8,15 +8,15 @@ import {
   computeRowspans,
   flattenMetadataRows,
   getRowColumns,
-  getTableFragments,
   isEmptyRow,
   readerEmoji,
   renderCitation,
   renderColumnValue,
   renderDataCell,
   rowPaletteClass,
-} from '../tableUtils'
+} from '../utils/table'
 import type { Row, Table, TableWithFragments, TableWithRows } from '../types'
+import { getTableFragments } from '../utils/getTableFragments'
 
 // ── getTableFragments ────────────────────────────────────────────────────────
 

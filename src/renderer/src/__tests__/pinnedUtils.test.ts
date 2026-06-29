@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sortByPinnedAndArchived, togglePinned, toggleArchived } from '../pinnedUtils'
+import { sortByPinnedAndArchived, togglePinned, toggleArchived } from '../utils/pinned'
 
 describe('sortByPinnedAndArchived', () => {
   it('places pinned papers before normal and archived ones', () => {

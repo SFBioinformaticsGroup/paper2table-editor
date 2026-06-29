@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { transposeTable } from '../editorActions'
 import type { Row, TablesFile } from '../types'
+import { transposeTable } from '../actions/transposeTable'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {
   return { tables }

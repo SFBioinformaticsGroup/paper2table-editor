@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { promoteRowToHeader } from '../editorActions'
 import type { Row, TablesFile } from '../types'
+import { promoteRowToHeader } from '../actions/promoteRowToHeader'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {
   return { tables }

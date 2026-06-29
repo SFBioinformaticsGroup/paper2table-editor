@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FaAnglesLeft, FaAnglesRight } from 'react-icons/fa6'
 import type { TablesFile } from '../types'
-import { getTableFragments } from '../tableUtils'
+import { getTableFragments } from '../utils/getTableFragments'
 import { highlightText } from '../highlightUtils'
 import { PinButton } from './PinButton'
 import { ArchiveButton } from './ArchiveButton'

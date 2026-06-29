@@ -1,12 +1,5 @@
-import type { Citation, ColumnValue, Metadata, Row, Table, TableFragment, TableWithFragments } from './types'
-
-export function getTableFragments(table: Table): TableFragment[] {
-  if ('table_fragments' in table) {
-    return (table as TableWithFragments).table_fragments
-  }
-  const t = table as { rows: Row[]; page: number }
-  return [{ rows: t.rows, page: t.page }]
-}
+import { Row, ColumnValue, Citation, Metadata, Table } from '@renderer/types';
+import { getTableFragments } from './getTableFragments';
 
 export function getRowColumns(row: Row): Record<string, ColumnValue> {
   const result: Record<string, ColumnValue> = {}

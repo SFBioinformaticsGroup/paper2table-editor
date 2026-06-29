@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mergeWithNextTable } from '../editorActions'
+import { mergeWithNextTable } from '../actions/mergeWithNextTable'
 import type { Row, TablesFile } from '../types'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {

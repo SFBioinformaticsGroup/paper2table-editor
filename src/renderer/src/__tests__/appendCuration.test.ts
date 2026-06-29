@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { appendCuration } from '../editorActions'
+import { appendCuration } from '../actions/appendCuration'
 import type { Curation, Row, TablesFile } from '../types'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {

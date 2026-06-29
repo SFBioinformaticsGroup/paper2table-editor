@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addRow } from '../editorActions'
+import { addRow } from '../actions/addRow'
 import type { Row, TablesFile } from '../types'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {

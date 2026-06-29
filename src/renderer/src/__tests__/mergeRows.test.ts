@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { mergeRows } from '../editorActions'
 import type { Row, TablesFile } from '../types'
+import { mergeRows } from '../actions/mergeRows'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {
   return { tables }

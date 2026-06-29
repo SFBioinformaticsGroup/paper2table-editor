@@ -1,5 +1,5 @@
 import type { Metadata, Source } from '../types'
-import { flattenMetadataRows, readerEmoji } from '../tableUtils'
+import { flattenMetadataRows, readerEmoji } from '../utils/table'
 import { highlightText } from '../highlightUtils'
 
 interface Props {

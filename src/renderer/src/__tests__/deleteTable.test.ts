@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deleteTable } from '../editorActions'
 import type { Row, TablesFile } from '../types'
+import { deleteTable } from '../actions/deleteTable'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {
   return { tables }

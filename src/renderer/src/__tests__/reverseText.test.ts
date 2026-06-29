@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { reverseText } from '../editorActions'
 import type { Row, TablesFile } from '../types'
+import { reverseText } from '../actions/reverseText'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {
   return { tables }

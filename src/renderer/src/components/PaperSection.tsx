@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { FaFloppyDisk, FaFolderOpen, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
 import type { TablesFile, Source } from '../types'
-import { collectPaperSourceUuids, getTableFragments, readerEmoji, renderCitation } from '../tableUtils'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
 import { TableToolbar } from './TableToolbar'
 import { highlightText } from '../highlightUtils'
+import { getTableFragments } from '../utils/getTableFragments'
+import { readerEmoji, collectPaperSourceUuids, renderCitation } from '../utils/table'
 
 interface Props {
   paperId: string

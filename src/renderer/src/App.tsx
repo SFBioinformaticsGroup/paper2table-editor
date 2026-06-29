@@ -10,9 +10,6 @@ import type {
   ResolvedSource,
   TablesFile
 } from './types'
-import { buildPaperAnchorIds, findTableAnchorId } from './tableUtils'
-import { sortByPinnedAndArchived, togglePinned, toggleArchived } from './pinnedUtils'
-import * as actions from './editorActions'
 import type { EditorCallbacks } from './editorCallbacks'
 import { Toc } from './components/Toc'
 import { MetadataSection } from './components/MetadataSection'
@@ -22,6 +19,25 @@ import type { SearchState } from './components/SearchBar'
 import { NameModal } from './components/NameModal'
 import { CurationModal } from './components/CurationModal'
 import './App.css'
+import { addColumn } from './actions/addColumn'
+import { addRow } from './actions/addRow'
+import { appendCuration } from './actions/appendCuration'
+import { compactFragments } from './actions/compactFragments'
+import { deleteColumn } from './actions/deleteColumn'
+import { deleteFragment } from './actions/deleteFragment'
+import { deleteRow } from './actions/deleteRow'
+import { deleteTable } from './actions/deleteTable'
+import { editCell } from './actions/editCell'
+import { mergeColumns } from './actions/mergeColumns'
+import { mergeRows } from './actions/mergeRows'
+import { mergeWithNextTable } from './actions/mergeWithNextTable'
+import { promoteRowToHeader } from './actions/promoteRowToHeader'
+import { renameColumn } from './actions/renameColumn'
+import { replicateCell } from './actions/replicateCell'
+import { reverseText } from './actions/reverseText'
+import { transposeTable } from './actions/transposeTable'
+import { togglePinned, toggleArchived, sortByPinnedAndArchived } from './utils/pinned'
+import { buildPaperAnchorIds, findTableAnchorId } from './utils/table'
 
 // ── history reducer ──────────────────────────────────────────────────────────
 
@@ -151,7 +167,7 @@ export function App() {
   const pendingSourceTableNumRef = useRef<number | null>(null)
   const pendingScrollYRef = useRef<number | null>(null)
   const activeSectionKeyRef = useRef<string>('')
-  const initiateSaveRef = useRef<(fileName: string, isAs: boolean) => void>(() => {})
+  const initiateSaveRef = useRef<(fileName: string, isAs: boolean) => void>(() => { })
 
   const getPaperContent = useCallback(
     (fileName: string, st: DirectoryState): TablesFile | null => {
@@ -329,7 +345,7 @@ export function App() {
       timestamp: new Date().toISOString().slice(0, 10),
       description: description.trim()
     }
-    const updated = actions.appendCuration(entry.present, curation)
+    const updated = appendCuration(entry.present, curation)
     dispatchHistory({ type: 'APPLY', fileName, newState: updated })
 
     const contentStr = JSON.stringify(updated, null, 2)
@@ -476,40 +492,40 @@ export function App() {
       savePaperAs: (fileName) => initiateSaveRef.current(fileName, true),
       navigateToSource: navigateToSourceFn,
       reverseText: (fileName, tableIdx) =>
-        applyEdit(fileName, (f) => actions.reverseText(f, tableIdx)),
+        applyEdit(fileName, (f) => reverseText(f, tableIdx)),
       transposeTable: (fileName, tableIdx) =>
-        applyEdit(fileName, (f) => actions.transposeTable(f, tableIdx)),
+        applyEdit(fileName, (f) => transposeTable(f, tableIdx)),
       deleteTable: (fileName, tableIdx) =>
-        applyEdit(fileName, (f) => actions.deleteTable(f, tableIdx)),
+        applyEdit(fileName, (f) => deleteTable(f, tableIdx)),
       deleteFragment: (fileName, tableIdx, fragmentIdx) =>
-        applyEdit(fileName, (f) => actions.deleteFragment(f, tableIdx, fragmentIdx)),
+        applyEdit(fileName, (f) => deleteFragment(f, tableIdx, fragmentIdx)),
       compactFragments: (fileName, tableIdx) =>
-        applyEdit(fileName, (f) => actions.compactFragments(f, tableIdx)),
+        applyEdit(fileName, (f) => compactFragments(f, tableIdx)),
       mergeWithNextTable: (fileName, tableIdx) =>
-        applyEdit(fileName, (f) => actions.mergeWithNextTable(f, tableIdx)),
+        applyEdit(fileName, (f) => mergeWithNextTable(f, tableIdx)),
       deleteRow: (fileName, tableIdx, fragmentIdx, rowIdx) =>
-        applyEdit(fileName, (f) => actions.deleteRow(f, tableIdx, fragmentIdx, rowIdx)),
+        applyEdit(fileName, (f) => deleteRow(f, tableIdx, fragmentIdx, rowIdx)),
       promoteRowToHeader: (fileName, tableIdx, fragmentIdx, rowIdx) =>
-        applyEdit(fileName, (f) => actions.promoteRowToHeader(f, tableIdx, fragmentIdx, rowIdx)),
+        applyEdit(fileName, (f) => promoteRowToHeader(f, tableIdx, fragmentIdx, rowIdx)),
       mergeRow: (fileName, tableIdx, fragmentIdx, rowIdx, direction) =>
-        applyEdit(fileName, (f) => actions.mergeRows(f, tableIdx, fragmentIdx, rowIdx, direction)),
+        applyEdit(fileName, (f) => mergeRows(f, tableIdx, fragmentIdx, rowIdx, direction)),
       addRow: (fileName, tableIdx, fragmentIdx, afterRowIdx) =>
-        applyEdit(fileName, (f) => actions.addRow(f, tableIdx, fragmentIdx, afterRowIdx)),
+        applyEdit(fileName, (f) => addRow(f, tableIdx, fragmentIdx, afterRowIdx)),
       deleteColumn: (fileName, tableIdx, colName) =>
-        applyEdit(fileName, (f) => actions.deleteColumn(f, tableIdx, colName)),
+        applyEdit(fileName, (f) => deleteColumn(f, tableIdx, colName)),
       renameColumn: (fileName, tableIdx, oldName, newName) =>
-        applyEdit(fileName, (f) => actions.renameColumn(f, tableIdx, oldName, newName)),
+        applyEdit(fileName, (f) => renameColumn(f, tableIdx, oldName, newName)),
       mergeColumns: (fileName, tableIdx, keepCol, dropCol) =>
-        applyEdit(fileName, (f) => actions.mergeColumns(f, tableIdx, keepCol, dropCol)),
+        applyEdit(fileName, (f) => mergeColumns(f, tableIdx, keepCol, dropCol)),
       addColumn: (fileName, tableIdx, columnName, afterColName) =>
-        applyEdit(fileName, (f) => actions.addColumn(f, tableIdx, columnName, afterColName)),
+        applyEdit(fileName, (f) => addColumn(f, tableIdx, columnName, afterColName)),
       editCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName, newValue) =>
         applyEdit(fileName, (f) =>
-          actions.editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
+          editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
         ),
       replicateCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName) =>
         applyEdit(fileName, (f) =>
-          actions.replicateCell(f, tableIdx, fragmentIdx, rowIdx, colName)
+          replicateCell(f, tableIdx, fragmentIdx, rowIdx, colName)
         )
     }),
     [applyEdit, applyDelete, navigateToSourceFn]

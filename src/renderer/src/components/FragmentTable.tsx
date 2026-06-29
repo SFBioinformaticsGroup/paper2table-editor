@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
 import type { ColumnValue, TableFragment } from '../types'
-import { agreementClass, buildFragmentColumns, columnNames, computeRowspans, isEmptyRow, renderColumnValue, renderDataCell, rowPaletteClass } from '../tableUtils'
 import { highlightText } from '../highlightUtils'
 
 import type { EditorCallbacks } from '../editorCallbacks'
 import { ColumnHeader } from './ColumnHeader'
 import { EditableCell } from './EditableCell'
+import { isEmptyRow, buildFragmentColumns, columnNames, computeRowspans, agreementClass, rowPaletteClass, renderDataCell, renderColumnValue } from '../utils/table'
 
 const META_COLS = new Set(['row_', 'agreement_level_', 'readers_', 'sources_'])
 

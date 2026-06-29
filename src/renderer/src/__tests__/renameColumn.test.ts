@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renameColumn } from '../editorActions'
+import { renameColumn } from '../actions/renameColumn'
 import type { Row, TablesFile } from '../types'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {

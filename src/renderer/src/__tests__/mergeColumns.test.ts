@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mergeColumns } from '../editorActions'
+import { mergeColumns } from '../actions/mergeColumns'
 import type { Row, TablesFile } from '../types'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {

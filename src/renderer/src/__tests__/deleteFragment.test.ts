@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deleteFragment } from '../editorActions'
+import { deleteFragment } from '../actions/deleteFragment'
 import type { Row, TablesFile } from '../types'
 
 function makeFile(...tables: TablesFile['tables']): TablesFile {
