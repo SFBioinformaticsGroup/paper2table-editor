@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { FaChevronLeft, FaChevronRight, FaFloppyDisk, FaRotateLeft } from 'react-icons/fa6'
 import type {
   Curation,
   DirectoryState,
@@ -18,6 +17,9 @@ import { SearchBar } from './components/SearchBar'
 import type { SearchState } from './components/SearchBar'
 import { NameModal } from './components/NameModal'
 import { CurationModal } from './components/CurationModal'
+import { OpenDirScreen } from './components/OpenDirScreen'
+import { DirHeader } from './components/DirHeader'
+import { ValidationErrors } from './components/ValidationErrors'
 import './App.css'
 import { addColumn } from './actions/addColumn'
 import { addRow } from './actions/addRow'
@@ -724,34 +726,12 @@ export function App() {
 
   if (!state) {
     return (
-      <>
-        <div className="open-dir-screen">
-          <h1>Tables Editor</h1>
-          {appLoading ? (
-            <span className="spinner" aria-label="Loading" />
-          ) : (
-            <>
-              {recentDirs.length > 0 && (
-                <div className="recent-dirs">
-                  {recentDirs.map((dirPath) => (
-                    <button
-                      key={dirPath}
-                      className="recent-dir-btn"
-                      title={dirPath}
-                      onClick={() => openRecentResultSet(dirPath)}
-                    >
-                      {dirPath.split('/').pop() || dirPath}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button className="open-dir-btn" onClick={openResultSet}>
-                Open ResultSet
-              </button>
-            </>
-          )}
-        </div>
-      </>
+      <OpenDirScreen
+        appLoading={appLoading}
+        recentDirs={recentDirs}
+        onOpen={openResultSet}
+        onOpenRecent={openRecentResultSet}
+      />
     )
   }
 
@@ -808,52 +788,18 @@ export function App() {
         onToggleArchive={toggleArchive}
       />
       <div className="main-wrapper">
-        <div className="dir-header">
-          <div className="nav-buttons">
-            <button
-              className="nav-btn"
-              title="Back (Cmd+[)"
-              disabled={navBack.length === 0}
-              onClick={navigateBackFn}
-            >
-              <FaChevronLeft />
-            </button>
-            <button
-              className="nav-btn"
-              title="Forward (Cmd+])"
-              disabled={navForward.length === 0}
-              onClick={navigateForwardFn}
-            >
-              <FaChevronRight />
-            </button>
-          </div>
-          <span className="dir-path">{state.dirPath}</span>
-          <div className="header-actions">
-            <button
-              className="toolbar-btn"
-              title="Undo (Cmd+Z)"
-              disabled={!canUndoFocused}
-              onClick={() => { if (focusedFileName) callbacks.undo(focusedFileName) }}
-            >
-              <FaRotateLeft />
-            </button>
-            <button
-              className={`toolbar-btn save-btn${focusedDirty ? ' dirty' : ''}`}
-              title="Save (Cmd+S)"
-              disabled={!focusedDirty}
-              onClick={() => { if (focusedFileName) callbacks.savePaper(focusedFileName) }}
-            >
-              <FaFloppyDisk /> {focusedDirty ? 'Save*' : 'Save'}
-            </button>
-            <button
-              className="toolbar-btn"
-              title="Save As…"
-              onClick={() => { if (focusedFileName) callbacks.savePaperAs(focusedFileName) }}
-            >
-              <FaFloppyDisk /> Save As…
-            </button>
-          </div>
-        </div>
+        <DirHeader
+          dirPath={state.dirPath}
+          canBack={navBack.length > 0}
+          canForward={navForward.length > 0}
+          canUndo={canUndoFocused}
+          focusedDirty={focusedDirty}
+          onBack={navigateBackFn}
+          onForward={navigateForwardFn}
+          onUndo={() => { if (focusedFileName) callbacks.undo(focusedFileName) }}
+          onSave={() => { if (focusedFileName) callbacks.savePaper(focusedFileName) }}
+          onSaveAs={() => { if (focusedFileName) callbacks.savePaperAs(focusedFileName) }}
+        />
         <SearchBar searchState={searchState} onChange={setSearchState} inputRef={searchBarInputRef} />
         <main>
           {appLoading && (
@@ -893,17 +839,7 @@ export function App() {
                   return (
                     <div key={fileName}>
                       {state.validationErrors[fileName] && (
-                        <details className="validation-errors" open>
-                          <summary>
-                            Schema validation errors in <code>{fileName}</code>{' '}
-                            ({state.validationErrors[fileName].length})
-                          </summary>
-                          <ul>
-                            {state.validationErrors[fileName].map((msg, i) => (
-                              <li key={i}><code>{msg}</code></li>
-                            ))}
-                          </ul>
-                        </details>
+                        <ValidationErrors fileName={fileName} errors={state.validationErrors[fileName]} />
                       )}
                       <PaperSection
                         paperId={paperId}
@@ -957,17 +893,7 @@ export function App() {
                   return (
                     <div key={fileName}>
                       {state.validationErrors[fileName] && (
-                        <details className="validation-errors" open>
-                          <summary>
-                            Schema validation errors in <code>{fileName}</code>{' '}
-                            ({state.validationErrors[fileName].length})
-                          </summary>
-                          <ul>
-                            {state.validationErrors[fileName].map((msg, i) => (
-                              <li key={i}><code>{msg}</code></li>
-                            ))}
-                          </ul>
-                        </details>
+                        <ValidationErrors fileName={fileName} errors={state.validationErrors[fileName]} />
                       )}
                       <PaperSection
                         paperId={activePaperId}
