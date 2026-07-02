@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaAnglesDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
+import { FaAnglesDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
 import type { ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
 
@@ -173,6 +173,16 @@ export function FragmentTable({
                           <FaArrowsDownToLine />
                         </button>
                       )}
+                      {displayIdx === 0 && fragmentIdx > 0 && (
+                        <button
+                          title="Move to previous fragment"
+                          onClick={() =>
+                            callbacks.moveFirstRowToPrevFragment(fileName, tableIdxZero, fragmentIdx)
+                          }
+                        >
+                          <FaCircleArrowUp />
+                        </button>
+                      )}
                       {displayIdx === displayedRows.length - 1 && hasNextFragment && (
                         <button
                           title="Merge with first row of next fragment"
@@ -181,6 +191,16 @@ export function FragmentTable({
                           }
                         >
                           <FaAnglesDown />
+                        </button>
+                      )}
+                      {displayIdx === displayedRows.length - 1 && hasNextFragment && (
+                        <button
+                          title="Move to next fragment"
+                          onClick={() =>
+                            callbacks.moveLastRowToNextFragment(fileName, tableIdxZero, fragmentIdx)
+                          }
+                        >
+                          <FaCircleArrowDown />
                         </button>
                       )}
                       <button

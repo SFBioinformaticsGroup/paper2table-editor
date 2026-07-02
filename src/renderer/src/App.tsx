@@ -33,6 +33,8 @@ import { editCell } from './actions/editCell'
 import { mergeColumns } from './actions/mergeColumns'
 import { mergeLastRowWithNextFragment } from './actions/mergeLastRowWithNextFragment'
 import { mergeRows } from './actions/mergeRows'
+import { moveFirstRowToPrevFragment } from './actions/moveFirstRowToPrevFragment'
+import { moveLastRowToNextFragment } from './actions/moveLastRowToNextFragment'
 import { mergeWithNextTable } from './actions/mergeWithNextTable'
 import { promoteRowToHeader } from './actions/promoteRowToHeader'
 import { renameColumn } from './actions/renameColumn'
@@ -535,6 +537,10 @@ export function App() {
         applyEdit(fileName, (f) => mergeRows(f, tableIdx, fragmentIdx, rowIdx, direction)),
       mergeLastRowWithNextFragment: (fileName, tableIdx, fragmentIdx) =>
         applyEdit(fileName, (f) => mergeLastRowWithNextFragment(f, tableIdx, fragmentIdx)),
+      moveLastRowToNextFragment: (fileName, tableIdx, fragmentIdx) =>
+        applyEdit(fileName, (f) => moveLastRowToNextFragment(f, tableIdx, fragmentIdx)),
+      moveFirstRowToPrevFragment: (fileName, tableIdx, fragmentIdx) =>
+        applyEdit(fileName, (f) => moveFirstRowToPrevFragment(f, tableIdx, fragmentIdx)),
       addRow: (fileName, tableIdx, fragmentIdx, afterRowIdx) =>
         applyEdit(fileName, (f) => addRow(f, tableIdx, fragmentIdx, afterRowIdx)),
       deleteColumn: (fileName, tableIdx, colName) =>

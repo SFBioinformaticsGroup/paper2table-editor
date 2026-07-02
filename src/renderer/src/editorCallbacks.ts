@@ -18,6 +18,8 @@ export interface EditorCallbacks {
   promoteRowToHeader: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
   mergeRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number, direction: 'next' | 'prev') => void
   mergeLastRowWithNextFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
+  moveLastRowToNextFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
+  moveFirstRowToPrevFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
   addRow: (fileName: string, tableIdx: number, fragmentIdx: number, afterRowIdx?: number) => void
 
   deleteColumn: (fileName: string, tableIdx: number, colName: string) => void
