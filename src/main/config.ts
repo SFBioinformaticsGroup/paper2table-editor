@@ -2,12 +2,16 @@ import { app } from 'electron'
 import { join, dirname } from 'path'
 import { readFileSync, writeFileSync } from 'fs'
 
+type PaperNotesByFile = Record<string, string>
+type PaperNotesByDir = Record<string, PaperNotesByFile>
+
 export interface AppConfig {
   recentDirs: string[]
   lastOpenedParent: string
   userName?: string
   pinnedPapers?: Record<string, string[]>
   archivedPapers?: Record<string, string[]>
+  paperNotes?: PaperNotesByDir
 }
 
 const MAX_RECENT = 10

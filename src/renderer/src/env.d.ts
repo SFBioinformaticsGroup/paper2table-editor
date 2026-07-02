@@ -34,5 +34,7 @@ interface Window {
     setArchivedPapers: (dirPath: string, fileNames: string[]) => Promise<void>
     getRecentDirs: () => Promise<string[]>
     markDirOpened: (dirPath: string) => Promise<void>
+    getPaperNotes: (dirPath: string) => Promise<Record<string, string>>
+    setPaperNote: (dirPath: string, fileName: string, text: string) => Promise<void>
   }
 }

@@ -269,6 +269,22 @@ ipcMain.handle('set-archived-papers', (_event, dirPath: string, fileNames: strin
   writeConfig(config)
 })
 
+ipcMain.handle('get-paper-notes', (_event, dirPath: string) => {
+  return readConfig().paperNotes?.[dirPath] ?? {}
+})
+
+ipcMain.handle('set-paper-note', (_event, dirPath: string, fileName: string, text: string) => {
+  const config = readConfig()
+  const byDir = { ...(config.paperNotes ?? {}), [dirPath]: { ...(config.paperNotes?.[dirPath] ?? {}) } }
+  if (text) {
+    byDir[dirPath][fileName] = text
+  } else {
+    delete byDir[dirPath][fileName]
+  }
+  config.paperNotes = byDir
+  writeConfig(config)
+})
+
 ipcMain.handle('get-recent-dirs', () => {
   return readConfig().recentDirs.slice(0, 3)
 })

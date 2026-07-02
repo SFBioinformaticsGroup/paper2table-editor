@@ -62,6 +62,8 @@ export interface ResolvedSource {
   isDir: boolean
 }
 
+export type PaperNotes = Record<string, string>
+
 export interface DirectoryState {
   dirPath: string
   metadata: Metadata
@@ -69,6 +71,7 @@ export interface DirectoryState {
   fileNames: string[]
   pinnedPapers: string[]
   archivedPapers: string[]
+  paperNotes: PaperNotes
   papers: Record<string, TablesFile>
   validationErrors: Record<string, string[]>
 }

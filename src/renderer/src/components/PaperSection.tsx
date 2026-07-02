@@ -4,6 +4,7 @@ import type { TablesFile, Source } from '../types'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
 import { TableToolbar } from './TableToolbar'
+import { NoteButton } from './NoteButton'
 import { highlightText } from '../highlightUtils'
 import { getTableFragments } from '../utils/getTableFragments'
 import { readerEmoji, collectPaperSourceUuids, renderCitation } from '../utils/table'
@@ -22,6 +23,8 @@ interface Props {
   isDirty: boolean
   searchQuery?: string
   showEmptyRows: boolean
+  paperNote: string
+  onUpdatePaperNote: (fileName: string, text: string) => void
 }
 
 function PaperSources({
@@ -103,7 +106,9 @@ export function PaperSection({
   canRedo,
   isDirty,
   searchQuery,
-  showEmptyRows
+  showEmptyRows,
+  paperNote,
+  onUpdatePaperNote
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const paperUuids = collectPaperSourceUuids(content)
@@ -151,6 +156,10 @@ export function PaperSection({
         >
           <FaArrowsRotate /> Reload
         </button>
+        <NoteButton
+          note={paperNote}
+          onSave={(text) => onUpdatePaperNote(fileName, text)}
+        />
         {confirmDelete ? (
           <span className="delete-confirm">
             Delete file?{' '}

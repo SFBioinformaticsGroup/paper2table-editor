@@ -87,5 +87,9 @@ contextBridge.exposeInMainWorld('api', {
   getRecentDirs: (): Promise<string[]> =>
     ipcRenderer.invoke('get-recent-dirs'),
   markDirOpened: (dirPath: string): Promise<void> =>
-    ipcRenderer.invoke('mark-dir-opened', dirPath)
+    ipcRenderer.invoke('mark-dir-opened', dirPath),
+  getPaperNotes: (dirPath: string): Promise<Record<string, string>> =>
+    ipcRenderer.invoke('get-paper-notes', dirPath),
+  setPaperNote: (dirPath: string, fileName: string, text: string): Promise<void> =>
+    ipcRenderer.invoke('set-paper-note', dirPath, fileName, text)
 })

@@ -225,10 +225,11 @@ export function App() {
       const sourcesInput = (listing.metadata.sources ?? [])
         .filter((s) => s.uuid && s.path)
         .map((s) => ({ uuid: String(s.uuid), path: String(s.path) }))
-      const [resolved, pinnedPapers, archivedPapers] = await Promise.all([
+      const [resolved, pinnedPapers, archivedPapers, paperNotes] = await Promise.all([
         window.api.resolveSources(dirPath, sourcesInput),
         window.api.getPinnedPapers(dirPath),
-        window.api.getArchivedPapers(dirPath)
+        window.api.getArchivedPapers(dirPath),
+        window.api.getPaperNotes(dirPath)
       ])
       const resolvedSources: Record<string, ResolvedSource> = {}
       for (const { uuid, fullPath, isDir } of resolved) {
@@ -242,6 +243,7 @@ export function App() {
         fileNames: listing.fileNames,
         pinnedPapers,
         archivedPapers,
+        paperNotes,
         papers: {},
         validationErrors: {}
       })
@@ -292,6 +294,15 @@ export function App() {
     const next = toggleArchived(state.archivedPapers, fileName)
     setState((prev) => prev ? { ...prev, archivedPapers: next } : prev)
     window.api.setArchivedPapers(state.dirPath, next)
+  }, [state])
+
+  const updatePaperNote = useCallback((fileName: string, text: string) => {
+    if (!state) return
+    const next = { ...state.paperNotes }
+    if (text) next[fileName] = text
+    else delete next[fileName]
+    setState((prev) => prev ? { ...prev, paperNotes: next } : prev)
+    window.api.setPaperNote(state.dirPath, fileName, text)
   }, [state])
 
   // ── save/load ─────────────────────────────────────────────────────────────
@@ -868,6 +879,8 @@ export function App() {
                         isDirty={isDirty}
                         searchQuery={searchQuery}
                         showEmptyRows={showEmptyRows}
+                        paperNote={state.paperNotes[fileName] ?? ''}
+                        onUpdatePaperNote={updatePaperNote}
                       />
                     </div>
                   )
@@ -922,6 +935,8 @@ export function App() {
                         isDirty={isDirty}
                         searchQuery={searchQuery}
                         showEmptyRows={showEmptyRows}
+                        paperNote={state.paperNotes[fileName] ?? ''}
+                        onUpdatePaperNote={updatePaperNote}
                       />
                     </div>
                   )

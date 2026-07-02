@@ -983,3 +983,7 @@ a.uuid-chip:hover {
   justify-content: flex-end;
   gap: 8px;
 }
+
+.note-btn--active {
+  color: #c8860a;
+}
