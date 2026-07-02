@@ -7,7 +7,8 @@ import { TableToolbar } from './TableToolbar'
 import { NoteButton } from './NoteButton'
 import { highlightText } from '../highlightUtils'
 import { getTableFragments } from '../utils/getTableFragments'
-import { readerEmoji, collectPaperSourceUuids, renderCitation } from '../utils/table'
+import { readerEmoji, collectPaperSourceUuids, renderCitation, columnNames } from '../utils/table'
+import { hasNonSemanticColumns } from '../actions/applyPrevFragmentColumnNames'
 
 interface Props {
   paperId: string
@@ -225,6 +226,11 @@ export function PaperSection({
               const anchorId = hasMultipleFragments
                 ? `${paperId}-table-${tableIdx + 1}-page-${fragment.page}`
                 : undefined
+              const canApplyPrevColumnNames = fragmentIdx > 0 && (() => {
+                const prevCols = columnNames(fragments[fragmentIdx - 1].rows)
+                const currentCols = columnNames(fragment.rows)
+                return hasNonSemanticColumns(currentCols) && currentCols.length >= prevCols.length
+              })()
               return (
                 <FragmentTable
                   key={`${tableIdx}-${fragmentIdx}`}
@@ -241,6 +247,7 @@ export function PaperSection({
                   searchQuery={searchQuery}
                   showEmptyRows={showEmptyRows}
                   hasNextFragment={fragmentIdx < fragments.length - 1}
+                  canApplyPrevColumnNames={canApplyPrevColumnNames}
                 />
               )
             })}

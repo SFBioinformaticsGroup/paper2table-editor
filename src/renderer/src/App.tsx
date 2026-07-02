@@ -22,6 +22,7 @@ import { DirHeader } from './components/DirHeader'
 import { ValidationErrors } from './components/ValidationErrors'
 import './App.css'
 import { addColumn } from './actions/addColumn'
+import { applyPrevFragmentColumnNames } from './actions/applyPrevFragmentColumnNames'
 import { addRow } from './actions/addRow'
 import { appendCuration } from './actions/appendCuration'
 import { compactFragments } from './actions/compactFragments'
@@ -541,6 +542,8 @@ export function App() {
         applyEdit(fileName, (f) => moveLastRowToNextFragment(f, tableIdx, fragmentIdx)),
       moveFirstRowToPrevFragment: (fileName, tableIdx, fragmentIdx) =>
         applyEdit(fileName, (f) => moveFirstRowToPrevFragment(f, tableIdx, fragmentIdx)),
+      applyPrevFragmentColumnNames: (fileName, tableIdx, fragmentIdx) =>
+        applyEdit(fileName, (f) => applyPrevFragmentColumnNames(f, tableIdx, fragmentIdx)),
       addRow: (fileName, tableIdx, fragmentIdx, afterRowIdx) =>
         applyEdit(fileName, (f) => addRow(f, tableIdx, fragmentIdx, afterRowIdx)),
       deleteColumn: (fileName, tableIdx, colName) =>

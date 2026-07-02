@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaAnglesDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaTrash } from 'react-icons/fa6'
+import { FaAnglesDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import type { ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
 
@@ -24,6 +24,7 @@ interface Props {
   searchQuery?: string
   showEmptyRows: boolean
   hasNextFragment: boolean
+  canApplyPrevColumnNames: boolean
 }
 
 export function FragmentTable({
@@ -39,7 +40,8 @@ export function FragmentTable({
   callbacks,
   searchQuery,
   showEmptyRows,
-  hasNextFragment
+  hasNextFragment,
+  canApplyPrevColumnNames
 }: Props) {
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colIdx: number } | null>(null)
 
@@ -77,6 +79,15 @@ export function FragmentTable({
         <>
           <h4 id={anchorId}>Table {tableIdx}, p. {fragment.page}</h4>
           <div className="fragment-toolbar">
+            {canApplyPrevColumnNames && (
+              <button
+                className="table-toolbar-btn"
+                title="Apply column names from previous fragment"
+                onClick={() => callbacks.applyPrevFragmentColumnNames(fileName, tableIdxZero, fragmentIdx)}
+              >
+                <FaTableColumns /> Apply column names
+              </button>
+            )}
             <button
               className="table-toolbar-btn danger"
               title="Delete this fragment"
