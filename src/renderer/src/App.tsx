@@ -287,16 +287,24 @@ export function App() {
 
   const togglePin = useCallback((fileName: string) => {
     if (!state) return
-    const next = togglePinned(state.pinnedPapers, fileName)
-    setState((prev) => prev ? { ...prev, pinnedPapers: next } : prev)
-    window.api.setPinnedPapers(state.dirPath, next)
+    const nextPinned = togglePinned(state.pinnedPapers, fileName)
+    const nextArchived = nextPinned.includes(fileName)
+      ? state.archivedPapers.filter((f) => f !== fileName)
+      : state.archivedPapers
+    setState((prev) => prev ? { ...prev, pinnedPapers: nextPinned, archivedPapers: nextArchived } : prev)
+    window.api.setPinnedPapers(state.dirPath, nextPinned)
+    window.api.setArchivedPapers(state.dirPath, nextArchived)
   }, [state])
 
   const toggleArchive = useCallback((fileName: string) => {
     if (!state) return
-    const next = toggleArchived(state.archivedPapers, fileName)
-    setState((prev) => prev ? { ...prev, archivedPapers: next } : prev)
-    window.api.setArchivedPapers(state.dirPath, next)
+    const nextArchived = toggleArchived(state.archivedPapers, fileName)
+    const nextPinned = nextArchived.includes(fileName)
+      ? state.pinnedPapers.filter((f) => f !== fileName)
+      : state.pinnedPapers
+    setState((prev) => prev ? { ...prev, archivedPapers: nextArchived, pinnedPapers: nextPinned } : prev)
+    window.api.setArchivedPapers(state.dirPath, nextArchived)
+    window.api.setPinnedPapers(state.dirPath, nextPinned)
   }, [state])
 
   const updatePaperNote = useCallback((fileName: string, text: string) => {
