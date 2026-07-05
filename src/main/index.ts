@@ -3,6 +3,7 @@ import { join, dirname } from 'path'
 import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync, statSync } from 'fs'
 import Ajv2020 from 'ajv/dist/2020'
 import { readConfig, writeConfig, addRecentDir } from './config'
+import { applyAnnotations } from './configUtils'
 
 let validateTablesFile: ((data: unknown) => { valid: boolean; errors: string[] }) | null = null
 
@@ -311,11 +312,7 @@ ipcMain.handle('import-annotations', async (_event, dirPath: string) => {
   })
   if (result.canceled || result.filePaths.length === 0) return null
   const { pinned, archived, notes } = JSON.parse(readFileSync(result.filePaths[0], 'utf-8'))
-  const config = readConfig()
-  config.pinnedPapers = { ...(config.pinnedPapers ?? {}), [dirPath]: pinned }
-  config.archivedPapers = { ...(config.archivedPapers ?? {}), [dirPath]: archived }
-  config.paperNotes = { ...(config.paperNotes ?? {}), [dirPath]: notes }
-  writeConfig(config)
+  writeConfig(applyAnnotations(readConfig(), dirPath, pinned, archived, notes))
   return { pinned, archived, notes }
 })
 
