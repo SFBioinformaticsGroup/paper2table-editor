@@ -921,6 +921,7 @@ export function App() {
                         showEmptyRows={showEmptyRows}
                         paperNote={state.paperNotes[fileName] ?? ''}
                         onUpdatePaperNote={updatePaperNote}
+                        isReloading={!!loadingPapers[fileName]}
                       />
                     </div>
                   )
@@ -977,6 +978,7 @@ export function App() {
                         showEmptyRows={showEmptyRows}
                         paperNote={state.paperNotes[fileName] ?? ''}
                         onUpdatePaperNote={updatePaperNote}
+                        isReloading={!!loadingPapers[fileName]}
                       />
                     </div>
                   )

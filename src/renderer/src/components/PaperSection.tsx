@@ -26,6 +26,7 @@ interface Props {
   showEmptyRows: boolean
   paperNote: string
   onUpdatePaperNote: (fileName: string, text: string) => void
+  isReloading: boolean
 }
 
 function PaperSources({
@@ -109,7 +110,8 @@ export function PaperSection({
   searchQuery,
   showEmptyRows,
   paperNote,
-  onUpdatePaperNote
+  onUpdatePaperNote,
+  isReloading
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const paperUuids = collectPaperSourceUuids(content)
@@ -153,9 +155,10 @@ export function PaperSection({
         <button
           className="toolbar-btn"
           title="Reload from disk (discards unsaved changes)"
+          disabled={isReloading}
           onClick={() => callbacks.reloadPaper(fileName)}
         >
-          <FaArrowsRotate /> Reload
+          {isReloading ? <span className="spinner" aria-label="Loading" /> : <FaArrowsRotate />} Reload
         </button>
         <NoteButton
           note={paperNote}
