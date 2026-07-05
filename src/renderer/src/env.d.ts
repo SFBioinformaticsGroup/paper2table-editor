@@ -36,5 +36,9 @@ interface Window {
     markDirOpened: (dirPath: string) => Promise<void>
     getPaperNotes: (dirPath: string) => Promise<Record<string, string>>
     setPaperNote: (dirPath: string, fileName: string, text: string) => Promise<void>
+    exportAnnotations: (dirPath: string, pinned: string[], archived: string[], notes: Record<string, string>) => Promise<{ ok: boolean }>
+    importAnnotations: (dirPath: string) => Promise<{ pinned: string[]; archived: string[]; notes: Record<string, string> } | null>
+    onExportAnnotations: (callback: () => void) => (() => void)
+    onImportAnnotations: (callback: () => void) => (() => void)
   }
 }

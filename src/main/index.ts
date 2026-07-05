@@ -26,6 +26,7 @@ function initValidator(): void {
 
 let mainWindow: BrowserWindow | null = null
 let showEmptyRows = false
+let currentDirPath: string | null = null
 
 function buildMenu(win: BrowserWindow): void {
   const config = readConfig()
@@ -36,6 +37,7 @@ function buildMenu(win: BrowserWindow): void {
       ...(config.lastOpenedParent ? { defaultPath: config.lastOpenedParent } : {})
     })
     if (!result.canceled && result.filePaths.length > 0) {
+      currentDirPath = result.filePaths[0]
       addRecentDir(result.filePaths[0])
       buildMenu(win)
       win.webContents.send('directory-selected', result.filePaths[0])
@@ -48,6 +50,7 @@ function buildMenu(win: BrowserWindow): void {
           ...config.recentDirs.map((dirPath): Electron.MenuItemConstructorOptions => ({
             label: dirPath,
             click: () => {
+              currentDirPath = dirPath
               addRecentDir(dirPath)
               buildMenu(win)
               win.webContents.send('directory-selected', dirPath)
@@ -90,7 +93,10 @@ function buildMenu(win: BrowserWindow): void {
         { role: 'paste' },
         { role: 'selectAll' },
         { type: 'separator' },
-        { label: 'Edit Name…', click: () => win.webContents.send('edit-user-name') }
+        { label: 'Edit Name…', click: () => win.webContents.send('edit-user-name') },
+        { type: 'separator' },
+        { label: 'Export Annotations…', enabled: currentDirPath !== null, click: () => win.webContents.send('export-annotations') },
+        { label: 'Import Annotations…', enabled: currentDirPath !== null, click: () => win.webContents.send('import-annotations') }
       ]
     },
     {
@@ -190,6 +196,7 @@ ipcMain.handle('open-directory', async () => {
   })
   if (result.canceled || result.filePaths.length === 0) return null
   const dirPath = result.filePaths[0]
+  currentDirPath = dirPath
   addRecentDir(dirPath)
   buildMenu(mainWindow)
   return dirPath
@@ -285,11 +292,39 @@ ipcMain.handle('set-paper-note', (_event, dirPath: string, fileName: string, tex
   writeConfig(config)
 })
 
+ipcMain.handle('export-annotations', async (_event, dirPath: string, pinned: string[], archived: string[], notes: Record<string, string>) => {
+  const win = BrowserWindow.getFocusedWindow()
+  const result = await dialog.showSaveDialog(win!, {
+    defaultPath: join(dirPath, 'annotations.json'),
+    filters: [{ name: 'JSON', extensions: ['json'] }]
+  })
+  if (result.canceled || !result.filePath) return { ok: false }
+  writeFileSync(result.filePath, JSON.stringify({ pinned, archived, notes }, null, 2), 'utf-8')
+  return { ok: true }
+})
+
+ipcMain.handle('import-annotations', async (_event, dirPath: string) => {
+  const win = BrowserWindow.getFocusedWindow()
+  const result = await dialog.showOpenDialog(win!, {
+    properties: ['openFile'],
+    filters: [{ name: 'JSON', extensions: ['json'] }]
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  const { pinned, archived, notes } = JSON.parse(readFileSync(result.filePaths[0], 'utf-8'))
+  const config = readConfig()
+  config.pinnedPapers = { ...(config.pinnedPapers ?? {}), [dirPath]: pinned }
+  config.archivedPapers = { ...(config.archivedPapers ?? {}), [dirPath]: archived }
+  config.paperNotes = { ...(config.paperNotes ?? {}), [dirPath]: notes }
+  writeConfig(config)
+  return { pinned, archived, notes }
+})
+
 ipcMain.handle('get-recent-dirs', () => {
   return readConfig().recentDirs.slice(0, 3)
 })
 
 ipcMain.handle('mark-dir-opened', (_event, dirPath: string) => {
+  currentDirPath = dirPath
   addRecentDir(dirPath)
   if (mainWindow) buildMenu(mainWindow)
 })

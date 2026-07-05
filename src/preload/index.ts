@@ -91,5 +91,19 @@ contextBridge.exposeInMainWorld('api', {
   getPaperNotes: (dirPath: string): Promise<Record<string, string>> =>
     ipcRenderer.invoke('get-paper-notes', dirPath),
   setPaperNote: (dirPath: string, fileName: string, text: string): Promise<void> =>
-    ipcRenderer.invoke('set-paper-note', dirPath, fileName, text)
+    ipcRenderer.invoke('set-paper-note', dirPath, fileName, text),
+  exportAnnotations: (dirPath: string, pinned: string[], archived: string[], notes: Record<string, string>): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('export-annotations', dirPath, pinned, archived, notes),
+  importAnnotations: (dirPath: string): Promise<{ pinned: string[]; archived: string[]; notes: Record<string, string> } | null> =>
+    ipcRenderer.invoke('import-annotations', dirPath),
+  onExportAnnotations: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('export-annotations', handler)
+    return () => ipcRenderer.removeListener('export-annotations', handler)
+  },
+  onImportAnnotations: (callback: () => void): (() => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('import-annotations', handler)
+    return () => ipcRenderer.removeListener('import-annotations', handler)
+  }
 })

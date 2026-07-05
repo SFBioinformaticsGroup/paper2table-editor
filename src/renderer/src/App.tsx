@@ -175,6 +175,8 @@ export function App() {
   const activeSectionKeyRef = useRef<string>('')
   const initiateSaveRef = useRef<(fileName: string, isAs: boolean) => void>(() => { })
   const reloadPaperRef = useRef<(fileName: string) => void>(() => { })
+  const exportAnnotationsRef = useRef<() => void>(() => { })
+  const importAnnotationsRef = useRef<() => void>(() => { })
 
   const getPaperContent = useCallback(
     (fileName: string, st: DirectoryState): TablesFile | null => {
@@ -353,6 +355,21 @@ export function App() {
   }
 
   reloadPaperRef.current = reloadPaper
+
+  async function exportAnnotations() {
+    if (!state) return
+    await window.api.exportAnnotations(state.dirPath, state.pinnedPapers, state.archivedPapers, state.paperNotes)
+  }
+
+  async function importAnnotations() {
+    if (!state) return
+    const result = await window.api.importAnnotations(state.dirPath)
+    if (!result) return
+    setState((prev) => prev ? { ...prev, pinnedPapers: result.pinned, archivedPapers: result.archived, paperNotes: result.notes } : prev)
+  }
+
+  exportAnnotationsRef.current = exportAnnotations
+  importAnnotationsRef.current = importAnnotations
 
   async function onNameConfirm(name: string) {
     const trimmed = name.trim()
@@ -656,25 +673,25 @@ export function App() {
   }, [state?.dirPath, histories])
 
   useEffect(() => {
-    const u1 = window.api.onSaveCurrentPaper(() => {
+    const offSave = window.api.onSaveCurrentPaper(() => {
       const name = focusedPaperRef.current
       if (name) initiateSaveRef.current(name, false)
     })
-    const u2 = window.api.onSaveCurrentPaperAs(() => {
+    const offSaveAs = window.api.onSaveCurrentPaperAs(() => {
       const name = focusedPaperRef.current
       if (name) initiateSaveRef.current(name, true)
     })
-    const u3 = window.api.onUndoPaper(() => {
+    const offUndo = window.api.onUndoPaper(() => {
       const name = focusedPaperRef.current
       if (name) dispatchHistory({ type: 'UNDO', fileName: name })
     })
-    const u4 = window.api.onRedoPaper(() => {
+    const offRedo = window.api.onRedoPaper(() => {
       const name = focusedPaperRef.current
       if (name) dispatchHistory({ type: 'REDO', fileName: name })
     })
-    const u5 = window.api.onNavigateBack(navigateBackFn)
-    const u6 = window.api.onNavigateForward(navigateForwardFn)
-    return () => { u1(); u2(); u3(); u4(); u5(); u6() }
+    const offBack = window.api.onNavigateBack(navigateBackFn)
+    const offForward = window.api.onNavigateForward(navigateForwardFn)
+    return () => { offSave(); offSaveAs(); offUndo(); offRedo(); offBack(); offForward() }
   }, [navigateBackFn, navigateForwardFn])
 
   useEffect(() => {
@@ -692,6 +709,12 @@ export function App() {
       setNameModalIsPresave(false)
       setShowNameModal(true)
     })
+  }, [])
+
+  useEffect(() => {
+    const offExport = window.api.onExportAnnotations(() => exportAnnotationsRef.current())
+    const offImport = window.api.onImportAnnotations(() => importAnnotationsRef.current())
+    return () => { offExport(); offImport() }
   }, [])
 
   useEffect(() => {
