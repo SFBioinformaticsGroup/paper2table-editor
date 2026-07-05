@@ -28,10 +28,10 @@ export function NoteButton({ note, onSave }: Props) {
     <>
       <button
         className={`toolbar-btn${note ? ' note-btn--active' : ''}`}
-        title={note ? 'Edit note' : 'Add note'}
+        title="Notes"
         onClick={handleOpen}
       >
-        <FaNoteSticky />
+        <FaNoteSticky /> Notes
       </button>
       {open && (
         <div className="modal-overlay" onClick={handleCancel}>
