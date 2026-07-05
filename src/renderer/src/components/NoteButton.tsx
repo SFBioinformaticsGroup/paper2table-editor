@@ -46,6 +46,9 @@ export function NoteButton({ note, onSave }: Props) {
             />
             <div className="modal-actions">
               <button className="toolbar-btn" onClick={handleCancel}>Cancel</button>
+              {note && (
+                <button className="toolbar-btn" onClick={() => { onSave(''); setOpen(false) }}>Clear</button>
+              )}
               <button className="toolbar-btn" onClick={handleSave}>Save</button>
             </div>
           </div>
