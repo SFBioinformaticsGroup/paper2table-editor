@@ -86,8 +86,8 @@ function buildMenu(win: BrowserWindow): void {
     {
       label: 'Edit',
       submenu: [
-        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', click: () => win.webContents.send('undo-paper') },
-        { label: 'Redo', accelerator: 'CmdOrCtrl+Shift+Z', click: () => win.webContents.send('redo-paper') },
+        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', registerAccelerator: false, click: () => win.webContents.send('undo-paper') },
+        { label: 'Redo', accelerator: 'CmdOrCtrl+Shift+Z', registerAccelerator: false, click: () => win.webContents.send('redo-paper') },
         { type: 'separator' },
         { role: 'cut' },
         { role: 'copy' },

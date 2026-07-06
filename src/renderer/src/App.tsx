@@ -673,6 +673,19 @@ export function App() {
   }, [state?.dirPath, histories])
 
   useEffect(() => {
+    const handleUndoRedoKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'z' || !(e.ctrlKey || e.metaKey)) return
+      if (document.activeElement === searchBarInputRef.current) return
+      e.preventDefault()
+      const name = focusedPaperRef.current
+      if (!name) return
+      dispatchHistory({ type: e.shiftKey ? 'REDO' : 'UNDO', fileName: name })
+    }
+    window.addEventListener('keydown', handleUndoRedoKey)
+    return () => window.removeEventListener('keydown', handleUndoRedoKey)
+  }, [])
+
+  useEffect(() => {
     const offSave = window.api.onSaveCurrentPaper(() => {
       const name = focusedPaperRef.current
       if (name) initiateSaveRef.current(name, false)
