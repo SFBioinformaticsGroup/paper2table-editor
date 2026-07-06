@@ -11,8 +11,12 @@ export interface EditorCallbacks {
   transposeTable: (fileName: string, tableIdx: number) => void
   deleteTable: (fileName: string, tableIdx: number) => void
   deleteFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
-  compactFragments: (fileName: string, tableIdx: number) => void
-  mergeWithNextTable: (fileName: string, tableIdx: number) => void
+  mergeAllTableRows: (fileName: string, tableIdx: number) => void
+  mergeTableFragmentsWithNextTableFragments: (fileName: string, tableIdx: number) => void
+  mergeTableFragmentsWithPreviousTableFragments: (fileName: string, tableIdx: number) => void
+  mergeFragmentRowsWithNextFragmentRows: (fileName: string, tableIdx: number, fragmentIdx: number) => void
+  mergeFragmentRowsWithPreviousFragmentRows: (fileName: string, tableIdx: number, fragmentIdx: number) => void
+  mergeAllFragments: (fileName: string) => void
 
   deleteRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
   promoteRowToHeader: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void

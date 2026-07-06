@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaAnglesDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaTableColumns, FaTrash } from 'react-icons/fa6'
+import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import type { ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
 
@@ -86,6 +86,24 @@ export function FragmentTable({
                 onClick={() => callbacks.applyPrevFragmentColumnNames(fileName, tableIdxZero, fragmentIdx)}
               >
                 <FaTableColumns /> Apply column names
+              </button>
+            )}
+            {fragmentIdx > 0 && (
+              <button
+                className="table-toolbar-btn"
+                title="Merge all rows of this fragment with the previous fragment's rows"
+                onClick={() => callbacks.mergeFragmentRowsWithPreviousFragmentRows(fileName, tableIdxZero, fragmentIdx)}
+              >
+                <FaArrowUp /> Merge with previous Fragment
+              </button>
+            )}
+            {hasNextFragment && (
+              <button
+                className="table-toolbar-btn"
+                title="Merge all rows of this fragment with the next fragment's rows"
+                onClick={() => callbacks.mergeFragmentRowsWithNextFragmentRows(fileName, tableIdxZero, fragmentIdx)}
+              >
+                <FaArrowDown /> Merge with next Fragment
               </button>
             )}
             <button

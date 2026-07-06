@@ -25,7 +25,12 @@ import { addColumn } from './actions/addColumn'
 import { applyPrevFragmentColumnNames } from './actions/applyPrevFragmentColumnNames'
 import { addRow } from './actions/addRow'
 import { appendCuration } from './actions/appendCuration'
-import { compactFragments } from './actions/compactFragments'
+import { mergeAllTableRows } from './actions/mergeAllTableRows'
+import { mergeAllFragments } from './actions/mergeAllFragments'
+import { mergeFragmentRowsWithNextFragmentRows } from './actions/mergeFragmentRowsWithNextFragmentRows'
+import { mergeFragmentRowsWithPreviousFragmentRows } from './actions/mergeFragmentRowsWithPreviousFragmentRows'
+import { mergeTableFragmentsWithNextTableFragments } from './actions/mergeTableFragmentsWithNextTableFragments'
+import { mergeTableFragmentsWithPreviousTableFragments } from './actions/mergeTableFragmentsWithPreviousTableFragments'
 import { deleteColumn } from './actions/deleteColumn'
 import { deleteFragment } from './actions/deleteFragment'
 import { deleteRow } from './actions/deleteRow'
@@ -36,7 +41,6 @@ import { mergeLastRowWithNextFragment } from './actions/mergeLastRowWithNextFrag
 import { mergeRows } from './actions/mergeRows'
 import { moveFirstRowToPrevFragment } from './actions/moveFirstRowToPrevFragment'
 import { moveLastRowToNextFragment } from './actions/moveLastRowToNextFragment'
-import { mergeWithNextTable } from './actions/mergeWithNextTable'
 import { promoteRowToHeader } from './actions/promoteRowToHeader'
 import { renameColumn } from './actions/renameColumn'
 import { replicateCell } from './actions/replicateCell'
@@ -551,10 +555,18 @@ export function App() {
         applyEdit(fileName, (f) => deleteTable(f, tableIdx)),
       deleteFragment: (fileName, tableIdx, fragmentIdx) =>
         applyEdit(fileName, (f) => deleteFragment(f, tableIdx, fragmentIdx)),
-      compactFragments: (fileName, tableIdx) =>
-        applyEdit(fileName, (f) => compactFragments(f, tableIdx)),
-      mergeWithNextTable: (fileName, tableIdx) =>
-        applyEdit(fileName, (f) => mergeWithNextTable(f, tableIdx)),
+      mergeAllTableRows: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => mergeAllTableRows(f, tableIdx)),
+      mergeTableFragmentsWithNextTableFragments: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => mergeTableFragmentsWithNextTableFragments(f, tableIdx)),
+      mergeTableFragmentsWithPreviousTableFragments: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => mergeTableFragmentsWithPreviousTableFragments(f, tableIdx)),
+      mergeFragmentRowsWithNextFragmentRows: (fileName, tableIdx, fragmentIdx) =>
+        applyEdit(fileName, (f) => mergeFragmentRowsWithNextFragmentRows(f, tableIdx, fragmentIdx)),
+      mergeFragmentRowsWithPreviousFragmentRows: (fileName, tableIdx, fragmentIdx) =>
+        applyEdit(fileName, (f) => mergeFragmentRowsWithPreviousFragmentRows(f, tableIdx, fragmentIdx)),
+      mergeAllFragments: (fileName) =>
+        applyEdit(fileName, (f) => mergeAllFragments(f)),
       deleteRow: (fileName, tableIdx, fragmentIdx, rowIdx) =>
         applyEdit(fileName, (f) => deleteRow(f, tableIdx, fragmentIdx, rowIdx)),
       promoteRowToHeader: (fileName, tableIdx, fragmentIdx, rowIdx) =>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaArrowsRotate, FaFloppyDisk, FaFolderOpen, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
+import { FaArrowsRotate, FaFloppyDisk, FaFolderOpen, FaObjectGroup, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
 import type { TablesFile, Source } from '../types'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
@@ -164,6 +164,15 @@ export function PaperSection({
           note={paperNote}
           onSave={(text) => onUpdatePaperNote(fileName, text)}
         />
+        {content.tables.length > 1 && (
+          <button
+            className="toolbar-btn"
+            title="Merge all tables' fragments into a single table"
+            onClick={() => callbacks.mergeAllFragments(fileName)}
+          >
+            <FaObjectGroup /> Merge All Tables
+          </button>
+        )}
         {confirmDelete ? (
           <span className="delete-confirm">
             Delete file?{' '}
@@ -221,6 +230,7 @@ export function PaperSection({
               fileName={fileName}
               tableIdx={tableIdx}
               hasFragments={hasFragments}
+              isFirstTable={tableIdx === 0}
               isLastTable={isLastTable}
               callbacks={callbacks}
             />

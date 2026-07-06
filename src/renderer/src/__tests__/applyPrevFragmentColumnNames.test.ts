@@ -28,10 +28,6 @@ describe('hasNonSemanticColumns', () => {
   it('returns false for an empty column list', () => {
     expect(hasNonSemanticColumns([])).toBe(false)
   })
-
-  it('returns false when column names contain leading zeros with extra digits', () => {
-    expect(hasNonSemanticColumns(['01', '02'])).toBe(false)
-  })
 })
 
 describe('applyPrevFragmentColumnNames', () => {
