@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaTableColumns, FaTrash } from 'react-icons/fa6'
+import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
+import { PageModal } from './PageModal'
 import type { ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
 
@@ -44,6 +45,7 @@ export function FragmentTable({
   canApplyPrevColumnNames
 }: Props) {
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colIdx: number } | null>(null)
+  const [pendingBreakRowIdx, setPendingBreakRowIdx] = useState<number | null>(null)
 
   const allRows = fragment.rows
 
@@ -238,6 +240,14 @@ export function FragmentTable({
                       >
                         <FaPlus />
                       </button>
+                      {originalIdx > 0 && (
+                        <button
+                          title="Break fragment here — rows from this row onward go to a new fragment"
+                          onClick={() => setPendingBreakRowIdx(originalIdx)}
+                        >
+                          <FaScissors />
+                        </button>
+                      )}
                     </td>
                     {columns.map((col) => {
                       const span = cellRowspans[col] ?? 1
@@ -313,6 +323,16 @@ export function FragmentTable({
           </tbody>
         </table>
       </div>
+      {pendingBreakRowIdx !== null && (
+        <PageModal
+          minPage={fragment.page}
+          onConfirm={(newPage) => {
+            callbacks.breakFragment(fileName, tableIdxZero, fragmentIdx, pendingBreakRowIdx, newPage)
+            setPendingBreakRowIdx(null)
+          }}
+          onCancel={() => setPendingBreakRowIdx(null)}
+        />
+      )}
     </div>
   )
 }
