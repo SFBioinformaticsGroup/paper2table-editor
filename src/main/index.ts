@@ -1,3 +1,5 @@
+declare const __GIT_SHA__: string
+
 import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import { join, dirname } from 'path'
 import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync, statSync } from 'fs'
@@ -166,6 +168,20 @@ function buildMenu(win: BrowserWindow): void {
       submenu: [
         { label: 'Back', accelerator: 'CmdOrCtrl+[', click: () => win.webContents.send('navigate-back') },
         { label: 'Forward', accelerator: 'CmdOrCtrl+]', click: () => win.webContents.send('navigate-forward') }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About Tables Editor',
+          click: () => dialog.showMessageBox(win, {
+            type: 'info',
+            title: 'About Tables Editor',
+            message: 'Tables Editor',
+            detail: `Version: ${app.getVersion()}\nBuild: ${__GIT_SHA__}`
+          })
+        }
       ]
     }
   ]
