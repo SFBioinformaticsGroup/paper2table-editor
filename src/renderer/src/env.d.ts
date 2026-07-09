@@ -37,9 +37,9 @@ interface Window {
     getPaperNotes: (dirPath: string) => Promise<Record<string, string>>
     setPaperNote: (dirPath: string, fileName: string, text: string) => Promise<void>
     exportAnnotations: (dirPath: string, pinned: string[], archived: string[], notes: Record<string, string>) => Promise<{ ok: boolean }>
-    importAnnotations: (dirPath: string) => Promise<{ pinned: string[]; archived: string[]; notes: Record<string, string> } | null>
+    importAnnotations: (dirPath: string) => Promise<import('../../main/annotations').ResultsetAnnotations | null>
     onExportAnnotations: (callback: () => void) => (() => void)
     onImportAnnotations: (callback: () => void) => (() => void)
-    importAnnotationsFromSyncFile: (dirPath: string) => Promise<{ pinned: string[]; archived: string[]; notes: Record<string, string> } | null>
+    importAnnotationsFromSyncFile: (dirPath: string) => Promise<import('../../main/annotations').ResultsetAnnotations | null>
   }
 }

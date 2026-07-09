@@ -3,7 +3,8 @@ import { join, dirname } from 'path'
 import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync, statSync } from 'fs'
 import Ajv2020 from 'ajv/dist/2020'
 import { readConfig, writeConfig, addRecentDir } from './config'
-import { applyAnnotations } from './configUtils'
+import { applyAnnotations, getAnnotations } from './annotations'
+import type { ResultsetAnnotations } from './annotations'
 
 let validateTablesFile: ((data: unknown) => { valid: boolean; errors: string[] }) | null = null
 
@@ -32,11 +33,8 @@ let currentDirPath: string | null = null
 function exportAnnotationsToSyncFiles(): void {
   const config = readConfig()
   for (const [dirPath, syncFilePath] of Object.entries(config.autoSyncPaths ?? {})) {
-    const pinned = config.pinnedPapers?.[dirPath] ?? []
-    const archived = config.archivedPapers?.[dirPath] ?? []
-    const notes = config.paperNotes?.[dirPath] ?? {}
     try {
-      writeFileSync(syncFilePath, JSON.stringify({ pinned, archived, notes }, null, 2), 'utf-8')
+      writeFileSync(syncFilePath, JSON.stringify(getAnnotations(config, dirPath), null, 2), 'utf-8')
     } catch { /* ignore */ }
   }
 }
@@ -354,9 +352,9 @@ ipcMain.handle('import-annotations', async (_event, dirPath: string) => {
     filters: [{ name: 'JSON', extensions: ['json'] }]
   })
   if (result.canceled || result.filePaths.length === 0) return null
-  const { pinned, archived, notes } = JSON.parse(readFileSync(result.filePaths[0], 'utf-8'))
-  writeConfig(applyAnnotations(readConfig(), dirPath, pinned, archived, notes))
-  return { pinned, archived, notes }
+  const annotations: ResultsetAnnotations = JSON.parse(readFileSync(result.filePaths[0], 'utf-8'))
+  writeConfig(applyAnnotations(readConfig(), dirPath, annotations))
+  return annotations
 })
 
 ipcMain.handle('import-annotations-from-sync-file', (_event, dirPath: string) => {
@@ -364,9 +362,9 @@ ipcMain.handle('import-annotations-from-sync-file', (_event, dirPath: string) =>
   const syncFilePath = config.autoSyncPaths?.[dirPath]
   if (!syncFilePath || !existsSync(syncFilePath)) return null
   try {
-    const { pinned, archived, notes } = JSON.parse(readFileSync(syncFilePath, 'utf-8'))
-    writeConfig(applyAnnotations(config, dirPath, pinned, archived, notes))
-    return { pinned, archived, notes }
+    const annotations: ResultsetAnnotations = JSON.parse(readFileSync(syncFilePath, 'utf-8'))
+    writeConfig(applyAnnotations(config, dirPath, annotations))
+    return annotations
   } catch {
     return null
   }
