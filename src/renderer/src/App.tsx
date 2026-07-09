@@ -47,6 +47,7 @@ import { renameColumn } from './actions/renameColumn'
 import { replicateCell } from './actions/replicateCell'
 import { reverseText } from './actions/reverseText'
 import { transposeTable } from './actions/transposeTable'
+import { withFilenameInMetadata } from './actions/withFilenameInMetadata'
 import { togglePinned, toggleArchived, sortByPinnedAndArchived } from './utils/pinned'
 import { buildPaperAnchorIds, findTableAnchorId } from './utils/table'
 
@@ -402,22 +403,26 @@ export function App() {
       description: description.trim()
     }
     const updated = appendCuration(entry.present, curation)
-    dispatchHistory({ type: 'APPLY', fileName, newState: updated })
 
-    const contentStr = JSON.stringify(updated, null, 2)
     if (isAs) {
-      const result = await window.api.savePaperAs(state.dirPath, fileName, contentStr)
+      dispatchHistory({ type: 'APPLY', fileName, newState: updated })
+      const result = await window.api.savePaperAs(state.dirPath, fileName, JSON.stringify(updated, null, 2))
       if (result.ok && result.filePath) {
         const newName = result.filePath.split('/').pop()!
+        const newDirPath = result.filePath.slice(0, result.filePath.lastIndexOf('/'))
+        const updatedWithFilename = withFilenameInMetadata(updated, newName)
+        await window.api.savePaper(newDirPath, newName, JSON.stringify(updatedWithFilename, null, 2))
         setState((prev) =>
           prev && !prev.fileNames.includes(newName)
             ? { ...prev, fileNames: [...prev.fileNames, newName] }
             : prev
         )
-        dispatchHistory({ type: 'RESET', fileName: newName, fresh: updated })
+        dispatchHistory({ type: 'RESET', fileName: newName, fresh: updatedWithFilename })
       }
     } else {
-      await window.api.savePaper(state.dirPath, fileName, contentStr)
+      const updatedWithFilename = withFilenameInMetadata(updated, fileName)
+      dispatchHistory({ type: 'APPLY', fileName, newState: updatedWithFilename })
+      await window.api.savePaper(state.dirPath, fileName, JSON.stringify(updatedWithFilename, null, 2))
       dispatchHistory({ type: 'MARK_SAVED', fileName })
     }
 
