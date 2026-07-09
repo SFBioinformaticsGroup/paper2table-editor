@@ -5,6 +5,7 @@ export interface AppConfig {
   pinnedPapers?: Record<string, string[]>
   archivedPapers?: Record<string, string[]>
   paperNotes?: Record<string, Record<string, string>>
+  autoSyncPaths?: Record<string, string>
 }
 
 export function applyAnnotations(

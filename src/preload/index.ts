@@ -105,5 +105,7 @@ contextBridge.exposeInMainWorld('api', {
     const handler = () => callback()
     ipcRenderer.on('import-annotations', handler)
     return () => ipcRenderer.removeListener('import-annotations', handler)
-  }
+  },
+  importAnnotationsFromSyncFile: (dirPath: string): Promise<{ pinned: string[]; archived: string[]; notes: Record<string, string> } | null> =>
+    ipcRenderer.invoke('import-annotations-from-sync-file', dirPath)
 })

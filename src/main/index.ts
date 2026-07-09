@@ -29,6 +29,18 @@ let mainWindow: BrowserWindow | null = null
 let showEmptyRows = false
 let currentDirPath: string | null = null
 
+function exportAnnotationsToSyncFiles(): void {
+  const config = readConfig()
+  for (const [dirPath, syncFilePath] of Object.entries(config.autoSyncPaths ?? {})) {
+    const pinned = config.pinnedPapers?.[dirPath] ?? []
+    const archived = config.archivedPapers?.[dirPath] ?? []
+    const notes = config.paperNotes?.[dirPath] ?? {}
+    try {
+      writeFileSync(syncFilePath, JSON.stringify({ pinned, archived, notes }, null, 2), 'utf-8')
+    } catch { /* ignore */ }
+  }
+}
+
 function buildMenu(win: BrowserWindow): void {
   const config = readConfig()
 
@@ -97,7 +109,35 @@ function buildMenu(win: BrowserWindow): void {
         { label: 'Edit Name…', click: () => win.webContents.send('edit-user-name') },
         { type: 'separator' },
         { label: 'Export Annotations…', enabled: currentDirPath !== null, click: () => win.webContents.send('export-annotations') },
-        { label: 'Import Annotations…', enabled: currentDirPath !== null, click: () => win.webContents.send('import-annotations') }
+        { label: 'Import Annotations…', enabled: currentDirPath !== null, click: () => win.webContents.send('import-annotations') },
+        { type: 'separator' },
+        {
+          type: 'checkbox',
+          label: 'Auto Sync Annotations',
+          enabled: currentDirPath !== null,
+          checked: !!(currentDirPath && readConfig().autoSyncPaths?.[currentDirPath]),
+          click: async () => {
+            if (!currentDirPath) return
+            const c = readConfig()
+            if (c.autoSyncPaths?.[currentDirPath]) {
+              delete c.autoSyncPaths[currentDirPath]
+              writeConfig(c)
+              buildMenu(win)
+            } else {
+              const result = await dialog.showSaveDialog(win, {
+                defaultPath: join(currentDirPath, 'annotations.json'),
+                filters: [{ name: 'JSON', extensions: ['json'] }]
+              })
+              if (!result.canceled && result.filePath) {
+                const c2 = readConfig()
+                c2.autoSyncPaths = { ...(c2.autoSyncPaths ?? {}), [currentDirPath]: result.filePath }
+                writeConfig(c2)
+                exportAnnotationsToSyncFiles()
+                buildMenu(win)
+              }
+            }
+          }
+        }
       ]
     },
     {
@@ -178,7 +218,10 @@ function createWindow(): void {
 app.whenReady().then(() => {
   initValidator()
   createWindow()
+  setInterval(exportAnnotationsToSyncFiles, 5 * 60 * 1000)
 })
+
+app.on('before-quit', exportAnnotationsToSyncFiles)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
@@ -314,6 +357,19 @@ ipcMain.handle('import-annotations', async (_event, dirPath: string) => {
   const { pinned, archived, notes } = JSON.parse(readFileSync(result.filePaths[0], 'utf-8'))
   writeConfig(applyAnnotations(readConfig(), dirPath, pinned, archived, notes))
   return { pinned, archived, notes }
+})
+
+ipcMain.handle('import-annotations-from-sync-file', (_event, dirPath: string) => {
+  const config = readConfig()
+  const syncFilePath = config.autoSyncPaths?.[dirPath]
+  if (!syncFilePath || !existsSync(syncFilePath)) return null
+  try {
+    const { pinned, archived, notes } = JSON.parse(readFileSync(syncFilePath, 'utf-8'))
+    writeConfig(applyAnnotations(config, dirPath, pinned, archived, notes))
+    return { pinned, archived, notes }
+  } catch {
+    return null
+  }
 })
 
 ipcMain.handle('get-recent-dirs', () => {

@@ -233,6 +233,7 @@ export function App() {
         metadata: Metadata
         fileNames: string[]
       }
+      await window.api.importAnnotationsFromSyncFile(dirPath)
       const sourcesInput = (listing.metadata.sources ?? [])
         .filter((s) => s.uuid && s.path)
         .map((s) => ({ uuid: String(s.uuid), path: String(s.path) }))

@@ -40,5 +40,6 @@ interface Window {
     importAnnotations: (dirPath: string) => Promise<{ pinned: string[]; archived: string[]; notes: Record<string, string> } | null>
     onExportAnnotations: (callback: () => void) => (() => void)
     onImportAnnotations: (callback: () => void) => (() => void)
+    importAnnotationsFromSyncFile: (dirPath: string) => Promise<{ pinned: string[]; archived: string[]; notes: Record<string, string> } | null>
   }
 }
