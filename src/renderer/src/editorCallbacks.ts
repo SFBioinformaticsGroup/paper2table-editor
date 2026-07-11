@@ -5,6 +5,7 @@ export interface EditorCallbacks {
   savePaper: (fileName: string) => void
   savePaperAs: (fileName: string) => void
   reloadPaper: (fileName: string) => void
+  rerunTablemerge: (fileName: string) => void
   navigateToSource: (uuid: string, tableNumber?: number) => void
 
   reverseText: (fileName: string, tableIdx: number) => void

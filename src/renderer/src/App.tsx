@@ -181,6 +181,8 @@ export function App() {
   const activeSectionKeyRef = useRef<string>('')
   const initiateSaveRef = useRef<(fileName: string, isAs: boolean) => void>(() => { })
   const reloadPaperRef = useRef<(fileName: string) => void>(() => { })
+  const rerunTablemergeRef = useRef<(fileName: string) => void>(() => { })
+  const [rerunningPapers, setRerunningPapers] = useState<Record<string, boolean>>({})
   const exportAnnotationsRef = useRef<() => void>(() => { })
   const importAnnotationsRef = useRef<() => void>(() => { })
 
@@ -232,6 +234,7 @@ export function App() {
       const listing = (await window.api.listDirectory(dirPath)) as {
         metadata: Metadata
         fileNames: string[]
+        hasTablemergeSettings: boolean
       }
       await window.api.importAnnotationsFromSyncFile(dirPath)
       const sourcesInput = (listing.metadata.sources ?? [])
@@ -257,7 +260,8 @@ export function App() {
         archivedPapers,
         paperNotes,
         papers: {},
-        validationErrors: {}
+        validationErrors: {},
+        hasTablemergeSettings: listing.hasTablemergeSettings
       })
       setActiveSectionKey(hasMetadata ? 'metadata' : listing.fileNames[0] ?? '')
       if (listing.fileNames.length > 0) {
@@ -362,6 +366,30 @@ export function App() {
   }
 
   reloadPaperRef.current = reloadPaper
+
+  async function rerunTablemerge(fileName: string) {
+    if (!state) return
+    const settingsPath = `${state.dirPath}/settings.tablemerge.json`
+    const paperPath = `${state.dirPath}/${fileName}`
+    setRerunningPapers((prev) => ({ ...prev, [fileName]: true }))
+    try {
+      const result = await window.api.runTablemerge(settingsPath, paperPath)
+      if (result.ok) {
+        requestedRef.current.delete(fileName)
+        loadPaper(state.dirPath, fileName)
+      } else {
+        window.alert(`tablemerge failed:\n${result.error ?? 'unknown error'}`)
+      }
+    } finally {
+      setRerunningPapers((prev) => {
+        const next = { ...prev }
+        delete next[fileName]
+        return next
+      })
+    }
+  }
+
+  rerunTablemergeRef.current = rerunTablemerge
 
   async function exportAnnotations() {
     if (!state) return
@@ -553,6 +581,7 @@ export function App() {
       savePaper: (fileName) => initiateSaveRef.current(fileName, false),
       savePaperAs: (fileName) => initiateSaveRef.current(fileName, true),
       reloadPaper: (fileName) => reloadPaperRef.current(fileName),
+      rerunTablemerge: (fileName) => rerunTablemergeRef.current(fileName),
       navigateToSource: navigateToSourceFn,
       reverseText: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => reverseText(f, tableIdx)),
@@ -956,6 +985,8 @@ export function App() {
                         paperNote={state.paperNotes[fileName] ?? ''}
                         onUpdatePaperNote={updatePaperNote}
                         isReloading={!!loadingPapers[fileName]}
+                        hasTablemergeSettings={state.hasTablemergeSettings}
+                        isRerunning={!!rerunningPapers[fileName]}
                       />
                     </div>
                   )
@@ -1013,6 +1044,8 @@ export function App() {
                         paperNote={state.paperNotes[fileName] ?? ''}
                         onUpdatePaperNote={updatePaperNote}
                         isReloading={!!loadingPapers[fileName]}
+                        hasTablemergeSettings={state.hasTablemergeSettings}
+                        isRerunning={!!rerunningPapers[fileName]}
                       />
                     </div>
                   )

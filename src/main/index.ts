@@ -3,6 +3,7 @@ declare const __GIT_SHA__: string
 import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import { join, dirname } from 'path'
 import { readFileSync, readdirSync, writeFileSync, unlinkSync, existsSync, statSync } from 'fs'
+import { spawn } from 'child_process'
 import Ajv2020 from 'ajv/dist/2020'
 import { readConfig, writeConfig, addRecentDir } from './config'
 import { applyAnnotations, getAnnotations } from './annotations'
@@ -281,7 +282,9 @@ ipcMain.handle('list-directory', async (_event, dirPath: string) => {
     // unreadable dir
   }
 
-  return { metadata, fileNames }
+  const hasTablemergeSettings = existsSync(join(dirPath, 'settings.tablemerge.json'))
+
+  return { metadata, fileNames, hasTablemergeSettings }
 })
 
 ipcMain.handle('load-paper', async (_event, dirPath: string, fileName: string) => {
@@ -402,6 +405,26 @@ ipcMain.handle('set-user-name', (_event, name: string) => {
   const c = readConfig()
   c.userName = name
   writeConfig(c)
+})
+
+ipcMain.handle('run-tablemerge', (_event, settingsPath: string, paperPath: string): Promise<{ ok: boolean; error?: string }> => {
+  return new Promise((resolve) => {
+    const child = spawn('tablemerge', ['--settings-path', settingsPath, '--paper', paperPath], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    let stderr = ''
+    child.stderr?.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ ok: true })
+      } else {
+        resolve({ ok: false, error: stderr || `tablemerge exited with code ${code}` })
+      }
+    })
+    child.on('error', (err: Error) => {
+      resolve({ ok: false, error: err.message })
+    })
+  })
 })
 
 ipcMain.handle('resolve-sources', async (

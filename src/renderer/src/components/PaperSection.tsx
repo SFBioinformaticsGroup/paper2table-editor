@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaArrowsRotate, FaFloppyDisk, FaFolderOpen, FaObjectGroup, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
+import { FaArrowsRotate, FaFloppyDisk, FaFolderOpen, FaObjectGroup, FaPlay, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
 import type { TablesFile, Source } from '../types'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
@@ -27,6 +27,8 @@ interface Props {
   paperNote: string
   onUpdatePaperNote: (fileName: string, text: string) => void
   isReloading: boolean
+  hasTablemergeSettings: boolean
+  isRerunning: boolean
 }
 
 function PaperSources({
@@ -111,7 +113,9 @@ export function PaperSection({
   showEmptyRows,
   paperNote,
   onUpdatePaperNote,
-  isReloading
+  isReloading,
+  hasTablemergeSettings,
+  isRerunning
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const paperUuids = collectPaperSourceUuids(content)
@@ -160,6 +164,16 @@ export function PaperSection({
         >
           {isReloading ? <span className="spinner" aria-label="Loading" /> : <FaArrowsRotate />} Reload
         </button>
+        {hasTablemergeSettings && (
+          <button
+            className="toolbar-btn"
+            title="Rerun tablemerge for this paper"
+            disabled={isRerunning}
+            onClick={() => callbacks.rerunTablemerge(fileName)}
+          >
+            {isRerunning ? <span className="spinner" aria-label="Loading" /> : <FaPlay />} Rerun
+          </button>
+        )}
         <NoteButton
           note={paperNote}
           onSave={(text) => onUpdatePaperNote(fileName, text)}

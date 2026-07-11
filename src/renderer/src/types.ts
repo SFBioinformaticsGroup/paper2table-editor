@@ -74,6 +74,7 @@ export interface DirectoryState {
   paperNotes: PaperNotes
   papers: Record<string, TablesFile>
   validationErrors: Record<string, string[]>
+  hasTablemergeSettings: boolean
 }
 
 export type PaperState = TablesFile | null

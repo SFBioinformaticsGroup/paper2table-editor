@@ -108,5 +108,7 @@ contextBridge.exposeInMainWorld('api', {
     return () => ipcRenderer.removeListener('import-annotations', handler)
   },
   importAnnotationsFromSyncFile: (dirPath: string): Promise<ResultsetAnnotations | null> =>
-    ipcRenderer.invoke('import-annotations-from-sync-file', dirPath)
+    ipcRenderer.invoke('import-annotations-from-sync-file', dirPath),
+  runTablemerge: (settingsPath: string, paperPath: string): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('run-tablemerge', settingsPath, paperPath)
 })
