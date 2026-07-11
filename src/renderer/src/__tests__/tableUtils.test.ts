@@ -317,8 +317,8 @@ describe('buildPaperAnchorIds', () => {
     expect(buildPaperAnchorIds('paper-1', tables)).toEqual([
       'paper-1',
       'paper-1-table-1',
-      'paper-1-table-1-page-1',
-      'paper-1-table-1-page-2',
+      'paper-1-table-1-fragment-0-page-1',
+      'paper-1-table-1-fragment-1-page-2',
     ])
   })
 
@@ -336,8 +336,8 @@ describe('buildPaperAnchorIds', () => {
       'paper-0',
       'paper-0-table-1-page-5',
       'paper-0-table-2',
-      'paper-0-table-2-page-10',
-      'paper-0-table-2-page-11',
+      'paper-0-table-2-fragment-0-page-10',
+      'paper-0-table-2-fragment-1-page-11',
     ])
   })
 })

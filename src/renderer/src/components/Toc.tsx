@@ -117,9 +117,9 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, hasS
                         const tableAnchor = hasMultipleFragments
                           ? `${paperId}-table-${tableIdx + 1}`
                           : `${paperId}-table-${tableIdx + 1}-page-${fragments[0]?.page}`
-                        const fragmentItems = fragments.map((fragment) => ({
+                        const fragmentItems = fragments.map((fragment, fragmentIdx) => ({
                           page: fragment.page,
-                          anchorId: `${paperId}-table-${tableIdx + 1}-page-${fragment.page}`
+                          anchorId: `${paperId}-table-${tableIdx + 1}-fragment-${fragmentIdx}-page-${fragment.page}`
                         }))
                         return { tableIdx: tableIdx + 1, tableKey, tableAnchor, fragmentItems }
                       })
@@ -153,7 +153,7 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, hasS
                             const isTableCollapsed = collapsedTables.has(tableKey)
                             const tableIsActive = activeSectionKey === fileName && (
                               activeId === `${paperId}-table-${tableIdx}` ||
-                              activeId.startsWith(`${paperId}-table-${tableIdx}-page`)
+                              activeId.startsWith(`${paperId}-table-${tableIdx}-`)
                             )
 
                             return (

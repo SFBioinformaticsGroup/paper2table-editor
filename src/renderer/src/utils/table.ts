@@ -107,9 +107,10 @@ export function buildPaperAnchorIds(paperId: string, tables: Table[]): string[] 
   tables.forEach((table, tableIdx) => {
     const fragments = getTableFragments(table)
     if (fragments.length > 1) ids.push(`${paperId}-table-${tableIdx + 1}`)
-    for (const fragment of fragments) {
-      ids.push(`${paperId}-table-${tableIdx + 1}-page-${fragment.page}`)
-    }
+    fragments.forEach((fragment, fragmentIdx) => {
+      const fragmentPart = fragments.length > 1 ? `fragment-${fragmentIdx}-` : ''
+      ids.push(`${paperId}-table-${tableIdx + 1}-${fragmentPart}page-${fragment.page}`)
+    })
   })
   return ids
 }

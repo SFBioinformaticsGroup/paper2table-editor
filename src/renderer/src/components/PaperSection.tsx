@@ -287,7 +287,7 @@ export function PaperSection({
 
             {fragments.map((fragment, fragmentIdx) => {
               const anchorId = hasMultipleFragments
-                ? `${paperId}-table-${tableIdx + 1}-page-${fragment.page}`
+                ? `${paperId}-table-${tableIdx + 1}-fragment-${fragmentIdx}-page-${fragment.page}`
                 : undefined
               const canApplyPrevColumnNames = fragmentIdx > 0 && (() => {
                 const prevCols = columnNames(fragments[fragmentIdx - 1].rows)
