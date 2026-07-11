@@ -80,7 +80,7 @@ export function flattenMetadataRows(metadata: Metadata): [string, string][] {
   }
 
   for (const [key, value] of Object.entries(metadata)) {
-    if (key === 'sources') continue
+    if (key === 'sources' || key === 'settings' || key === 'agreement_method') continue
     if (Array.isArray(value)) {
       rows.push([key, value.map((v) => String(v)).join(', ')])
     } else if (value !== null && typeof value === 'object') {

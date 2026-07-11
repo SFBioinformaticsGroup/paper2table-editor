@@ -4,9 +4,10 @@ import { highlightText } from '../highlightUtils'
 
 interface Props {
   metadata: Metadata
+  settings?: Record<string, unknown>
   navigateToSource: (uuid: string) => void
   uuidToFullPath: Map<string, string | null>
-  section: 'metadata' | 'sources'
+  section: 'metadata' | 'sources' | 'settings'
   searchQuery?: string
 }
 
@@ -48,7 +49,7 @@ function SourceCell({
   return <td>{String(source[colKey] ?? '')}</td>
 }
 
-export function MetadataSection({ metadata, navigateToSource, uuidToFullPath, section, searchQuery }: Props) {
+export function MetadataSection({ metadata, settings, navigateToSource, uuidToFullPath, section, searchQuery }: Props) {
   const rows = flattenMetadataRows(metadata)
   const sources = metadata.sources ?? []
   const allKeys = new Set(sources.flatMap((s) => Object.keys(s)))
@@ -57,6 +58,29 @@ export function MetadataSection({ metadata, navigateToSource, uuidToFullPath, se
     ...preferred.filter((k) => allKeys.has(k)),
     ...[...allKeys].filter((k) => !preferred.includes(k)).sort()
   ]
+
+  if (section === 'settings') {
+    const settingsRows = flattenMetadataRows(settings as Metadata ?? {})
+    return (
+      <>
+        <h2 id="settings">Settings</h2>
+        {settingsRows.length > 0 && (
+          <div className="table-wrapper">
+            <table className="table metadata-table">
+              <tbody>
+                {settingsRows.map(([key, value], i) => (
+                  <tr key={i}>
+                    <th>{highlightText(key, searchQuery ?? '')}</th>
+                    <td style={{ whiteSpace: 'pre-line' }}>{highlightText(value, searchQuery ?? '')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </>
+    )
+  }
 
   if (section === 'sources') {
     return (

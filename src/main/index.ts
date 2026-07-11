@@ -282,9 +282,17 @@ ipcMain.handle('list-directory', async (_event, dirPath: string) => {
     // unreadable dir
   }
 
-  const hasTablemergeSettings = existsSync(join(dirPath, 'settings.tablemerge.json'))
+  let tablemergeSettings: Record<string, unknown> | null = null
+  const settingsFilePath = join(dirPath, 'settings.tablemerge.json')
+  if (existsSync(settingsFilePath)) {
+    try {
+      tablemergeSettings = JSON.parse(readFileSync(settingsFilePath, 'utf-8'))
+    } catch {
+      // malformed settings file
+    }
+  }
 
-  return { metadata, fileNames, hasTablemergeSettings }
+  return { metadata, fileNames, tablemergeSettings }
 })
 
 ipcMain.handle('load-paper', async (_event, dirPath: string, fileName: string) => {

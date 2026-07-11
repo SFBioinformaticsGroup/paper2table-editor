@@ -12,6 +12,7 @@ interface Props {
   activeId: string
   hasMetadata: boolean
   hasSources: boolean
+  hasSettings: boolean
   dirtyFileNames: Set<string>
   collapsed: boolean
   activeSectionKey: string
@@ -24,7 +25,7 @@ interface Props {
   onToggleArchive: (fileName: string) => void
 }
 
-export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirtyFileNames, collapsed, activeSectionKey, searchQuery, pinnedPapers, archivedPapers, onToggleCollapse, onNavigateToSection, onTogglePin, onToggleArchive }: Props) {
+export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, hasSettings, dirtyFileNames, collapsed, activeSectionKey, searchQuery, pinnedPapers, archivedPapers, onToggleCollapse, onNavigateToSection, onTogglePin, onToggleArchive }: Props) {
   const [papersExpanded, setPapersExpanded] = useState(true)
   const [collapsedPapers, setCollapsedPapers] = useState(new Set<string>())
   const [collapsedTables, setCollapsedTables] = useState(new Set<string>())
@@ -80,6 +81,17 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, dirt
                 onClick={(e) => { e.preventDefault(); onNavigateToSection('sources') }}
               >
                 Sources
+              </a>
+            </li>
+          )}
+          {hasSettings && (
+            <li>
+              <a
+                href="#"
+                className={activeSectionKey === 'settings' ? 'active' : undefined}
+                onClick={(e) => { e.preventDefault(); onNavigateToSection('settings') }}
+              >
+                Settings
               </a>
             </li>
           )}

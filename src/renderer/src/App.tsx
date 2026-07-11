@@ -139,6 +139,7 @@ function buildUuidToFullPath(resolvedSources: Record<string, ResolvedSource>): M
 function buildSectionAnchorIds(sectionKey: string, fileNames: string[], state: DirectoryState, histories: EditHistories): string[] {
   if (sectionKey === 'metadata') return ['metadata']
   if (sectionKey === 'sources') return ['sources']
+  if (sectionKey === 'settings') return ['settings']
   const paperIdx = fileNames.indexOf(sectionKey)
   if (paperIdx === -1) return []
   const paperId = `paper-${paperIdx}`
@@ -234,7 +235,7 @@ export function App() {
       const listing = (await window.api.listDirectory(dirPath)) as {
         metadata: Metadata
         fileNames: string[]
-        hasTablemergeSettings: boolean
+        tablemergeSettings: Record<string, unknown> | null
       }
       await window.api.importAnnotationsFromSyncFile(dirPath)
       const sourcesInput = (listing.metadata.sources ?? [])
@@ -261,7 +262,7 @@ export function App() {
         paperNotes,
         papers: {},
         validationErrors: {},
-        hasTablemergeSettings: listing.hasTablemergeSettings
+        tablemergeSettings: listing.tablemergeSettings
       })
       setActiveSectionKey(hasMetadata ? 'metadata' : listing.fileNames[0] ?? '')
       if (listing.fileNames.length > 0) {
@@ -866,6 +867,11 @@ export function App() {
   const uuidToFullPath = buildUuidToFullPath(state.resolvedSources)
   const allSources = state.metadata.sources ?? []
   const hasMetadata = Object.keys(state.metadata).length > 0
+  const effectiveSettings: Record<string, unknown> | null =
+    state.tablemergeSettings ??
+    (typeof state.metadata.settings === 'object' && state.metadata.settings !== null
+      ? state.metadata.settings as Record<string, unknown>
+      : null)
 
   const dirtyFileNames = new Set(
     Object.entries(histories)
@@ -903,6 +909,7 @@ export function App() {
         activeId={activeId}
         hasMetadata={hasMetadata}
         hasSources={(state.metadata.sources?.length ?? 0) > 0}
+        hasSettings={effectiveSettings !== null}
         dirtyFileNames={dirtyFileNames}
         collapsed={tocCollapsed}
         activeSectionKey={activeSectionKey}
@@ -955,6 +962,16 @@ export function App() {
                     searchQuery={searchQuery}
                   />
                 )}
+                {effectiveSettings !== null && (
+                  <MetadataSection
+                    metadata={state.metadata}
+                    settings={effectiveSettings}
+                    navigateToSource={callbacks.navigateToSource}
+                    uuidToFullPath={uuidToFullPath}
+                    section="settings"
+                    searchQuery={searchQuery}
+                  />
+                )}
                 {sortedFileNames.map((fileName, fileIdx) => {
                   const history = histories[fileName]
                   const content = history?.present ?? state.papers[fileName]
@@ -985,7 +1002,7 @@ export function App() {
                         paperNote={state.paperNotes[fileName] ?? ''}
                         onUpdatePaperNote={updatePaperNote}
                         isReloading={!!loadingPapers[fileName]}
-                        hasTablemergeSettings={state.hasTablemergeSettings}
+                        hasTablemergeSettings={state.tablemergeSettings !== null}
                         isRerunning={!!rerunningPapers[fileName]}
                       />
                     </div>
@@ -1000,6 +1017,16 @@ export function App() {
                     navigateToSource={callbacks.navigateToSource}
                     uuidToFullPath={uuidToFullPath}
                     section={activeSectionKey}
+                    searchQuery={searchQuery}
+                  />
+                )}
+                {activeSectionKey === 'settings' && effectiveSettings !== null && (
+                  <MetadataSection
+                    metadata={state.metadata}
+                    settings={effectiveSettings}
+                    navigateToSource={callbacks.navigateToSource}
+                    uuidToFullPath={uuidToFullPath}
+                    section="settings"
                     searchQuery={searchQuery}
                   />
                 )}
@@ -1044,7 +1071,7 @@ export function App() {
                         paperNote={state.paperNotes[fileName] ?? ''}
                         onUpdatePaperNote={updatePaperNote}
                         isReloading={!!loadingPapers[fileName]}
-                        hasTablemergeSettings={state.hasTablemergeSettings}
+                        hasTablemergeSettings={state.tablemergeSettings !== null}
                         isRerunning={!!rerunningPapers[fileName]}
                       />
                     </div>
