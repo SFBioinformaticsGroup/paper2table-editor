@@ -337,6 +337,16 @@ main {
   font-size: 0.85em;
 }
 
+.paper-curations {
+  margin: 0.5em 0 1em;
+}
+
+.paper-curations summary {
+  cursor: pointer;
+  color: #555;
+  font-size: 0.85em;
+}
+
 .low {
   background-color: #fdd;
 }

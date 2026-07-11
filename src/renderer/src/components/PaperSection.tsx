@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FaArrowsRotate, FaFloppyDisk, FaFolderOpen, FaObjectGroup, FaPlay, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
-import type { TablesFile, Source } from '../types'
+import type { TablesFile, Source, Curation } from '../types'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
 import { TableToolbar } from './TableToolbar'
@@ -88,6 +88,35 @@ function PaperSources({
             {sources.map((source, i) => (
               <tr key={i}>
                 {sourceKeys.map((k) => renderCell(source, k))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  )
+}
+
+function PaperCurations({ curations }: { curations: Curation[] }) {
+  if (curations.length === 0) return null
+  return (
+    <details className="paper-curations">
+      <summary>Curations ({curations.length})</summary>
+      <div className="table-wrapper">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>curator</th>
+              <th>timestamp</th>
+              <th>description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {curations.map((curation, i) => (
+              <tr key={i}>
+                <td>{curation.curator}</td>
+                <td>{curation.timestamp}</td>
+                <td>{curation.description}</td>
               </tr>
             ))}
           </tbody>
@@ -216,6 +245,13 @@ export function PaperSection({
         sources={paperSources}
         navigateToSource={callbacks.navigateToSource}
         uuidToFullPath={uuidToFullPath}
+      />
+      <PaperCurations
+        curations={
+          Array.isArray(content.metadata?.['curations'])
+            ? (content.metadata!['curations'] as Curation[])
+            : []
+        }
       />
 
       {content.tables.map((table, tableIdx) => {
