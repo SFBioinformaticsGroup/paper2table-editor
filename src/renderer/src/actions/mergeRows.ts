@@ -2,6 +2,19 @@ import { mapTableFragments } from '../utils/mapTableFragments';
 import { renderColumnValue } from '../utils/table';
 import type { TablesFile, Row, ColumnValue } from '../types';
 
+function mergedRowNum(rowNumA: number | undefined, rowNumB: number | undefined): number | null {
+  if (rowNumA != null && rowNumB != null) return Math.min(rowNumA, rowNumB);
+  return (rowNumA ?? rowNumB) ?? null;
+}
+
+function reenumerateRows(rows: Row[], rowNumA: number | undefined, rowNumB: number | undefined): Row[] {
+  if (rowNumA == null || rowNumB == null || rowNumA === rowNumB) return rows;
+  const maxRowNum = Math.max(rowNumA, rowNumB);
+  return rows.map(row => {
+    const rowNum = row['row_'] as number | undefined;
+    return rowNum != null && rowNum >= maxRowNum ? { ...row, row_: rowNum - 1 } : row;
+  });
+}
 
 export function mergeRows(
   file: TablesFile,
@@ -21,6 +34,9 @@ export function mergeRows(
     const rowA = rows[firstIdx];
     const rowB = rows[secondIdx];
 
+    const rowNumA = rowA['row_'] as number | undefined;
+    const rowNumB = rowB['row_'] as number | undefined;
+
     const allKeys = [...new Set([...Object.keys(rowA), ...Object.keys(rowB)])];
     const mergedRow: Row = {};
 
@@ -38,6 +54,10 @@ export function mergeRows(
         mergedRow.sources_ = merged.length > 0 ? merged : null;
         continue;
       }
+      if (key === 'row_') {
+        mergedRow['row_'] = mergedRowNum(rowNumA, rowNumB);
+        continue;
+      }
       const valA = rowA[key] as ColumnValue;
       const valB = rowB[key] as ColumnValue;
       const strA = renderColumnValue(valA);
@@ -47,9 +67,7 @@ export function mergeRows(
         : ([strA, strB].filter(Boolean).join(' ') || null);
     }
 
-    return {
-      ...fragment,
-      rows: [...rows.slice(0, firstIdx), mergedRow, ...rows.slice(secondIdx + 1)]
-    };
+    const rawRows = [...rows.slice(0, firstIdx), mergedRow, ...rows.slice(secondIdx + 1)];
+    return { ...fragment, rows: reenumerateRows(rawRows, rowNumA, rowNumB) };
   });
 }
