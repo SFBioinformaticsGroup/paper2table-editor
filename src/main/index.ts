@@ -61,26 +61,26 @@ function buildMenu(win: BrowserWindow): void {
   const recentItems: Electron.MenuItemConstructorOptions[] =
     config.recentDirs.length > 0
       ? [
-          ...config.recentDirs.map((dirPath): Electron.MenuItemConstructorOptions => ({
-            label: dirPath,
-            click: () => {
-              currentDirPath = dirPath
-              addRecentDir(dirPath)
-              buildMenu(win)
-              win.webContents.send('directory-selected', dirPath)
-            }
-          })),
-          { type: 'separator' },
-          {
-            label: 'Clear Recents',
-            click: () => {
-              const c = readConfig()
-              c.recentDirs = []
-              writeConfig(c)
-              buildMenu(win)
-            }
+        ...config.recentDirs.map((dirPath): Electron.MenuItemConstructorOptions => ({
+          label: dirPath,
+          click: () => {
+            currentDirPath = dirPath
+            addRecentDir(dirPath)
+            buildMenu(win)
+            win.webContents.send('directory-selected', dirPath)
           }
-        ]
+        })),
+        { type: 'separator' },
+        {
+          label: 'Clear Recents',
+          click: () => {
+            const c = readConfig()
+            c.recentDirs = []
+            writeConfig(c)
+            buildMenu(win)
+          }
+        }
+      ]
       : [{ label: 'No Recent Items', enabled: false }]
 
   const template: Electron.MenuItemConstructorOptions[] = [
