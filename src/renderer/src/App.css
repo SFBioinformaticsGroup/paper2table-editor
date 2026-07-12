@@ -845,19 +845,19 @@ th:hover .col-header-actions {
 }
 
 .editable-cell.editing {
-  padding: 2px !important;
+  padding: 0 !important;
 }
 
 .cell-edit-textarea {
   font: inherit;
-  width: 100%;
+  position: absolute;
+  inset: 0;
   box-sizing: border-box;
-  resize: both;
+  resize: none;
   border: 1px solid #99c;
   border-radius: 2px;
   padding: 2px 4px;
   min-height: 2em;
-  display: block;
 }
 
 /* ── Sources: UUID chips ────────────────────────────────────────────────── */

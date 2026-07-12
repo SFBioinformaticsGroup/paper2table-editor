@@ -100,14 +100,13 @@ export function EditableCell({
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          rows={Math.max(1, draft.split('\n').length)}
         />
       </td>
     )
   }
 
   return (
-    <td className={['editable-cell', canReplicate && 'has-replicate', className].filter(Boolean).join(' ')} rowSpan={rowSpan}>
+    <td className={['editable-cell', canReplicate && 'has-replicate', className].filter(Boolean).join(' ')} rowSpan={rowSpan} onDoubleClick={onStartEdit}>
       {searchQuery ? highlightText(displayValue, searchQuery) : displayValue}
       {canReplicate && (
         <button className="cell-replicate-btn" title="Replicate down" onClick={onReplicate}>
