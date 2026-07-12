@@ -370,11 +370,15 @@ export function App() {
 
   async function rerunTablemerge(fileName: string) {
     if (!state) return
-    const settingsPath = `${state.dirPath}/settings.tablemerge.json`
-    const paperPath = `${state.dirPath}/${fileName}`
+    const paperName = fileName.replace(/\.tables\.json$/, '')
+    const paths = state.tablemergeSettings?.paths as string[] | undefined
+    if (!paths) {
+      window.alert('tablemerge failed: settings file has no paths entry')
+      return
+    }
     setRerunningPapers((prev) => ({ ...prev, [fileName]: true }))
     try {
-      const result = await window.api.runTablemerge(settingsPath, paperPath)
+      const result = await window.api.runTablemerge(paperName, state.dirPath, paths)
       if (result.ok) {
         requestedRef.current.delete(fileName)
         loadPaper(state.dirPath, fileName)

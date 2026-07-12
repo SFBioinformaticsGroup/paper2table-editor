@@ -415,9 +415,10 @@ ipcMain.handle('set-user-name', (_event, name: string) => {
   writeConfig(c)
 })
 
-ipcMain.handle('run-tablemerge', (_event, settingsPath: string, paperPath: string): Promise<{ ok: boolean; error?: string }> => {
+ipcMain.handle('run-tablemerge', (_event, paperName: string, outputPath: string, paths: string[]): Promise<{ ok: boolean; error?: string }> => {
   return new Promise((resolve) => {
-    const child = spawn('tablemerge', ['--settings-path', settingsPath, '--paper', paperPath], {
+    const child = spawn('tablemerge', ['--paper', paperName, '--settings', '-o', outputPath, ...paths], {
+      cwd: outputPath,
       stdio: ['ignore', 'pipe', 'pipe']
     })
     let stderr = ''

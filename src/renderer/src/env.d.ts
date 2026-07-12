@@ -41,6 +41,6 @@ interface Window {
     onExportAnnotations: (callback: () => void) => (() => void)
     onImportAnnotations: (callback: () => void) => (() => void)
     importAnnotationsFromSyncFile: (dirPath: string) => Promise<import('../../main/annotations').ResultsetAnnotations | null>
-    runTablemerge: (settingsPath: string, paperPath: string) => Promise<{ ok: boolean; error?: string }>
+    runTablemerge: (paperName: string, outputPath: string, paths: string[]) => Promise<{ ok: boolean; error?: string }>
   }
 }
