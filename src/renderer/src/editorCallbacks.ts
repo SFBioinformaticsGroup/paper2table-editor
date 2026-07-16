@@ -10,6 +10,7 @@ export interface EditorCallbacks {
 
   reverseText: (fileName: string, tableIdx: number) => void
   transposeTable: (fileName: string, tableIdx: number) => void
+  deaggregateTitleRows: (fileName: string, tableIdx: number) => void
   deleteTable: (fileName: string, tableIdx: number) => void
   deleteFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
   mergeAllTableRows: (fileName: string, tableIdx: number) => void

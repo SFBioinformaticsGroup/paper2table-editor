@@ -1,4 +1,4 @@
-import { FaArrowDown, FaArrowRightArrowLeft, FaArrowUp, FaLayerGroup, FaTableColumns, FaTrash } from 'react-icons/fa6'
+import { FaArrowDown, FaArrowRightArrowLeft, FaArrowUp, FaLayerGroup, FaObjectUngroup, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 
 interface Props {
@@ -35,6 +35,13 @@ export function TableToolbar({ fileName, tableIdx, hasFragments, isFirstTable, i
         onClick={() => callbacks.transposeTable(fileName, tableIdx)}
       >
         <FaTableColumns /> Transpose
+      </button>
+      <button
+        className="table-toolbar-btn"
+        title="Deaggregate titles: expand grouped rows into flat rows with the title filled in"
+        onClick={() => callbacks.deaggregateTitleRows(fileName, tableIdx)}
+      >
+        <FaObjectUngroup /> Deaggregate titles
       </button>
       {!isFirstTable && (
         <button

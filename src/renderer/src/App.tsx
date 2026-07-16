@@ -47,6 +47,7 @@ import { renameColumn } from './actions/renameColumn'
 import { replicateCell } from './actions/replicateCell'
 import { reverseText } from './actions/reverseText'
 import { transposeTable } from './actions/transposeTable'
+import { deaggregateTitleRows } from './actions/deaggregateTitleRows'
 import { withFilenameInMetadata } from './actions/withFilenameInMetadata'
 import { togglePinned, toggleArchived, sortByPinnedAndArchived } from './utils/pinned'
 import { buildPaperAnchorIds, findTableAnchorId } from './utils/table'
@@ -592,6 +593,8 @@ export function App() {
         applyEdit(fileName, (f) => reverseText(f, tableIdx)),
       transposeTable: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => transposeTable(f, tableIdx)),
+      deaggregateTitleRows: (fileName, tableIdx) =>
+        applyEdit(fileName, (f) => deaggregateTitleRows(f, tableIdx)),
       deleteTable: (fileName, tableIdx) =>
         applyEdit(fileName, (f) => deleteTable(f, tableIdx)),
       deleteFragment: (fileName, tableIdx, fragmentIdx) =>
