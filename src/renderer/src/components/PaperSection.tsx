@@ -199,6 +199,7 @@ export function PaperSection({
             title="Rerun tablemerge for this paper"
             disabled={isRerunning}
             onClick={() => callbacks.rerunTablemerge(fileName)}
+            style={{ display: 'none' }}
           >
             {isRerunning ? <span className="spinner" aria-label="Loading" /> : <FaPlay />} Rerun
           </button>
