@@ -63,6 +63,12 @@ export function readerEmoji(reader: string | undefined): string {
   return '🤖'
 }
 
+/**
+ * Converts a metadata object into [key, value] display rows.
+ * `sources`, `settings`, and `agreement_method` are skipped because they are
+ * rendered in dedicated UI sections rather than the general metadata table.
+ * Nested objects are flattened with dot-notation keys (e.g. `config.mode`).
+ */
 export function flattenMetadataRows(metadata: Metadata): [string, string][] {
   const rows: [string, string][] = []
 

@@ -227,13 +227,16 @@ describe('flattenMetadataRows', () => {
     expect(rows).toEqual([['reader', 'pdfplumber']])
   })
 
-  it('flattens nested objects with dot notation', () => {
-    const metadata = { settings: { threshold: 0.5, lang: 'es' } }
+  it('skips the settings key (displayed in a separate UI section)', () => {
+    const metadata = { reader: 'pdfplumber', settings: { threshold: 0.5, lang: 'es' } }
     const rows = flattenMetadataRows(metadata)
-    expect(rows).toEqual([
-      ['threshold', '0.5'],
-      ['lang', 'es'],
-    ])
+    expect(rows).toEqual([['reader', 'pdfplumber']])
+  })
+
+  it('skips the agreement_method key (displayed in a separate UI section)', () => {
+    const metadata = { reader: 'tablemerge', agreement_method: 'simple-count' }
+    const rows = flattenMetadataRows(metadata)
+    expect(rows).toEqual([['reader', 'tablemerge']])
   })
 
   it('joins array values with ", "', () => {
@@ -242,12 +245,12 @@ describe('flattenMetadataRows', () => {
     expect(rows).toEqual([['tags', 'a, b, c']])
   })
 
-  it('handles top-level scalar values', () => {
-    const metadata = { reader: 'tablemerge', agreement_method: 'simple-count' }
+  it('flattens nested objects with dot notation', () => {
+    const metadata = { config: { mode: 'fast', retries: 3 } }
     const rows = flattenMetadataRows(metadata)
     expect(rows).toEqual([
-      ['reader', 'tablemerge'],
-      ['agreement_method', 'simple-count'],
+      ['config.mode', 'fast'],
+      ['config.retries', '3'],
     ])
   })
 
