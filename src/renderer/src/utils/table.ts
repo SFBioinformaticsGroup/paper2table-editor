@@ -90,7 +90,7 @@ export function flattenMetadataRows(metadata: Metadata): [string, string][] {
     if (Array.isArray(value)) {
       rows.push([key, value.map((v) => String(v)).join(', ')])
     } else if (value !== null && typeof value === 'object') {
-      flattenDict(value as Record<string, unknown>, '')
+      flattenDict(value as Record<string, unknown>, key)
     } else {
       rows.push([key, String(value)])
     }
