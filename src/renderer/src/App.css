@@ -844,6 +844,12 @@ th:hover .col-header-actions {
   color: #555;
 }
 
+.editable-cell.cell-selected {
+  background-color: rgba(66, 153, 225, 0.2);
+  outline: 1px solid rgba(66, 153, 225, 0.6);
+  outline-offset: -1px;
+}
+
 .editable-cell.editing {
   padding: 0 !important;
 }

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type {
+  CellClipboard,
+  CellSelection,
+  ColumnValue,
   Curation,
   DirectoryState,
   EditHistories,
@@ -53,7 +56,10 @@ import { transposeTable } from './actions/transposeTable'
 import { deaggregateTitleRows } from './actions/deaggregateTitleRows'
 import { withFilenameInMetadata } from './actions/withFilenameInMetadata'
 import { togglePinned, toggleArchived, sortByPinnedAndArchived } from './utils/pinned'
-import { buildPaperAnchorIds, findTableAnchorId } from './utils/table'
+import { buildPaperAnchorIds, columnNames, findTableAnchorId, renderColumnValue } from './utils/table'
+import { getTableFragments } from './utils/getTableFragments'
+import { clearCells } from './actions/clearCells'
+import { pasteSelection } from './actions/pasteSelection'
 
 // ── history reducer ──────────────────────────────────────────────────────────
 
@@ -122,6 +128,8 @@ function historyReducer(state: EditHistories, action: HistoryAction): EditHistor
   return state
 }
 
+const META_COL_SET = new Set(['row_', 'agreement_level_', 'readers_', 'sources_'])
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function buildUuidToReader(metadata: Metadata): Map<string, string> {
@@ -170,6 +178,8 @@ export function App() {
   const [showEmptyRows, setShowEmptyRows] = useState(false)
   const [userName, setUserName] = useState('')
   const [pendingSave, setPendingSave] = useState<{ fileName: string; isAs: boolean } | null>(null)
+  const [cellSelection, setCellSelection] = useState<CellSelection | null>(null)
+  const [cellClipboard, setCellClipboard] = useState<CellClipboard | null>(null)
   const [showNameModal, setShowNameModal] = useState(false)
   const [nameModalIsPresave, setNameModalIsPresave] = useState(false)
   const [showCurationModal, setShowCurationModal] = useState(false)
@@ -190,6 +200,10 @@ export function App() {
   const [rerunningPapers, setRerunningPapers] = useState<Record<string, boolean>>({})
   const exportAnnotationsRef = useRef<() => void>(() => { })
   const importAnnotationsRef = useRef<() => void>(() => { })
+  const isDraggingRef = useRef(false)
+  const handleClipboardKeysRef = useRef<(e: KeyboardEvent) => void>(() => { })
+  const handleCellMouseDownRef = useRef<(fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number, isShift: boolean) => void>(() => { })
+  const handleCellMouseOverRef = useRef<(fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number) => void>(() => { })
 
   const getPaperContent = useCallback(
     (fileName: string, st: DirectoryState): TablesFile | null => {
@@ -363,6 +377,106 @@ export function App() {
   }
 
   initiateSaveRef.current = initiateSave
+
+  // ── clipboard / selection handlers ────────────────────────────────────────
+
+  function handleCellMouseDown(
+    fileName: string,
+    tableIdx: number,
+    fragmentIdx: number,
+    rowOriginalIdx: number,
+    editableColIdx: number,
+    isShift: boolean
+  ) {
+    if (
+      isShift &&
+      cellSelection?.fileName === fileName &&
+      cellSelection?.tableIdx === tableIdx &&
+      cellSelection?.fragmentIdx === fragmentIdx
+    ) {
+      setCellSelection({ ...cellSelection, currentRowOriginalIdx: rowOriginalIdx, currentColIdx: editableColIdx })
+    } else {
+      setCellSelection({
+        fileName,
+        tableIdx,
+        fragmentIdx,
+        anchorRowOriginalIdx: rowOriginalIdx,
+        anchorColIdx: editableColIdx,
+        currentRowOriginalIdx: rowOriginalIdx,
+        currentColIdx: editableColIdx
+      })
+    }
+    isDraggingRef.current = true
+  }
+
+  function handleCellMouseOver(
+    fileName: string,
+    tableIdx: number,
+    fragmentIdx: number,
+    rowOriginalIdx: number,
+    editableColIdx: number
+  ) {
+    if (!isDraggingRef.current) return
+    setCellSelection((prev) => {
+      if (
+        !prev ||
+        prev.fileName !== fileName ||
+        prev.tableIdx !== tableIdx ||
+        prev.fragmentIdx !== fragmentIdx
+      ) return prev
+      return { ...prev, currentRowOriginalIdx: rowOriginalIdx, currentColIdx: editableColIdx }
+    })
+  }
+
+  handleCellMouseDownRef.current = handleCellMouseDown
+  handleCellMouseOverRef.current = handleCellMouseOver
+
+  handleClipboardKeysRef.current = (e: KeyboardEvent) => {
+    if (!(e.ctrlKey || e.metaKey)) return
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+    const sel = cellSelection
+    const clip = cellClipboard
+
+    if ((e.key === 'c' || e.key === 'x') && sel && state) {
+      e.preventDefault()
+      const paper = getPaperContent(sel.fileName, state)
+      if (!paper) return
+      const fragment = getTableFragments(paper.tables[sel.tableIdx])[sel.fragmentIdx]
+      if (!fragment) return
+      const editableColsForCopy = columnNames(fragment.rows).filter((c) => !META_COL_SET.has(c))
+      const startRowOrig = Math.min(sel.anchorRowOriginalIdx, sel.currentRowOriginalIdx)
+      const endRowOrig = Math.max(sel.anchorRowOriginalIdx, sel.currentRowOriginalIdx)
+      const startCol = Math.min(sel.anchorColIdx, sel.currentColIdx)
+      const endCol = Math.max(sel.anchorColIdx, sel.currentColIdx)
+      const selectedCols = editableColsForCopy.slice(startCol, endCol + 1)
+      const cells: string[][] = []
+      for (let ri = startRowOrig; ri <= endRowOrig; ri++) {
+        const row = fragment.rows[ri]
+        if (!row) continue
+        cells.push(selectedCols.map((colName) => renderColumnValue((row[colName] ?? null) as ColumnValue)))
+      }
+      setCellClipboard({ cells })
+      if (e.key === 'x') {
+        const rowIdxs: number[] = []
+        for (let ri = startRowOrig; ri <= endRowOrig; ri++) rowIdxs.push(ri)
+        applyEdit(sel.fileName, (f) => clearCells(f, sel.tableIdx, sel.fragmentIdx, rowIdxs, selectedCols))
+      }
+    }
+
+    if (e.key === 'v' && sel && clip && state) {
+      e.preventDefault()
+      const paper = getPaperContent(sel.fileName, state)
+      if (!paper) return
+      const fragment = getTableFragments(paper.tables[sel.tableIdx])[sel.fragmentIdx]
+      if (!fragment) return
+      const editableColsForPaste = columnNames(fragment.rows).filter((c) => !META_COL_SET.has(c))
+      const anchorRowOrig = Math.min(sel.anchorRowOriginalIdx, sel.currentRowOriginalIdx)
+      const anchorColIdx = Math.min(sel.anchorColIdx, sel.currentColIdx)
+      const anchorColName = editableColsForPaste[anchorColIdx]
+      if (!anchorColName) return
+      applyEdit(sel.fileName, (f) => pasteSelection(f, sel.tableIdx, sel.fragmentIdx, anchorRowOrig, anchorColName, clip.cells))
+    }
+  }
 
   function reloadPaper(fileName: string) {
     if (!state) return
@@ -826,6 +940,18 @@ export function App() {
     return () => container.removeEventListener('scroll', handleScroll)
   }, [activeSectionKey, state, histories])
 
+  useEffect(() => {
+    function handleMouseUp() { isDraggingRef.current = false }
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => document.removeEventListener('mouseup', handleMouseUp)
+  }, [])
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) { handleClipboardKeysRef.current(e) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+
   // ── search navigation ────────────────────────────────────────────────────
 
   const navigateMatch = useCallback((direction: 'forward' | 'backward') => {
@@ -1020,6 +1146,10 @@ export function App() {
                         isReloading={!!loadingPapers[fileName]}
                         hasTablemergeSettings={state.tablemergeSettings !== null}
                         isRerunning={!!rerunningPapers[fileName]}
+                        cellSelection={cellSelection}
+                        cellClipboard={cellClipboard}
+                        onCellMouseDown={(fn, ti, fi, rowOrig, colIdx, isShift) => handleCellMouseDownRef.current(fn, ti, fi, rowOrig, colIdx, isShift)}
+                        onCellMouseOver={(fn, ti, fi, rowOrig, colIdx) => handleCellMouseOverRef.current(fn, ti, fi, rowOrig, colIdx)}
                       />
                     </div>
                   )
@@ -1089,6 +1219,10 @@ export function App() {
                         isReloading={!!loadingPapers[fileName]}
                         hasTablemergeSettings={state.tablemergeSettings !== null}
                         isRerunning={!!rerunningPapers[fileName]}
+                        cellSelection={cellSelection}
+                        cellClipboard={cellClipboard}
+                        onCellMouseDown={(fn, ti, fi, rowOrig, colIdx, isShift) => handleCellMouseDownRef.current(fn, ti, fi, rowOrig, colIdx, isShift)}
+                        onCellMouseOver={(fn, ti, fi, rowOrig, colIdx) => handleCellMouseOverRef.current(fn, ti, fi, rowOrig, colIdx)}
                       />
                     </div>
                   )

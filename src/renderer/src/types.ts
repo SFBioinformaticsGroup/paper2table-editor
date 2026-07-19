@@ -87,3 +87,17 @@ export interface PaperHistory {
 }
 
 export type EditHistories = Record<string, PaperHistory>
+
+export type CellSelection = {
+  fileName: string
+  tableIdx: number
+  fragmentIdx: number
+  anchorRowOriginalIdx: number
+  anchorColIdx: number
+  currentRowOriginalIdx: number
+  currentColIdx: number
+}
+
+export type CellClipboard = {
+  cells: string[][]
+}

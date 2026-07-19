@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaCopy, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import { PageModal } from './PageModal'
-import type { ColumnValue, TableFragment } from '../types'
+import type { CellClipboard, CellSelection, ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
 
 import type { EditorCallbacks } from '../editorCallbacks'
@@ -26,6 +26,10 @@ interface Props {
   showEmptyRows: boolean
   hasNextFragment: boolean
   canApplyPrevColumnNames: boolean
+  cellSelection: CellSelection | null
+  cellClipboard: CellClipboard | null
+  onCellMouseDown: (fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number, isShift: boolean) => void
+  onCellMouseOver: (fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number) => void
 }
 
 export function FragmentTable({
@@ -42,7 +46,11 @@ export function FragmentTable({
   searchQuery,
   showEmptyRows,
   hasNextFragment,
-  canApplyPrevColumnNames
+  canApplyPrevColumnNames,
+  cellSelection,
+  cellClipboard: _cellClipboard,
+  onCellMouseDown,
+  onCellMouseOver
 }: Props) {
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colIdx: number } | null>(null)
   const [pendingBreakRowIdx, setPendingBreakRowIdx] = useState<number | null>(null)
@@ -62,6 +70,19 @@ export function FragmentTable({
   const rowspanMatrix = displayedRows.length > 0
     ? computeRowspans(displayedRows.map((r) => r.row), columns, uuidToReader)
     : []
+
+  const editableCols = allDataCols.filter((c) => !META_COLS.has(c))
+
+  const isOwnSelection =
+    cellSelection !== null &&
+    cellSelection.fileName === fileName &&
+    cellSelection.tableIdx === tableIdxZero &&
+    cellSelection.fragmentIdx === fragmentIdx
+
+  const selStartRowOrig = isOwnSelection ? Math.min(cellSelection!.anchorRowOriginalIdx, cellSelection!.currentRowOriginalIdx) : -1
+  const selEndRowOrig   = isOwnSelection ? Math.max(cellSelection!.anchorRowOriginalIdx, cellSelection!.currentRowOriginalIdx) : -1
+  const selStartCol     = isOwnSelection ? Math.min(cellSelection!.anchorColIdx, cellSelection!.currentColIdx) : -1
+  const selEndCol       = isOwnSelection ? Math.max(cellSelection!.anchorColIdx, cellSelection!.currentColIdx) : -1
 
   function advanceEdit(rowIdx: number, colIdx: number) {
     const dataCols = columns.filter((c) => !META_COLS.has(c))
@@ -301,6 +322,11 @@ export function FragmentTable({
                         cellValue !== '' &&
                         nextOriginalIdx < allRows.length &&
                         renderColumnValue(allRows[nextOriginalIdx][col] as ColumnValue) === ''
+                      const editableColIdx = editableCols.indexOf(col)
+                      const isSelected =
+                        isOwnSelection &&
+                        originalIdx >= selStartRowOrig && originalIdx <= selEndRowOrig &&
+                        editableColIdx >= selStartCol && editableColIdx <= selEndCol
                       return (
                         <EditableCell
                           key={col}
@@ -314,11 +340,19 @@ export function FragmentTable({
                           rowSpan={rowSpanProp}
                           searchQuery={searchQuery}
                           canReplicate={cellCanReplicate}
+                          isSelected={isSelected}
                           onStartEdit={() => setEditingCell({ rowIdx: displayIdx, colIdx })}
                           onConfirm={() => setEditingCell(null)}
                           onTabConfirm={() => advanceEdit(displayIdx, colIdx)}
                           onCancel={() => setEditingCell(null)}
                           onReplicate={() => callbacks.replicateCell(fileName, tableIdxZero, fragmentIdx, originalIdx, col)}
+                          onCellMouseDown={(e) => {
+                            e.preventDefault()
+                            onCellMouseDown(fileName, tableIdxZero, fragmentIdx, originalIdx, editableColIdx, e.shiftKey)
+                          }}
+                          onCellMouseOver={() => {
+                            onCellMouseOver(fileName, tableIdxZero, fragmentIdx, originalIdx, editableColIdx)
+                          }}
                           callbacks={callbacks}
                         />
                       )

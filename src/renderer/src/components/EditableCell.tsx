@@ -15,11 +15,14 @@ interface Props {
   rowSpan?: number
   searchQuery?: string
   canReplicate?: boolean
+  isSelected?: boolean
   onStartEdit: () => void
   onConfirm: (newValue: string) => void  // confirms and stops editing (Enter/blur)
   onTabConfirm: (newValue: string) => void  // confirms and advances to next cell (Tab)
   onCancel: () => void  // cancels and stops editing (Escape)
   onReplicate?: () => void
+  onCellMouseDown?: (e: React.MouseEvent<HTMLTableCellElement>) => void
+  onCellMouseOver?: () => void
   callbacks: EditorCallbacks
 }
 
@@ -35,11 +38,14 @@ export function EditableCell({
   rowSpan,
   searchQuery,
   canReplicate,
+  isSelected,
   onStartEdit,
   onConfirm,
   onTabConfirm,
   onCancel,
   onReplicate,
+  onCellMouseDown,
+  onCellMouseOver,
   callbacks
 }: Props) {
   const [draft, setDraft] = useState(displayValue)
@@ -106,7 +112,13 @@ export function EditableCell({
   }
 
   return (
-    <td className={['editable-cell', canReplicate && 'has-replicate', className].filter(Boolean).join(' ')} rowSpan={rowSpan} onDoubleClick={onStartEdit}>
+    <td
+      className={['editable-cell', isSelected && 'cell-selected', canReplicate && 'has-replicate', className].filter(Boolean).join(' ')}
+      rowSpan={rowSpan}
+      onDoubleClick={onStartEdit}
+      onMouseDown={onCellMouseDown}
+      onMouseOver={onCellMouseOver}
+    >
       {searchQuery ? highlightText(displayValue, searchQuery) : displayValue}
       {canReplicate && (
         <button className="cell-replicate-btn" title="Replicate down" onClick={onReplicate}>

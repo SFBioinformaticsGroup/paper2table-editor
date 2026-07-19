@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FaArrowsRotate, FaFloppyDisk, FaFolderOpen, FaObjectGroup, FaPlay, FaRotateLeft, FaRotateRight, FaTrash } from 'react-icons/fa6'
-import type { TablesFile, Source, Curation } from '../types'
+import type { CellClipboard, CellSelection, TablesFile, Source, Curation } from '../types'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { FragmentTable } from './FragmentTable'
 import { TableToolbar } from './TableToolbar'
@@ -29,6 +29,10 @@ interface Props {
   isReloading: boolean
   hasTablemergeSettings: boolean
   isRerunning: boolean
+  cellSelection: CellSelection | null
+  cellClipboard: CellClipboard | null
+  onCellMouseDown: (fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number, isShift: boolean) => void
+  onCellMouseOver: (fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number) => void
 }
 
 function PaperSources({
@@ -144,7 +148,11 @@ export function PaperSection({
   onUpdatePaperNote,
   isReloading,
   hasTablemergeSettings,
-  isRerunning
+  isRerunning,
+  cellSelection,
+  cellClipboard,
+  onCellMouseDown,
+  onCellMouseOver
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const paperUuids = collectPaperSourceUuids(content)
@@ -312,6 +320,10 @@ export function PaperSection({
                   showEmptyRows={showEmptyRows}
                   hasNextFragment={fragmentIdx < fragments.length - 1}
                   canApplyPrevColumnNames={canApplyPrevColumnNames}
+                  cellSelection={cellSelection}
+                  cellClipboard={cellClipboard}
+                  onCellMouseDown={onCellMouseDown}
+                  onCellMouseOver={onCellMouseOver}
                 />
               )
             })}
