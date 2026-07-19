@@ -31,6 +31,7 @@ export interface EditorCallbacks {
   addRow: (fileName: string, tableIdx: number, fragmentIdx: number, afterRowIdx?: number) => void
   duplicateRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
 
+  clearColumn: (fileName: string, tableIdx: number, fragmentIdx: number, colName: string) => void
   deleteColumn: (fileName: string, tableIdx: number, colName: string) => void
   renameColumn: (fileName: string, tableIdx: number, oldName: string, newName: string) => void
   mergeColumns: (fileName: string, tableIdx: number, keepCol: string, dropCol: string) => void

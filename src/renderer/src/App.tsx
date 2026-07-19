@@ -59,6 +59,7 @@ import { togglePinned, toggleArchived, sortByPinnedAndArchived } from './utils/p
 import { buildPaperAnchorIds, columnNames, findTableAnchorId, renderColumnValue } from './utils/table'
 import { getTableFragments } from './utils/getTableFragments'
 import { clearCells } from './actions/clearCells'
+import { clearColumn } from './actions/clearColumn'
 import { pasteSelection } from './actions/pasteSelection'
 
 // ── history reducer ──────────────────────────────────────────────────────────
@@ -748,6 +749,8 @@ export function App() {
         applyEdit(fileName, (f) => duplicateRow(f, tableIdx, fragmentIdx, rowIdx)),
       breakFragment: (fileName, tableIdx, fragmentIdx, rowIdx, newPage) =>
         applyEdit(fileName, (f) => breakFragment(f, tableIdx, fragmentIdx, rowIdx, newPage)),
+      clearColumn: (fileName, tableIdx, fragmentIdx, colName) =>
+        applyEdit(fileName, (f) => clearColumn(f, tableIdx, fragmentIdx, colName)),
       deleteColumn: (fileName, tableIdx, colName) =>
         applyEdit(fileName, (f) => deleteColumn(f, tableIdx, colName)),
       renameColumn: (fileName, tableIdx, oldName, newName) =>

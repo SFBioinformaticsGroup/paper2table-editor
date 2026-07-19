@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FaCopy, FaEllipsisVertical, FaPencil, FaPlus, FaRightLeft, FaTrash } from 'react-icons/fa6'
+import { FaCopy, FaEllipsisVertical, FaEraser, FaPencil, FaPlus, FaRightLeft, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { highlightText } from '../highlightUtils'
 
@@ -55,6 +55,11 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   function handleRenameKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') confirmRename()
     if (e.key === 'Escape') setRenaming(false)
+  }
+
+  function handleClearColumn() {
+    setMenuOpen(false)
+    callbacks.clearColumn(fileName, tableIdx, fragmentIdx, colName)
   }
 
   function handleDelete() {
@@ -191,6 +196,9 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
           </button>
           <button onClick={openTransfer}>
             <FaRightLeft /> Transfer values to…
+          </button>
+          <button onClick={handleClearColumn}>
+            <FaEraser /> Clear column
           </button>
           <button onClick={handleDelete}>
             <FaTrash /> Delete column
