@@ -22,6 +22,9 @@ import { DirHeader } from './components/DirHeader'
 import { ValidationErrors } from './components/ValidationErrors'
 import './App.css'
 import { addColumn } from './actions/addColumn'
+import { duplicateColumn } from './actions/duplicateColumn'
+import { duplicateRow } from './actions/duplicateRow'
+import { transferColumnValues } from './actions/transferColumnValues'
 import { breakFragment } from './actions/breakFragment'
 import { applyPrevFragmentColumnNames } from './actions/applyPrevFragmentColumnNames'
 import { addRow } from './actions/addRow'
@@ -627,6 +630,8 @@ export function App() {
         applyEdit(fileName, (f) => applyPrevFragmentColumnNames(f, tableIdx, fragmentIdx)),
       addRow: (fileName, tableIdx, fragmentIdx, afterRowIdx) =>
         applyEdit(fileName, (f) => addRow(f, tableIdx, fragmentIdx, afterRowIdx)),
+      duplicateRow: (fileName, tableIdx, fragmentIdx, rowIdx) =>
+        applyEdit(fileName, (f) => duplicateRow(f, tableIdx, fragmentIdx, rowIdx)),
       breakFragment: (fileName, tableIdx, fragmentIdx, rowIdx, newPage) =>
         applyEdit(fileName, (f) => breakFragment(f, tableIdx, fragmentIdx, rowIdx, newPage)),
       deleteColumn: (fileName, tableIdx, colName) =>
@@ -637,6 +642,10 @@ export function App() {
         applyEdit(fileName, (f) => mergeColumns(f, tableIdx, keepCol, dropCol)),
       addColumn: (fileName, tableIdx, columnName, afterColName) =>
         applyEdit(fileName, (f) => addColumn(f, tableIdx, columnName, afterColName)),
+      duplicateColumn: (fileName, tableIdx, colName) =>
+        applyEdit(fileName, (f) => duplicateColumn(f, tableIdx, colName)),
+      transferColumnValues: (fileName, tableIdx, fragmentIdx, sourceColName, destColName) =>
+        applyEdit(fileName, (f) => transferColumnValues(f, tableIdx, fragmentIdx, sourceColName, destColName)),
       editCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName, newValue) =>
         applyEdit(fileName, (f) =>
           editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)

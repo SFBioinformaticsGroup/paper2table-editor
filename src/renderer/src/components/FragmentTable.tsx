@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
+import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaCopy, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import { PageModal } from './PageModal'
 import type { ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
@@ -142,6 +142,7 @@ export function FragmentTable({
                     allDataColumns={allDataCols}
                     fileName={fileName}
                     tableIdx={tableIdxZero}
+                    fragmentIdx={fragmentIdx}
                     callbacks={callbacks}
                     searchQuery={searchQuery}
                   />
@@ -234,6 +235,12 @@ export function FragmentTable({
                           <FaCircleArrowDown />
                         </button>
                       )}
+                      <button
+                        title="Duplicate row"
+                        onClick={() => callbacks.duplicateRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}
+                      >
+                        <FaCopy />
+                      </button>
                       <button
                         title="Add row after"
                         onClick={() => callbacks.addRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}

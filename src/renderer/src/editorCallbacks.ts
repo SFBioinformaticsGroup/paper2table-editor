@@ -29,11 +29,14 @@ export interface EditorCallbacks {
   moveFirstRowToPrevFragment: (fileName: string, tableIdx: number, fragmentIdx: number) => void
   applyPrevFragmentColumnNames: (fileName: string, tableIdx: number, fragmentIdx: number) => void
   addRow: (fileName: string, tableIdx: number, fragmentIdx: number, afterRowIdx?: number) => void
+  duplicateRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
 
   deleteColumn: (fileName: string, tableIdx: number, colName: string) => void
   renameColumn: (fileName: string, tableIdx: number, oldName: string, newName: string) => void
   mergeColumns: (fileName: string, tableIdx: number, keepCol: string, dropCol: string) => void
   addColumn: (fileName: string, tableIdx: number, columnName: string, afterColName?: string) => void
+  duplicateColumn: (fileName: string, tableIdx: number, colName: string) => void
+  transferColumnValues: (fileName: string, tableIdx: number, fragmentIdx: number, sourceColName: string, destColName: string) => void
 
   editCell: (
     fileName: string,

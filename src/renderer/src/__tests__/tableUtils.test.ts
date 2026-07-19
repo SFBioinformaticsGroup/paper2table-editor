@@ -14,6 +14,7 @@ import {
   renderColumnValue,
   renderDataCell,
   rowPaletteClass,
+  shiftRowNumbers,
 } from '../utils/table'
 import type { Row, Table, TableWithFragments, TableWithRows } from '../types'
 import { getTableFragments } from '../utils/getTableFragments'
@@ -542,5 +543,66 @@ describe('renderDataCell', () => {
   it('omits UUIDs from readers_ that have no matching reader in the map', () => {
     const row: Row = { sources_: ['unknown-uuid'] }
     expect(renderDataCell(row, 'readers_', uuidToReader)).toBe('')
+  })
+})
+
+// ── shiftRowNumbers ──────────────────────────────────────────────────────────
+
+describe('shiftRowNumbers', () => {
+  it('increments row_ values >= fromRowNum by the given delta', () => {
+    const rows: Row[] = [
+      { name: 'A', row_: 1 },
+      { name: 'B', row_: 2 },
+      { name: 'C', row_: 3 },
+    ]
+    expect(shiftRowNumbers(rows, 2, 1)).toEqual([
+      { name: 'A', row_: 1 },
+      { name: 'B', row_: 3 },
+      { name: 'C', row_: 4 },
+    ])
+  })
+
+  it('decrements row_ values >= fromRowNum when delta is negative', () => {
+    const rows: Row[] = [
+      { name: 'A', row_: 1 },
+      { name: 'B', row_: 2 },
+      { name: 'C', row_: 3 },
+    ]
+    expect(shiftRowNumbers(rows, 2, -1)).toEqual([
+      { name: 'A', row_: 1 },
+      { name: 'B', row_: 1 },
+      { name: 'C', row_: 2 },
+    ])
+  })
+
+  it('leaves rows with row_ below fromRowNum unchanged', () => {
+    const rows: Row[] = [
+      { name: 'A', row_: 1 },
+      { name: 'B', row_: 2 },
+    ]
+    expect(shiftRowNumbers(rows, 5, 1)).toEqual([
+      { name: 'A', row_: 1 },
+      { name: 'B', row_: 2 },
+    ])
+  })
+
+  it('leaves rows without a row_ key unchanged', () => {
+    const rows: Row[] = [
+      { name: 'A' },
+      { name: 'B', row_: 3 },
+    ]
+    expect(shiftRowNumbers(rows, 1, 1)).toEqual([
+      { name: 'A' },
+      { name: 'B', row_: 4 },
+    ])
+  })
+
+  it('shifts the boundary row (row_ exactly equal to fromRowNum)', () => {
+    const rows: Row[] = [{ name: 'A', row_: 3 }]
+    expect(shiftRowNumbers(rows, 3, 1)).toEqual([{ name: 'A', row_: 4 }])
+  })
+
+  it('returns an empty array unchanged', () => {
+    expect(shiftRowNumbers([], 1, 1)).toEqual([])
   })
 })

@@ -1,5 +1,5 @@
 import { mapTableFragments } from '../utils/mapTableFragments';
-import { renderColumnValue } from '../utils/table';
+import { renderColumnValue, shiftRowNumbers } from '../utils/table';
 import type { TablesFile, Row, ColumnValue } from '../types';
 
 function mergedRowNum(rowNumA: number | undefined, rowNumB: number | undefined): number | null {
@@ -9,11 +9,7 @@ function mergedRowNum(rowNumA: number | undefined, rowNumB: number | undefined):
 
 function reenumerateRows(rows: Row[], rowNumA: number | undefined, rowNumB: number | undefined): Row[] {
   if (rowNumA == null || rowNumB == null || rowNumA === rowNumB) return rows;
-  const maxRowNum = Math.max(rowNumA, rowNumB);
-  return rows.map(row => {
-    const rowNum = row['row_'] as number | undefined;
-    return rowNum != null && rowNum >= maxRowNum ? { ...row, row_: rowNum - 1 } : row;
-  });
+  return shiftRowNumbers(rows, Math.max(rowNumA, rowNumB), -1);
 }
 
 export function mergeRows(

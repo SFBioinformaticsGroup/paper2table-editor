@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FaEllipsisVertical, FaPencil, FaPlus, FaTrash } from 'react-icons/fa6'
+import { FaCopy, FaEllipsisVertical, FaPencil, FaPlus, FaRightLeft, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { highlightText } from '../highlightUtils'
 
@@ -8,31 +8,35 @@ interface Props {
   allDataColumns: string[]
   fileName: string
   tableIdx: number
+  fragmentIdx: number
   callbacks: EditorCallbacks
   searchQuery?: string
 }
 
-export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, callbacks, searchQuery }: Props) {
+export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, fragmentIdx, callbacks, searchQuery }: Props) {
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [mergeOpen, setMergeOpen] = useState(false)
   const [addAfterOpen, setAddAfterOpen] = useState(false)
   const [addAfterName, setAddAfterName] = useState('')
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [transferName, setTransferName] = useState('')
   const thRef = useRef<HTMLTableCellElement>(null)
 
   useEffect(() => {
-    if (!menuOpen && !addAfterOpen) return
+    if (!menuOpen && !addAfterOpen && !transferOpen) return
     function handleMouseDown(e: MouseEvent) {
       if (thRef.current && !thRef.current.contains(e.target as Node)) {
         setMenuOpen(false)
         setMergeOpen(false)
         setAddAfterOpen(false)
+        setTransferOpen(false)
       }
     }
     document.addEventListener('mousedown', handleMouseDown)
     return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [menuOpen, addAfterOpen])
+  }, [menuOpen, addAfterOpen, transferOpen])
 
   function startRename() {
     setRenameValue(colName)
@@ -58,6 +62,11 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
     callbacks.deleteColumn(fileName, tableIdx, colName)
   }
 
+  function handleDuplicate() {
+    setMenuOpen(false)
+    callbacks.duplicateColumn(fileName, tableIdx, colName)
+  }
+
   function handleMerge(target: string) {
     setMenuOpen(false)
     setMergeOpen(false)
@@ -81,6 +90,25 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
   function cancelAddAfter() {
     setAddAfterOpen(false)
     setAddAfterName('')
+  }
+
+  function openTransfer() {
+    setTransferOpen(true)
+    setMenuOpen(false)
+    setMergeOpen(false)
+    setTransferName('')
+  }
+
+  function confirmTransfer() {
+    const trimmed = transferName.trim()
+    if (trimmed && trimmed !== colName) callbacks.transferColumnValues(fileName, tableIdx, fragmentIdx, colName, trimmed)
+    setTransferOpen(false)
+    setTransferName('')
+  }
+
+  function cancelTransfer() {
+    setTransferOpen(false)
+    setTransferName('')
   }
 
   const otherCols = allDataColumns.filter((c) => c !== colName)
@@ -117,7 +145,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
             <button
               className="col-header-icon-btn"
               title="More actions"
-              onClick={() => { setMenuOpen((v) => !v); setMergeOpen(false); setAddAfterOpen(false) }}
+              onClick={() => { setMenuOpen((v) => !v); setMergeOpen(false); setAddAfterOpen(false); setTransferOpen(false) }}
             >
               <FaEllipsisVertical />
             </button>
@@ -140,8 +168,30 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, call
           />
         </div>
       )}
+      {transferOpen && (
+        <div className="col-header-add-after">
+          <input
+            className="add-col-input"
+            autoFocus
+            placeholder="Destination column"
+            value={transferName}
+            onChange={(e) => setTransferName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') confirmTransfer()
+              if (e.key === 'Escape') cancelTransfer()
+            }}
+            onBlur={confirmTransfer}
+          />
+        </div>
+      )}
       {menuOpen && (
         <div className="col-header-menu">
+          <button onClick={handleDuplicate}>
+            <FaCopy /> Duplicate column
+          </button>
+          <button onClick={openTransfer}>
+            <FaRightLeft /> Transfer values to…
+          </button>
           <button onClick={handleDelete}>
             <FaTrash /> Delete column
           </button>

@@ -135,6 +135,13 @@ export function collectPaperSourceUuids(content: { tables: Table[] }): Set<strin
   return uuids
 }
 
+export function shiftRowNumbers(rows: Row[], fromRowNum: number, delta: number): Row[] {
+  return rows.map((row) => {
+    const rowNum = row['row_'] as number | undefined;
+    return rowNum != null && rowNum >= fromRowNum ? { ...row, row_: rowNum + delta } : row;
+  });
+}
+
 const ROW_PALETTE_SIZE = 5
 
 export function rowPaletteClass(row: Row): string | undefined {
