@@ -19,58 +19,71 @@ function fragmentedTable(...groups: Row[][]): TablesFile['tables'][number] {
 describe('duplicateColumn', () => {
   it('inserts a copy of the column immediately after the source column', () => {
     const file = makeFile(
-      flatTable([{ name: 'aspirin', dose: '500mg', group: 'NSAID' }])
+      flatTable([{ city: 'Bogotá', country: 'Colombia', continent: 'América del Sur' }])
     )
-    const result = duplicateColumn(file, 0, 'dose')
+    const result = duplicateColumn(file, 0, 'country', 0, true)
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({
-      name: 'aspirin',
-      dose: '500mg',
-      dose_2: '500mg',
-      group: 'NSAID',
+      city: 'Bogotá',
+      country: 'Colombia',
+      country_2: 'Colombia',
+      continent: 'América del Sur',
     })
   })
 
   it('copies the column values including null', () => {
     const file = makeFile(
       flatTable([
-        { name: 'aspirin', dose: '500mg' },
-        { name: 'ibuprofen', dose: null },
+        { city: 'Bogotá', country: 'Colombia' },
+        { city: 'Santiago', country: null },
       ])
     )
-    const result = duplicateColumn(file, 0, 'dose')
+    const result = duplicateColumn(file, 0, 'country', 0, true)
     const rows = (result.tables[0] as { rows: Row[] }).rows
     expect(rows).toEqual([
-      { name: 'aspirin', dose: '500mg', dose_2: '500mg' },
-      { name: 'ibuprofen', dose: null, dose_2: null },
+      { city: 'Bogotá', country: 'Colombia', country_2: 'Colombia' },
+      { city: 'Santiago', country: null, country_2: null },
     ])
   })
 
   it('uses uniqueName to avoid collisions (appends _2, _3)', () => {
     const file = makeFile(
-      flatTable([{ name: 'A', dose: '5mg', dose_2: '10mg' }])
+      flatTable([{ city: 'Bogotá', country: 'Colombia', country_2: 'Chile' }])
     )
-    const result = duplicateColumn(file, 0, 'dose')
+    const result = duplicateColumn(file, 0, 'country', 0, true)
     const row = (result.tables[0] as { rows: Row[] }).rows[0]
-    expect(row).toEqual({ name: 'A', dose: '5mg', dose_2: '10mg', dose_3: '5mg' })
+    expect(row).toEqual({ city: 'Bogotá', country: 'Colombia', country_2: 'Chile', country_3: 'Colombia' })
   })
 
-  it('duplicates across all fragments', () => {
+  it('duplicates across all fragments when editColumnsGlobally = true', () => {
     const file = makeFile(
       fragmentedTable(
-        [{ name: 'A', dose: '5mg' }],
-        [{ name: 'B', dose: '10mg' }]
+        [{ city: 'Bogotá', country: 'Colombia' }],
+        [{ city: 'Santiago', country: 'Chile' }]
       )
     )
-    const result = duplicateColumn(file, 0, 'dose')
+    const result = duplicateColumn(file, 0, 'country', 0, true)
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
-    expect(fragments[0].rows[0]).toEqual({ name: 'A', dose: '5mg', dose_2: '5mg' })
-    expect(fragments[1].rows[0]).toEqual({ name: 'B', dose: '10mg', dose_2: '10mg' })
+    expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá', country: 'Colombia', country_2: 'Colombia' })
+    expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', country: 'Chile', country_2: 'Chile' })
+  })
+
+  it('duplicates only the targeted fragment when editColumnsGlobally = false', () => {
+    const file = makeFile(
+      fragmentedTable(
+        [{ city: 'Bogotá', country: 'Colombia' }],
+        [{ city: 'Santiago', country: 'Chile' }]
+      )
+    )
+    const result = duplicateColumn(file, 0, 'country', 0, false)
+    const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
+    expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá', country: 'Colombia', country_2: 'Colombia' })
+    expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', country: 'Chile' })
   })
 
   it('leaves other tables untouched', () => {
-    const other = flatTable([{ name: 'X' }], 5)
-    const file = makeFile(flatTable([{ name: 'A', dose: '5mg' }]), other)
-    const result = duplicateColumn(file, 0, 'dose')
+    const other = flatTable([{ city: 'Caracas' }], 5)
+    const file = makeFile(flatTable([{ city: 'Bogotá', country: 'Colombia' }]), other)
+    const result = duplicateColumn(file, 0, 'country', 0, true)
     expect(result.tables[1]).toBe(other)
   })
 })

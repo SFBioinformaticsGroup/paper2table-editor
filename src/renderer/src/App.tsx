@@ -178,6 +178,7 @@ export function App() {
   const [tocCollapsed, setTocCollapsed] = useState(false)
   const [activeSectionKey, setActiveSectionKey] = useState<string>('')
   const [showEmptyRows, setShowEmptyRows] = useState(false)
+  const [editColumnsGlobally, setEditColumnsGlobally] = useState(true)
   const [userName, setUserName] = useState('')
   const [pendingSave, setPendingSave] = useState<{ fileName: string; isAs: boolean } | null>(null)
   const [cellSelection, setCellSelection] = useState<CellSelection | null>(null)
@@ -751,21 +752,21 @@ export function App() {
       breakFragment: (fileName, tableIdx, fragmentIdx, rowIdx, newPage) =>
         applyEdit(fileName, (f) => breakFragment(f, tableIdx, fragmentIdx, rowIdx, newPage)),
       clearColumn: (fileName, tableIdx, fragmentIdx, colName) =>
-        applyEdit(fileName, (f) => clearColumn(f, tableIdx, fragmentIdx, colName)),
-      deleteColumn: (fileName, tableIdx, colName) =>
-        applyEdit(fileName, (f) => deleteColumn(f, tableIdx, colName)),
-      renameColumn: (fileName, tableIdx, oldName, newName) =>
-        applyEdit(fileName, (f) => renameColumn(f, tableIdx, oldName, newName)),
-      mergeColumns: (fileName, tableIdx, keepCol, dropCol, separator) =>
-        applyEdit(fileName, (f) => mergeColumns(f, tableIdx, keepCol, dropCol, separator)),
-      addColumn: (fileName, tableIdx, columnName, afterColName) =>
-        applyEdit(fileName, (f) => addColumn(f, tableIdx, columnName, afterColName)),
-      duplicateColumn: (fileName, tableIdx, colName) =>
-        applyEdit(fileName, (f) => duplicateColumn(f, tableIdx, colName)),
-      splitColumn: (fileName, tableIdx, colName) =>
-        applyEdit(fileName, (f) => splitColumn(f, tableIdx, colName)),
+        applyEdit(fileName, (f) => clearColumn(f, tableIdx, colName, fragmentIdx, editColumnsGlobally)),
+      deleteColumn: (fileName, tableIdx, fragmentIdx, colName) =>
+        applyEdit(fileName, (f) => deleteColumn(f, tableIdx, colName, fragmentIdx, editColumnsGlobally)),
+      renameColumn: (fileName, tableIdx, fragmentIdx, oldName, newName) =>
+        applyEdit(fileName, (f) => renameColumn(f, tableIdx, oldName, newName, fragmentIdx, editColumnsGlobally)),
+      mergeColumns: (fileName, tableIdx, fragmentIdx, keepCol, dropCol, separator) =>
+        applyEdit(fileName, (f) => mergeColumns(f, tableIdx, keepCol, dropCol, separator, fragmentIdx, editColumnsGlobally)),
+      addColumn: (fileName, tableIdx, fragmentIdx, columnName, afterColName) =>
+        applyEdit(fileName, (f) => addColumn(f, tableIdx, columnName, afterColName, fragmentIdx, editColumnsGlobally)),
+      duplicateColumn: (fileName, tableIdx, fragmentIdx, colName) =>
+        applyEdit(fileName, (f) => duplicateColumn(f, tableIdx, colName, fragmentIdx, editColumnsGlobally)),
+      splitColumn: (fileName, tableIdx, fragmentIdx, colName) =>
+        applyEdit(fileName, (f) => splitColumn(f, tableIdx, colName, fragmentIdx, editColumnsGlobally)),
       transferColumnValues: (fileName, tableIdx, fragmentIdx, sourceColName, destColName) =>
-        applyEdit(fileName, (f) => transferColumnValues(f, tableIdx, fragmentIdx, sourceColName, destColName)),
+        applyEdit(fileName, (f) => transferColumnValues(f, tableIdx, fragmentIdx, sourceColName, destColName, editColumnsGlobally)),
       editCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName, newValue) =>
         applyEdit(fileName, (f) =>
           editCell(f, tableIdx, fragmentIdx, rowIdx, colName, newValue)
@@ -775,7 +776,7 @@ export function App() {
           replicateCell(f, tableIdx, fragmentIdx, rowIdx, colName)
         )
     }),
-    [applyEdit, applyDelete, navigateToSourceFn]
+    [applyEdit, applyDelete, navigateToSourceFn, editColumnsGlobally]
   )
 
   // ── effects ───────────────────────────────────────────────────────────────
@@ -902,6 +903,10 @@ export function App() {
 
   useEffect(() => {
     return window.api.onSetShowEmptyRows((show) => setShowEmptyRows(show))
+  }, [])
+
+  useEffect(() => {
+    return window.api.onSetEditColumnsGlobally((value) => setEditColumnsGlobally(value))
   }, [])
 
   useEffect(() => {

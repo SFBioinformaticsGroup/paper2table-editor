@@ -1,4 +1,4 @@
-import { mapTableFragments } from '../utils/mapTableFragments';
+import { mapColumnFragments } from '../utils/mapColumnFragments';
 import type { TablesFile, ColumnValue, Row } from '../types';
 import { renderColumnValue } from '../utils/table';
 
@@ -8,9 +8,11 @@ export function mergeColumns(
   tableIdx: number,
   keepCol: string,
   dropCol: string,
-  separator = ' '
+  separator = ' ',
+  fragmentIdx: number,
+  editColumnsGlobally: boolean
 ): TablesFile {
-  return mapTableFragments(file, tableIdx, (fragment) => ({
+  return mapColumnFragments(file, tableIdx, fragmentIdx, editColumnsGlobally, (fragment) => ({
     ...fragment,
     rows: fragment.rows.map((row) => {
       const keepVal = renderColumnValue(row[keepCol] as ColumnValue);

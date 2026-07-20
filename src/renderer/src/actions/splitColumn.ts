@@ -1,16 +1,16 @@
 import { getTableFragments } from '../utils/getTableFragments';
-import { mapTableFragments } from '../utils/mapTableFragments';
+import { mapColumnFragments } from '../utils/mapColumnFragments';
 import { columnNames, renderColumnValue } from '../utils/table';
 import { uniqueName } from '../utils/uniqueName';
 import type { TablesFile, Row, ColumnValue } from '../types';
 
 
-export function splitColumn(file: TablesFile, tableIdx: number, colName: string): TablesFile {
+export function splitColumn(file: TablesFile, tableIdx: number, colName: string, fragmentIdx: number, editColumnsGlobally: boolean): TablesFile {
   const table = file.tables[tableIdx];
   const allCols = new Set(getTableFragments(table).flatMap((f) => columnNames(f.rows)));
   const tailName = uniqueName(`${colName}_tail`, allCols);
 
-  return mapTableFragments(file, tableIdx, (fragment) => ({
+  return mapColumnFragments(file, tableIdx, fragmentIdx, editColumnsGlobally, (fragment) => ({
     ...fragment,
     rows: fragment.rows.map((row) => {
       const rendered = renderColumnValue(row[colName] as ColumnValue);

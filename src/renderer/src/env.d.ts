@@ -25,6 +25,7 @@ interface Window {
     ) => Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>>
     onFocusSearchBar: (callback: () => void) => (() => void)
     onSetShowEmptyRows: (callback: (show: boolean) => void) => (() => void)
+    onSetEditColumnsGlobally: (callback: (value: boolean) => void) => (() => void)
     getUserName: () => Promise<string>
     setUserName: (name: string) => Promise<void>
     onEditUserName: (callback: () => void) => (() => void)

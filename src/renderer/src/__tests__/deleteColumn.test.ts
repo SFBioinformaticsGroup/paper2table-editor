@@ -20,41 +20,54 @@ describe('deleteColumn', () => {
   it('removes the named column from every row', () => {
     const file = makeFile(
       flatTable([
-        { name: 'aspirin', dose: '500mg' },
-        { name: 'ibuprofen', dose: '200mg' },
+        { city: 'Bogotá', country: 'Colombia' },
+        { city: 'Santiago', country: 'Chile' },
       ])
     )
-    const result = deleteColumn(file, 0, 'dose')
+    const result = deleteColumn(file, 0, 'country', 0, true)
     expect(result.tables[0]).toEqual(
-      flatTable([{ name: 'aspirin' }, { name: 'ibuprofen' }])
+      flatTable([{ city: 'Bogotá' }, { city: 'Santiago' }])
     )
   })
 
-  it('removes the column from every fragment', () => {
+  it('removes the column from every fragment when editColumnsGlobally = true', () => {
     const file = makeFile(
       fragmentedTable(
-        [{ name: 'A', dose: '5mg' }],
-        [{ name: 'B', dose: '10mg' }]
+        [{ city: 'Bogotá', country: 'Colombia' }],
+        [{ city: 'Santiago', country: 'Chile' }]
       )
     )
-    const result = deleteColumn(file, 0, 'dose')
+    const result = deleteColumn(file, 0, 'country', 0, true)
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
-    expect(fragments[0].rows[0]).toEqual({ name: 'A' })
-    expect(fragments[1].rows[0]).toEqual({ name: 'B' })
+    expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá' })
+    expect(fragments[1].rows[0]).toEqual({ city: 'Santiago' })
+  })
+
+  it('removes the column only from the targeted fragment when editColumnsGlobally = false', () => {
+    const file = makeFile(
+      fragmentedTable(
+        [{ city: 'Bogotá', country: 'Colombia' }],
+        [{ city: 'Santiago', country: 'Chile' }]
+      )
+    )
+    const result = deleteColumn(file, 0, 'country', 0, false)
+    const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
+    expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá' })
+    expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', country: 'Chile' })
   })
 
   it('leaves other columns intact', () => {
     const file = makeFile(
-      flatTable([{ name: 'aspirin', dose: '500mg', group: 'NSAID' }])
+      flatTable([{ city: 'Bogotá', country: 'Colombia', continent: 'América del Sur' }])
     )
-    const result = deleteColumn(file, 0, 'dose')
-    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ name: 'aspirin', group: 'NSAID' })
+    const result = deleteColumn(file, 0, 'country', 0, true)
+    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ city: 'Bogotá', continent: 'América del Sur' })
   })
 
   it('leaves other tables untouched', () => {
-    const other = flatTable([{ dose: '5mg' }], 3)
-    const file = makeFile(flatTable([{ name: 'A', dose: '1mg' }]), other)
-    const result = deleteColumn(file, 0, 'dose')
+    const other = flatTable([{ city: 'Caracas', country: 'Venezuela' }], 3)
+    const file = makeFile(flatTable([{ city: 'Bogotá', country: 'Colombia' }]), other)
+    const result = deleteColumn(file, 0, 'country', 0, true)
     expect(result.tables[1]).toBe(other)
   })
 })

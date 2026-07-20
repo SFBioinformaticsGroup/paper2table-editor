@@ -20,42 +20,52 @@ describe('renameColumn', () => {
   it('renames the column key in all rows', () => {
     const file = makeFile(
       flatTable([
-        { drug: 'aspirin', dose: '500mg' },
-        { drug: 'ibuprofen', dose: '200mg' },
+        { city: 'Bogotá', country: 'Colombia' },
+        { city: 'Santiago', country: 'Chile' },
       ])
     )
-    const result = renameColumn(file, 0, 'drug', 'medication')
+    const result = renameColumn(file, 0, 'city', 'capital', 0, true)
     expect(result.tables[0]).toEqual(
       flatTable([
-        { medication: 'aspirin', dose: '500mg' },
-        { medication: 'ibuprofen', dose: '200mg' },
+        { capital: 'Bogotá', country: 'Colombia' },
+        { capital: 'Santiago', country: 'Chile' },
       ])
     )
   })
 
   it('avoids collision by appending _2', () => {
     const file = makeFile(
-      flatTable([{ col1: 'A', col2: 'B', col3: 'C' }])
+      flatTable([{ col1: 'Bogotá', col2: 'Colombia', col3: 'América del Sur' }])
     )
-    const result = renameColumn(file, 0, 'col1', 'col2')
-    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ col2_2: 'A', col2: 'B', col3: 'C' })
+    const result = renameColumn(file, 0, 'col1', 'col2', 0, true)
+    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ col2_2: 'Bogotá', col2: 'Colombia', col3: 'América del Sur' })
   })
 
   it('increments suffix beyond _2 when _2 is also taken', () => {
     const file = makeFile(
-      flatTable([{ col1: 'A', col2: 'B', col2_2: 'C' }])
+      flatTable([{ col1: 'Bogotá', col2: 'Colombia', col2_2: 'América del Sur' }])
     )
-    const result = renameColumn(file, 0, 'col1', 'col2')
-    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ col2_3: 'A', col2: 'B', col2_2: 'C' })
+    const result = renameColumn(file, 0, 'col1', 'col2', 0, true)
+    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ col2_3: 'Bogotá', col2: 'Colombia', col2_2: 'América del Sur' })
   })
 
-  it('renames across all fragments', () => {
+  it('renames across all fragments when editColumnsGlobally = true', () => {
     const file = makeFile(
-      fragmentedTable([{ drug: 'A' }], [{ drug: 'B' }])
+      fragmentedTable([{ city: 'Bogotá' }], [{ city: 'Santiago' }])
     )
-    const result = renameColumn(file, 0, 'drug', 'medication')
+    const result = renameColumn(file, 0, 'city', 'capital', 0, true)
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
-    expect(fragments[0].rows[0]).toEqual({ medication: 'A' })
-    expect(fragments[1].rows[0]).toEqual({ medication: 'B' })
+    expect(fragments[0].rows[0]).toEqual({ capital: 'Bogotá' })
+    expect(fragments[1].rows[0]).toEqual({ capital: 'Santiago' })
+  })
+
+  it('renames only the targeted fragment when editColumnsGlobally = false', () => {
+    const file = makeFile(
+      fragmentedTable([{ city: 'Bogotá' }], [{ city: 'Santiago' }])
+    )
+    const result = renameColumn(file, 0, 'city', 'capital', 0, false)
+    const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
+    expect(fragments[0].rows[0]).toEqual({ capital: 'Bogotá' })
+    expect(fragments[1].rows[0]).toEqual({ city: 'Santiago' })
   })
 })

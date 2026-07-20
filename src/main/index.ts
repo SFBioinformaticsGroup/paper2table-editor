@@ -31,6 +31,7 @@ function initValidator(): void {
 
 let mainWindow: BrowserWindow | null = null
 let showEmptyRows = false
+let editColumnsGlobally = true
 let currentDirPath: string | null = null
 
 function exportAnnotationsToSyncFiles(): void {
@@ -106,6 +107,17 @@ function buildMenu(win: BrowserWindow): void {
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          type: 'checkbox',
+          label: 'Edit Columns Globally',
+          checked: editColumnsGlobally,
+          click: () => {
+            editColumnsGlobally = !editColumnsGlobally
+            buildMenu(win)
+            win.webContents.send('set-edit-columns-globally', editColumnsGlobally)
+          }
+        },
         { type: 'separator' },
         { label: 'Edit Name…', click: () => win.webContents.send('edit-user-name') },
         { type: 'separator' },

@@ -68,6 +68,11 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('set-show-empty-rows', handler)
     return () => ipcRenderer.removeListener('set-show-empty-rows', handler)
   },
+  onSetEditColumnsGlobally: (callback: (value: boolean) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, value: boolean) => callback(value)
+    ipcRenderer.on('set-edit-columns-globally', handler)
+    return () => ipcRenderer.removeListener('set-edit-columns-globally', handler)
+  },
   getUserName: (): Promise<string> =>
     ipcRenderer.invoke('get-user-name'),
   setUserName: (name: string): Promise<void> =>

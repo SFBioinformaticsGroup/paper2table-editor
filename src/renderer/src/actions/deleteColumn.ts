@@ -1,9 +1,15 @@
-import { mapTableFragments } from '../utils/mapTableFragments';
+import { mapColumnFragments } from '../utils/mapColumnFragments';
 import type { TablesFile, Row, ColumnValue } from '../types';
 
 
-export function deleteColumn(file: TablesFile, tableIdx: number, colName: string): TablesFile {
-  return mapTableFragments(file, tableIdx, (fragment) => ({
+export function deleteColumn(
+  file: TablesFile,
+  tableIdx: number,
+  colName: string,
+  fragmentIdx: number,
+  editColumnsGlobally: boolean
+): TablesFile {
+  return mapColumnFragments(file, tableIdx, fragmentIdx, editColumnsGlobally, (fragment) => ({
     ...fragment,
     rows: fragment.rows.map((row) => {
       const next: Row = {};

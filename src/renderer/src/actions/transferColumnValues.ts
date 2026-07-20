@@ -1,4 +1,4 @@
-import { mapTableFragments } from '../utils/mapTableFragments';
+import { mapColumnFragments } from '../utils/mapColumnFragments';
 import { renameRowKeys } from '../utils/renameRowKeys';
 import { columnNames } from '../utils/table';
 import type { TablesFile, Row, ColumnValue } from '../types';
@@ -9,12 +9,12 @@ export function transferColumnValues(
   tableIdx: number,
   fragmentIdx: number,
   sourceColName: string,
-  destColName: string
+  destColName: string,
+  editColumnsGlobally: boolean
 ): TablesFile {
   if (sourceColName === destColName) return file;
   const renameMap = new Map([[sourceColName, destColName]]);
-  return mapTableFragments(file, tableIdx, (fragment, fi) => {
-    if (fi !== fragmentIdx) return fragment;
+  return mapColumnFragments(file, tableIdx, fragmentIdx, editColumnsGlobally, (fragment) => {
     const destExistsInFragment = columnNames(fragment.rows).includes(destColName);
 
     if (!destExistsInFragment) {

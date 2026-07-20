@@ -1,14 +1,15 @@
-import { getTableFragments } from '../utils/getTableFragments'
-import { clearCells } from './clearCells'
+import { mapColumnFragments } from '../utils/mapColumnFragments'
 import type { TablesFile } from '../types'
 
 export function clearColumn(
   file: TablesFile,
   tableIdx: number,
+  colName: string,
   fragmentIdx: number,
-  colName: string
+  editColumnsGlobally: boolean
 ): TablesFile {
-  const fragments = getTableFragments(file.tables[tableIdx])
-  const rowIdxs = fragments[fragmentIdx].rows.map((_, i) => i)
-  return clearCells(file, tableIdx, fragmentIdx, rowIdxs, [colName])
+  return mapColumnFragments(file, tableIdx, fragmentIdx, editColumnsGlobally, (fragment) => ({
+    ...fragment,
+    rows: fragment.rows.map((row) => ({ ...row, [colName]: null }))
+  }))
 }

@@ -47,7 +47,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   function confirmRename() {
     const trimmed = renameValue.trim()
     if (trimmed && trimmed !== colName) {
-      callbacks.renameColumn(fileName, tableIdx, colName, trimmed)
+      callbacks.renameColumn(fileName, tableIdx, fragmentIdx, colName, trimmed)
     }
     setRenaming(false)
   }
@@ -64,24 +64,24 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
 
   function handleDelete() {
     setMenuOpen(false)
-    callbacks.deleteColumn(fileName, tableIdx, colName)
+    callbacks.deleteColumn(fileName, tableIdx, fragmentIdx, colName)
   }
 
   function handleDuplicate() {
     setMenuOpen(false)
-    callbacks.duplicateColumn(fileName, tableIdx, colName)
+    callbacks.duplicateColumn(fileName, tableIdx, fragmentIdx, colName)
   }
 
   function handleSplitColumn() {
     setMenuOpen(false)
-    callbacks.splitColumn(fileName, tableIdx, colName)
+    callbacks.splitColumn(fileName, tableIdx, fragmentIdx, colName)
   }
 
   function handleMerge(target: string) {
     const separator = mergeMode === 'combine' ? ' ' : ''
     setMenuOpen(false)
     setMergeMode(null)
-    callbacks.mergeColumns(fileName, tableIdx, colName, target, separator)
+    callbacks.mergeColumns(fileName, tableIdx, fragmentIdx, colName, target, separator)
   }
 
   function openAddAfter() {
@@ -93,7 +93,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
 
   function confirmAddAfter() {
     const trimmed = addAfterName.trim()
-    if (trimmed) callbacks.addColumn(fileName, tableIdx, trimmed, colName)
+    if (trimmed) callbacks.addColumn(fileName, tableIdx, fragmentIdx, trimmed, colName)
     setAddAfterOpen(false)
     setAddAfterName('')
   }

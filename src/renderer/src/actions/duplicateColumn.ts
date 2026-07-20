@@ -1,5 +1,5 @@
 import { getTableFragments } from '../utils/getTableFragments';
-import { mapTableFragments } from '../utils/mapTableFragments';
+import { mapColumnFragments } from '../utils/mapColumnFragments';
 import { columnNames } from '../utils/table';
 import { uniqueName } from '../utils/uniqueName';
 import type { TablesFile, Row, ColumnValue } from '../types';
@@ -8,12 +8,14 @@ import type { TablesFile, Row, ColumnValue } from '../types';
 export function duplicateColumn(
   file: TablesFile,
   tableIdx: number,
-  colName: string
+  colName: string,
+  fragmentIdx: number,
+  editColumnsGlobally: boolean
 ): TablesFile {
   const table = file.tables[tableIdx];
   const allCols = new Set(getTableFragments(table).flatMap((f) => columnNames(f.rows)));
   const newName = uniqueName(colName, allCols);
-  return mapTableFragments(file, tableIdx, (fragment) => ({
+  return mapColumnFragments(file, tableIdx, fragmentIdx, editColumnsGlobally, (fragment) => ({
     ...fragment,
     rows: fragment.rows.map((row) => {
       const newRow: Row = {};

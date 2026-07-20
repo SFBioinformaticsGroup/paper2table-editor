@@ -1,5 +1,5 @@
 import { getTableFragments } from '../utils/getTableFragments';
-import { mapTableFragments } from '../utils/mapTableFragments';
+import { mapColumnFragments } from '../utils/mapColumnFragments';
 import { renameRowKeys } from '../utils/renameRowKeys';
 import { columnNames } from '../utils/table';
 import { uniqueName } from '../utils/uniqueName';
@@ -10,7 +10,9 @@ export function renameColumn(
   file: TablesFile,
   tableIdx: number,
   oldName: string,
-  newName: string
+  newName: string,
+  fragmentIdx: number,
+  editColumnsGlobally: boolean
 ): TablesFile {
   const table = file.tables[tableIdx];
   const allCols = new Set(
@@ -19,7 +21,7 @@ export function renameColumn(
   allCols.delete(oldName);
   const safeName = uniqueName(newName, allCols);
   const renameMap = new Map([[oldName, safeName]]);
-  return mapTableFragments(file, tableIdx, (fragment) => ({
+  return mapColumnFragments(file, tableIdx, fragmentIdx, editColumnsGlobally, (fragment) => ({
     ...fragment,
     rows: fragment.rows.map((row) => renameRowKeys(row, renameMap))
   }));
