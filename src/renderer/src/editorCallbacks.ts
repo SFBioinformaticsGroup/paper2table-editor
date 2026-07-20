@@ -37,6 +37,7 @@ export interface EditorCallbacks {
   mergeColumns: (fileName: string, tableIdx: number, keepCol: string, dropCol: string, separator: string) => void
   addColumn: (fileName: string, tableIdx: number, columnName: string, afterColName?: string) => void
   duplicateColumn: (fileName: string, tableIdx: number, colName: string) => void
+  splitColumn: (fileName: string, tableIdx: number, colName: string) => void
   transferColumnValues: (fileName: string, tableIdx: number, fragmentIdx: number, sourceColName: string, destColName: string) => void
 
   editCell: (

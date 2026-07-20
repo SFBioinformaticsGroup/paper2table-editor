@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FaCopy, FaEllipsisVertical, FaEraser, FaPencil, FaPlus, FaRightLeft, FaTrash } from 'react-icons/fa6'
+import { FaCopy, FaEllipsisVertical, FaEraser, FaPencil, FaPlus, FaRightLeft, FaScissors, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { highlightText } from '../highlightUtils'
 
@@ -70,6 +70,11 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   function handleDuplicate() {
     setMenuOpen(false)
     callbacks.duplicateColumn(fileName, tableIdx, colName)
+  }
+
+  function handleSplitColumn() {
+    setMenuOpen(false)
+    callbacks.splitColumn(fileName, tableIdx, colName)
   }
 
   function handleMerge(target: string) {
@@ -194,6 +199,9 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
         <div className="col-header-menu">
           <button onClick={handleDuplicate}>
             <FaCopy /> Duplicate column
+          </button>
+          <button onClick={handleSplitColumn}>
+            <FaScissors /> Split by last comma
           </button>
           <button onClick={openTransfer}>
             <FaRightLeft /> Transfer values to…

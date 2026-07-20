@@ -25,6 +25,7 @@ import { DirHeader } from './components/DirHeader'
 import { ValidationErrors } from './components/ValidationErrors'
 import './App.css'
 import { addColumn } from './actions/addColumn'
+import { splitColumn } from './actions/splitColumn'
 import { duplicateColumn } from './actions/duplicateColumn'
 import { duplicateRow } from './actions/duplicateRow'
 import { transferColumnValues } from './actions/transferColumnValues'
@@ -761,6 +762,8 @@ export function App() {
         applyEdit(fileName, (f) => addColumn(f, tableIdx, columnName, afterColName)),
       duplicateColumn: (fileName, tableIdx, colName) =>
         applyEdit(fileName, (f) => duplicateColumn(f, tableIdx, colName)),
+      splitColumn: (fileName, tableIdx, colName) =>
+        applyEdit(fileName, (f) => splitColumn(f, tableIdx, colName)),
       transferColumnValues: (fileName, tableIdx, fragmentIdx, sourceColName, destColName) =>
         applyEdit(fileName, (f) => transferColumnValues(f, tableIdx, fragmentIdx, sourceColName, destColName)),
       editCell: (fileName, tableIdx, fragmentIdx, rowIdx, colName, newValue) =>
