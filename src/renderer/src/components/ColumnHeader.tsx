@@ -17,7 +17,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
-  const [mergeOpen, setMergeOpen] = useState(false)
+  const [mergeMode, setMergeMode] = useState<'combine' | 'merge' | null>(null)
   const [addAfterOpen, setAddAfterOpen] = useState(false)
   const [addAfterName, setAddAfterName] = useState('')
   const [transferOpen, setTransferOpen] = useState(false)
@@ -73,15 +73,16 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   }
 
   function handleMerge(target: string) {
+    const separator = mergeMode === 'combine' ? ' ' : ''
     setMenuOpen(false)
-    setMergeOpen(false)
-    callbacks.mergeColumns(fileName, tableIdx, colName, target)
+    setMergeMode(null)
+    callbacks.mergeColumns(fileName, tableIdx, colName, target, separator)
   }
 
   function openAddAfter() {
     setAddAfterOpen(true)
     setMenuOpen(false)
-    setMergeOpen(false)
+    setMergeMode(null)
     setAddAfterName('')
   }
 
@@ -100,7 +101,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   function openTransfer() {
     setTransferOpen(true)
     setMenuOpen(false)
-    setMergeOpen(false)
+    setMergeMode(null)
     setTransferName('')
   }
 
@@ -150,7 +151,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
             <button
               className="col-header-icon-btn"
               title="More actions"
-              onClick={() => { setMenuOpen((v) => !v); setMergeOpen(false); setAddAfterOpen(false); setTransferOpen(false) }}
+              onClick={() => { setMenuOpen((v) => !v); setMergeMode(null); setAddAfterOpen(false); setTransferOpen(false) }}
             >
               <FaEllipsisVertical />
             </button>
@@ -204,11 +205,16 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
             <FaTrash /> Delete column
           </button>
           {otherCols.length > 0 && (
-            <button onClick={() => setMergeOpen((v) => !v)}>
-              Merge with…
-            </button>
+            <>
+              <button onClick={() => setMergeMode((m) => m === 'combine' ? null : 'combine')}>
+                Combine with…
+              </button>
+              <button onClick={() => setMergeMode((m) => m === 'merge' ? null : 'merge')}>
+                Merge with…
+              </button>
+            </>
           )}
-          {mergeOpen && otherCols.length > 0 && (
+          {mergeMode !== null && otherCols.length > 0 && (
             <div className="col-merge-list">
               {otherCols.map((c) => (
                 <button key={c} className="col-merge-item" onClick={() => handleMerge(c)}>

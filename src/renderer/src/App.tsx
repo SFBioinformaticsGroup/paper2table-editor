@@ -755,8 +755,8 @@ export function App() {
         applyEdit(fileName, (f) => deleteColumn(f, tableIdx, colName)),
       renameColumn: (fileName, tableIdx, oldName, newName) =>
         applyEdit(fileName, (f) => renameColumn(f, tableIdx, oldName, newName)),
-      mergeColumns: (fileName, tableIdx, keepCol, dropCol) =>
-        applyEdit(fileName, (f) => mergeColumns(f, tableIdx, keepCol, dropCol)),
+      mergeColumns: (fileName, tableIdx, keepCol, dropCol, separator) =>
+        applyEdit(fileName, (f) => mergeColumns(f, tableIdx, keepCol, dropCol, separator)),
       addColumn: (fileName, tableIdx, columnName, afterColName) =>
         applyEdit(fileName, (f) => addColumn(f, tableIdx, columnName, afterColName)),
       duplicateColumn: (fileName, tableIdx, colName) =>

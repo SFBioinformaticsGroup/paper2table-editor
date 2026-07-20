@@ -15,10 +15,26 @@ describe('mergeColumns', () => {
     const file = makeFile(
       flatTable([{ name: 'aspirin', suffix: '(tablet)' }])
     )
-    const result = mergeColumns(file, 0, 'name', 'suffix')
+    const result = mergeColumns(file, 0, 'name', 'suffix', ' ')
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({
       name: 'aspirin (tablet)',
     })
+  })
+
+  it('concatenates keep and drop column values with no separator', () => {
+    const file = makeFile(
+      flatTable([{ name: 'aspirin', suffix: '(tablet)' }])
+    )
+    const result = mergeColumns(file, 0, 'name', 'suffix', '')
+    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({
+      name: 'aspirin(tablet)',
+    })
+  })
+
+  it('omits an empty keep value from the no-separator concatenation', () => {
+    const file = makeFile(flatTable([{ name: '', suffix: '(tablet)' }]))
+    const result = mergeColumns(file, 0, 'name', 'suffix', '')
+    expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ name: '(tablet)' })
   })
 
   it('drops the drop column from the row', () => {

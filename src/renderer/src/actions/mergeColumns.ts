@@ -7,14 +7,15 @@ export function mergeColumns(
   file: TablesFile,
   tableIdx: number,
   keepCol: string,
-  dropCol: string
+  dropCol: string,
+  separator = ' '
 ): TablesFile {
   return mapTableFragments(file, tableIdx, (fragment) => ({
     ...fragment,
     rows: fragment.rows.map((row) => {
       const keepVal = renderColumnValue(row[keepCol] as ColumnValue);
       const dropVal = renderColumnValue(row[dropCol] as ColumnValue);
-      const merged = [keepVal, dropVal].filter(Boolean).join(' ');
+      const merged = [keepVal, dropVal].filter(Boolean).join(separator);
       const next: Row = {};
       for (const [k, v] of Object.entries(row)) {
         if (k === dropCol) continue;
