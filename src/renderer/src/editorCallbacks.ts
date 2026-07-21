@@ -1,3 +1,9 @@
+export interface ColumnCallbackOpts {
+  tableIdx: number
+  fragmentIdx: number
+  colName: string
+}
+
 export interface EditorCallbacks {
   deletePaper: (fileName: string) => void
   undo: (fileName: string) => void
@@ -31,14 +37,14 @@ export interface EditorCallbacks {
   addRow: (fileName: string, tableIdx: number, fragmentIdx: number, afterRowIdx?: number) => void
   duplicateRow: (fileName: string, tableIdx: number, fragmentIdx: number, rowIdx: number) => void
 
-  clearColumn: (fileName: string, tableIdx: number, fragmentIdx: number, colName: string) => void
-  deleteColumn: (fileName: string, tableIdx: number, fragmentIdx: number, colName: string) => void
-  renameColumn: (fileName: string, tableIdx: number, fragmentIdx: number, oldName: string, newName: string) => void
-  mergeColumns: (fileName: string, tableIdx: number, fragmentIdx: number, keepCol: string, dropCol: string, separator: string) => void
-  addColumn: (fileName: string, tableIdx: number, fragmentIdx: number, columnName: string, afterColName?: string) => void
-  duplicateColumn: (fileName: string, tableIdx: number, fragmentIdx: number, colName: string) => void
-  splitColumn: (fileName: string, tableIdx: number, fragmentIdx: number, colName: string) => void
-  transferColumnValues: (fileName: string, tableIdx: number, fragmentIdx: number, sourceColName: string, destColName: string) => void
+  clearColumn: (fileName: string, options: ColumnCallbackOpts) => void
+  deleteColumn: (fileName: string, options: ColumnCallbackOpts) => void
+  duplicateColumn: (fileName: string, options: ColumnCallbackOpts) => void
+  splitColumn: (fileName: string, options: ColumnCallbackOpts) => void
+  renameColumn: (fileName: string, newName: string, options: ColumnCallbackOpts) => void
+  mergeColumns: (fileName: string, dropCol: string, separator: string, options: ColumnCallbackOpts) => void
+  addColumn: (fileName: string, columnName: string, options: ColumnCallbackOpts) => void
+  transferColumnValues: (fileName: string, destColName: string, options: ColumnCallbackOpts) => void
 
   editCell: (
     fileName: string,

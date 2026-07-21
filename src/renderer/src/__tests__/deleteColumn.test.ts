@@ -24,7 +24,7 @@ describe('deleteColumn', () => {
         { city: 'Santiago', country: 'Chile' },
       ])
     )
-    const result = deleteColumn(file, 0, 'country', 0, true)
+    const result = deleteColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'country', editColumnsGlobally: true })
     expect(result.tables[0]).toEqual(
       flatTable([{ city: 'Bogotá' }, { city: 'Santiago' }])
     )
@@ -37,7 +37,7 @@ describe('deleteColumn', () => {
         [{ city: 'Santiago', country: 'Chile' }]
       )
     )
-    const result = deleteColumn(file, 0, 'country', 0, true)
+    const result = deleteColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'country', editColumnsGlobally: true })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá' })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago' })
@@ -50,7 +50,7 @@ describe('deleteColumn', () => {
         [{ city: 'Santiago', country: 'Chile' }]
       )
     )
-    const result = deleteColumn(file, 0, 'country', 0, false)
+    const result = deleteColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'country', editColumnsGlobally: false })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá' })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', country: 'Chile' })
@@ -60,14 +60,14 @@ describe('deleteColumn', () => {
     const file = makeFile(
       flatTable([{ city: 'Bogotá', country: 'Colombia', continent: 'América del Sur' }])
     )
-    const result = deleteColumn(file, 0, 'country', 0, true)
+    const result = deleteColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'country', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ city: 'Bogotá', continent: 'América del Sur' })
   })
 
   it('leaves other tables untouched', () => {
     const other = flatTable([{ city: 'Caracas', country: 'Venezuela' }], 3)
     const file = makeFile(flatTable([{ city: 'Bogotá', country: 'Colombia' }]), other)
-    const result = deleteColumn(file, 0, 'country', 0, true)
+    const result = deleteColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'country', editColumnsGlobally: true })
     expect(result.tables[1]).toBe(other)
   })
 })

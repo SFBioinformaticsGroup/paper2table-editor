@@ -25,7 +25,7 @@ describe('mapColumnFragments', () => {
           [{ city: 'Lima' }]
         )
       )
-      const result = mapColumnFragments(file, 0, 0, true, markFragment)
+      const result = mapColumnFragments(file, { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true }, markFragment)
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá', touched: 'yes' })
       expect(fragments[1].rows[0]).toEqual({ city: 'Lima', touched: 'yes' })
@@ -38,7 +38,7 @@ describe('mapColumnFragments', () => {
           [{ city: 'Lima' }]
         )
       )
-      const result = mapColumnFragments(file, 0, 1, true, markFragment)
+      const result = mapColumnFragments(file, { tableIdx: 0, fragmentIdx: 1, colName: 'city', editColumnsGlobally: true }, markFragment)
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá', touched: 'yes' })
       expect(fragments[1].rows[0]).toEqual({ city: 'Lima', touched: 'yes' })
@@ -53,7 +53,7 @@ describe('mapColumnFragments', () => {
           [{ city: 'Lima' }]
         )
       )
-      const result = mapColumnFragments(file, 0, 0, false, markFragment)
+      const result = mapColumnFragments(file, { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: false }, markFragment)
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá', touched: 'yes' })
       expect(fragments[1].rows[0]).toEqual({ city: 'Lima' })
@@ -66,7 +66,7 @@ describe('mapColumnFragments', () => {
           [{ city: 'Lima' }]
         )
       )
-      const result = mapColumnFragments(file, 0, 1, false, markFragment)
+      const result = mapColumnFragments(file, { tableIdx: 0, fragmentIdx: 1, colName: 'city', editColumnsGlobally: false }, markFragment)
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá' })
       expect(fragments[1].rows[0]).toEqual({ city: 'Lima', touched: 'yes' })
@@ -79,7 +79,7 @@ describe('mapColumnFragments', () => {
       fragmentedTable([{ city: 'Bogotá' }]),
       otherTable
     )
-    const result = mapColumnFragments(file, 0, 0, true, markFragment)
+    const result = mapColumnFragments(file, { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true }, markFragment)
     expect(result.tables[1]).toBe(otherTable)
   })
 })

@@ -21,7 +21,7 @@ describe('mergeColumns', () => {
     const file = makeFile(
       flatTable([{ city: 'Bogotá', region: '(Cundinamarca)' }])
     )
-    const result = mergeColumns(file, 0, 'city', 'region', ' ', 0, true)
+    const result = mergeColumns(file, 'region', ' ', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({
       city: 'Bogotá (Cundinamarca)',
     })
@@ -31,7 +31,7 @@ describe('mergeColumns', () => {
     const file = makeFile(
       flatTable([{ city: 'Buenos', region: 'Aires' }])
     )
-    const result = mergeColumns(file, 0, 'city', 'region', '', 0, true)
+    const result = mergeColumns(file, 'region', '', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({
       city: 'BuenosAires',
     })
@@ -39,25 +39,25 @@ describe('mergeColumns', () => {
 
   it('omits an empty keep value from the no-separator concatenation', () => {
     const file = makeFile(flatTable([{ city: '', region: 'Colombia' }]))
-    const result = mergeColumns(file, 0, 'city', 'region', '', 0, true)
+    const result = mergeColumns(file, 'region', '', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ city: 'Colombia' })
   })
 
   it('drops the drop column from the row', () => {
     const file = makeFile(flatTable([{ city: 'Bogotá', region: 'Cundinamarca' }]))
-    const result = mergeColumns(file, 0, 'city', 'region', ' ', 0, true)
+    const result = mergeColumns(file, 'region', ' ', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect('region' in (result.tables[0] as { rows: Row[] }).rows[0]).toBe(false)
   })
 
   it('omits an empty keep value from the concatenation', () => {
     const file = makeFile(flatTable([{ city: '', region: 'Colombia' }]))
-    const result = mergeColumns(file, 0, 'city', 'region', ' ', 0, true)
+    const result = mergeColumns(file, 'region', ' ', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ city: 'Colombia' })
   })
 
   it('omits a null drop value from the concatenation', () => {
     const file = makeFile(flatTable([{ city: 'Bogotá', region: null }]))
-    const result = mergeColumns(file, 0, 'city', 'region', ' ', 0, true)
+    const result = mergeColumns(file, 'region', ' ', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ city: 'Bogotá' })
   })
 
@@ -65,7 +65,7 @@ describe('mergeColumns', () => {
     const file = makeFile(
       flatTable([{ city: 'Bogotá', region: 'Cundinamarca', continent: 'América del Sur' }])
     )
-    const result = mergeColumns(file, 0, 'city', 'region', ' ', 0, true)
+    const result = mergeColumns(file, 'region', ' ', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({
       city: 'Bogotá Cundinamarca',
       continent: 'América del Sur',
@@ -79,7 +79,7 @@ describe('mergeColumns', () => {
         [{ city: 'Santiago', region: 'Metropolitana' }]
       )
     )
-    const result = mergeColumns(file, 0, 'city', 'region', ' ', 0, true)
+    const result = mergeColumns(file, 'region', ' ', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá Cundinamarca' })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago Metropolitana' })
@@ -92,7 +92,7 @@ describe('mergeColumns', () => {
         [{ city: 'Santiago', region: 'Metropolitana' }]
       )
     )
-    const result = mergeColumns(file, 0, 'city', 'region', ' ', 0, false)
+    const result = mergeColumns(file, 'region', ' ', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: false })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá Cundinamarca' })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', region: 'Metropolitana' })

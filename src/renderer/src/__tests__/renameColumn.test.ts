@@ -24,7 +24,7 @@ describe('renameColumn', () => {
         { city: 'Santiago', country: 'Chile' },
       ])
     )
-    const result = renameColumn(file, 0, 'city', 'capital', 0, true)
+    const result = renameColumn(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect(result.tables[0]).toEqual(
       flatTable([
         { capital: 'Bogotá', country: 'Colombia' },
@@ -37,7 +37,7 @@ describe('renameColumn', () => {
     const file = makeFile(
       flatTable([{ col1: 'Bogotá', col2: 'Colombia', col3: 'América del Sur' }])
     )
-    const result = renameColumn(file, 0, 'col1', 'col2', 0, true)
+    const result = renameColumn(file, 'col2', { tableIdx: 0, fragmentIdx: 0, colName: 'col1', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ col2_2: 'Bogotá', col2: 'Colombia', col3: 'América del Sur' })
   })
 
@@ -45,7 +45,7 @@ describe('renameColumn', () => {
     const file = makeFile(
       flatTable([{ col1: 'Bogotá', col2: 'Colombia', col2_2: 'América del Sur' }])
     )
-    const result = renameColumn(file, 0, 'col1', 'col2', 0, true)
+    const result = renameColumn(file, 'col2', { tableIdx: 0, fragmentIdx: 0, colName: 'col1', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({ col2_3: 'Bogotá', col2: 'Colombia', col2_2: 'América del Sur' })
   })
 
@@ -53,7 +53,7 @@ describe('renameColumn', () => {
     const file = makeFile(
       fragmentedTable([{ city: 'Bogotá' }], [{ city: 'Santiago' }])
     )
-    const result = renameColumn(file, 0, 'city', 'capital', 0, true)
+    const result = renameColumn(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ capital: 'Bogotá' })
     expect(fragments[1].rows[0]).toEqual({ capital: 'Santiago' })
@@ -63,7 +63,7 @@ describe('renameColumn', () => {
     const file = makeFile(
       fragmentedTable([{ city: 'Bogotá' }], [{ city: 'Santiago' }])
     )
-    const result = renameColumn(file, 0, 'city', 'capital', 0, false)
+    const result = renameColumn(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: false })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ capital: 'Bogotá' })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago' })

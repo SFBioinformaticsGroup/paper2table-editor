@@ -25,7 +25,7 @@ describe('clearColumn', () => {
           [{ city: 'Santiago', country: 'Chile' }]
         )
       )
-      const result = clearColumn(file, 0, 'city', 0, true)
+      const result = clearColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: null, country: 'Colombia' })
       expect(fragments[1].rows[0]).toEqual({ city: null, country: 'Chile' })
@@ -39,7 +39,7 @@ describe('clearColumn', () => {
           { city: 'Lima', country: 'Perú' },
         ])
       )
-      const result = clearColumn(file, 0, 'city', 0, true)
+      const result = clearColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       expect((result.tables[0] as { rows: Row[] }).rows).toEqual([
         { city: null, country: 'Colombia' },
         { city: null, country: 'Chile' },
@@ -56,7 +56,7 @@ describe('clearColumn', () => {
           [{ city: 'Santiago' }]
         )
       )
-      const result = clearColumn(file, 0, 'city', 0, false)
+      const result = clearColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: false })
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: null })
       expect(fragments[1].rows[0]).toEqual({ city: 'Santiago' })
@@ -69,7 +69,7 @@ describe('clearColumn', () => {
           [{ city: 'Santiago' }]
         )
       )
-      const result = clearColumn(file, 0, 'city', 1, false)
+      const result = clearColumn(file, { tableIdx: 0, fragmentIdx: 1, colName: 'city', editColumnsGlobally: false })
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá' })
       expect(fragments[1].rows[0]).toEqual({ city: null })
@@ -80,7 +80,7 @@ describe('clearColumn', () => {
     const file = makeFile(
       flatTable([{ city: 'Bogotá', country: 'Colombia', continent: 'América del Sur' }])
     )
-    const result = clearColumn(file, 0, 'country', 0, true)
+    const result = clearColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'country', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows).toEqual([
       { city: 'Bogotá', country: null, continent: 'América del Sur' },
     ])
@@ -89,7 +89,7 @@ describe('clearColumn', () => {
   it('leaves other tables untouched', () => {
     const otherTable = flatTable([{ city: 'Caracas' }], 5)
     const file = makeFile(flatTable([{ city: 'Bogotá' }]), otherTable)
-    const result = clearColumn(file, 0, 'city', 0, true)
+    const result = clearColumn(file, { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     expect(result.tables[1]).toBe(otherTable)
   })
 })

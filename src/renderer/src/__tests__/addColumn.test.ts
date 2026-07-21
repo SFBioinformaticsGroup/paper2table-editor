@@ -17,25 +17,25 @@ function fragmentedTable(...groups: Row[][]): TablesFile['tables'][number] {
 }
 
 describe('addColumn', () => {
-  it('appends a null column at the end of each row when afterColName is omitted', () => {
+  it('appends a null column at the end of each row when colName does not match any existing column', () => {
     const file = makeFile(
       flatTable([
         { city: 'Bogotá', country: 'Colombia' },
         { city: 'Santiago', country: 'Chile' },
       ])
     )
-    const result = addColumn(file, 0, 'region', undefined, 0, true)
+    const result = addColumn(file, 'region', { tableIdx: 0, fragmentIdx: 0, colName: '__none__', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows).toEqual([
       { city: 'Bogotá', country: 'Colombia', region: null },
       { city: 'Santiago', country: 'Chile', region: null },
     ])
   })
 
-  it('inserts the new column immediately after afterColName', () => {
+  it('inserts the new column immediately after colName', () => {
     const file = makeFile(
       flatTable([{ city: 'Bogotá', country: 'Colombia', continent: 'América del Sur' }])
     )
-    const result = addColumn(file, 0, 'region', 'country', 0, true)
+    const result = addColumn(file, 'region', { tableIdx: 0, fragmentIdx: 0, colName: 'country', editColumnsGlobally: true })
     expect((result.tables[0] as { rows: Row[] }).rows[0]).toEqual({
       city: 'Bogotá',
       country: 'Colombia',
@@ -48,7 +48,7 @@ describe('addColumn', () => {
     const file = makeFile(
       flatTable([{ city: 'Bogotá', country: 'Colombia' }])
     )
-    const result = addColumn(file, 0, 'country', undefined, 0, true)
+    const result = addColumn(file, 'country', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
     const row = (result.tables[0] as { rows: Row[] }).rows[0]
     expect('country_2' in row).toBe(true)
     expect(row.country_2).toBeNull()
@@ -61,7 +61,7 @@ describe('addColumn', () => {
         [{ city: 'Santiago', country: 'Chile' }]
       )
     )
-    const result = addColumn(file, 0, 'region', undefined, 0, true)
+    const result = addColumn(file, 'region', { tableIdx: 0, fragmentIdx: 0, colName: '__none__', editColumnsGlobally: true })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá', country: 'Colombia', region: null })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', country: 'Chile', region: null })
@@ -74,7 +74,7 @@ describe('addColumn', () => {
         [{ city: 'Santiago', country: 'Chile' }]
       )
     )
-    const result = addColumn(file, 0, 'region', undefined, 0, false)
+    const result = addColumn(file, 'region', { tableIdx: 0, fragmentIdx: 0, colName: '__none__', editColumnsGlobally: false })
     const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
     expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá', country: 'Colombia', region: null })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', country: 'Chile' })
@@ -83,7 +83,7 @@ describe('addColumn', () => {
   it('leaves other tables untouched', () => {
     const other = flatTable([{ city: 'Caracas' }], 5)
     const file = makeFile(flatTable([{ city: 'Bogotá' }]), other)
-    const result = addColumn(file, 0, 'country', undefined, 0, true)
+    const result = addColumn(file, 'country', { tableIdx: 0, fragmentIdx: 0, colName: '__none__', editColumnsGlobally: true })
     expect(result.tables[1]).toBe(other)
   })
 })

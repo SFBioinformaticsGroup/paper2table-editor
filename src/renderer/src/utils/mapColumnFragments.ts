@@ -2,15 +2,20 @@ import { mapTableFragments } from './mapTableFragments'
 import type { TablesFile, TableFragment } from '../types'
 
 
+export interface ColumnScope {
+  tableIdx: number
+  fragmentIdx: number
+  colName: string
+  editColumnsGlobally: boolean
+}
+
 export function mapColumnFragments(
   file: TablesFile,
-  tableIdx: number,
-  fragmentIdx: number,
-  editColumnsGlobally: boolean,
+  scope: ColumnScope,
   fn: (fragment: TableFragment) => TableFragment
 ): TablesFile {
-  return mapTableFragments(file, tableIdx, (fragment, fi) => {
-    if (!editColumnsGlobally && fi !== fragmentIdx) return fragment
+  return mapTableFragments(file, scope.tableIdx, (fragment, fi) => {
+    if (!scope.editColumnsGlobally && fi !== scope.fragmentIdx) return fragment
     return fn(fragment)
   })
 }

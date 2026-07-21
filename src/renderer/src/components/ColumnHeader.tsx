@@ -47,7 +47,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   function confirmRename() {
     const trimmed = renameValue.trim()
     if (trimmed && trimmed !== colName) {
-      callbacks.renameColumn(fileName, tableIdx, fragmentIdx, colName, trimmed)
+      callbacks.renameColumn(fileName, trimmed, options)
     }
     setRenaming(false)
   }
@@ -59,29 +59,29 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
 
   function handleClearColumn() {
     setMenuOpen(false)
-    callbacks.clearColumn(fileName, tableIdx, fragmentIdx, colName)
+    callbacks.clearColumn(fileName, options)
   }
 
   function handleDelete() {
     setMenuOpen(false)
-    callbacks.deleteColumn(fileName, tableIdx, fragmentIdx, colName)
+    callbacks.deleteColumn(fileName, options)
   }
 
   function handleDuplicate() {
     setMenuOpen(false)
-    callbacks.duplicateColumn(fileName, tableIdx, fragmentIdx, colName)
+    callbacks.duplicateColumn(fileName, options)
   }
 
   function handleSplitColumn() {
     setMenuOpen(false)
-    callbacks.splitColumn(fileName, tableIdx, fragmentIdx, colName)
+    callbacks.splitColumn(fileName, options)
   }
 
   function handleMerge(target: string) {
     const separator = mergeMode === 'combine' ? ' ' : ''
     setMenuOpen(false)
     setMergeMode(null)
-    callbacks.mergeColumns(fileName, tableIdx, fragmentIdx, colName, target, separator)
+    callbacks.mergeColumns(fileName, target, separator, options)
   }
 
   function openAddAfter() {
@@ -93,7 +93,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
 
   function confirmAddAfter() {
     const trimmed = addAfterName.trim()
-    if (trimmed) callbacks.addColumn(fileName, tableIdx, fragmentIdx, trimmed, colName)
+    if (trimmed) callbacks.addColumn(fileName, trimmed, options)
     setAddAfterOpen(false)
     setAddAfterName('')
   }
@@ -112,7 +112,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
 
   function confirmTransfer() {
     const trimmed = transferName.trim()
-    if (trimmed && trimmed !== colName) callbacks.transferColumnValues(fileName, tableIdx, fragmentIdx, colName, trimmed)
+    if (trimmed && trimmed !== colName) callbacks.transferColumnValues(fileName, trimmed, options)
     setTransferOpen(false)
     setTransferName('')
   }
@@ -122,6 +122,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
     setTransferName('')
   }
 
+  const options = { tableIdx, fragmentIdx, colName }
   const otherCols = allDataColumns.filter((c) => c !== colName)
 
   return (

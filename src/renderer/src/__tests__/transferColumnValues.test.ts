@@ -25,7 +25,7 @@ describe('transferColumnValues', () => {
           { city: 'Santiago', country: 'Chile' },
         ])
       )
-      const result = transferColumnValues(file, 0, 0, 'city', 'capital', true)
+      const result = transferColumnValues(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       expect((result.tables[0] as { rows: Row[] }).rows).toEqual([
         { capital: 'Bogotá', country: 'Colombia' },
         { capital: 'Santiago', country: 'Chile' },
@@ -36,7 +36,7 @@ describe('transferColumnValues', () => {
       const file = makeFile(
         flatTable([{ city: 'Bogotá', region: 'Cundinamarca', continent: 'América del Sur' }])
       )
-      const result = transferColumnValues(file, 0, 0, 'region', 'province', true)
+      const result = transferColumnValues(file, 'province', { tableIdx: 0, fragmentIdx: 0, colName: 'region', editColumnsGlobally: true })
       expect(Object.keys((result.tables[0] as { rows: Row[] }).rows[0])).toEqual([
         'city', 'province', 'continent',
       ])
@@ -51,21 +51,21 @@ describe('transferColumnValues', () => {
           { city: 'Santiago', capital: 'other-old', country: 'Chile' },
         ])
       )
-      const result = transferColumnValues(file, 0, 0, 'city', 'capital', true)
+      const result = transferColumnValues(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       expect((result.tables[0] as { rows: Row[] }).rows).toEqual([
         { capital: 'Bogotá', country: 'Colombia' },
         { capital: 'Santiago', country: 'Chile' },
       ])
     })
 
-    it('keeps destination value when source key is absent from a row', () => {
+    it('keeps the destination value when source key is absent from a row', () => {
       const file = makeFile(
         flatTable([
           { city: 'Bogotá', capital: 'old' },
           { capital: 'kept' },
         ])
       )
-      const result = transferColumnValues(file, 0, 0, 'city', 'capital', true)
+      const result = transferColumnValues(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       expect((result.tables[0] as { rows: Row[] }).rows).toEqual([
         { capital: 'Bogotá' },
         { capital: 'kept' },
@@ -76,7 +76,7 @@ describe('transferColumnValues', () => {
       const file = makeFile(
         flatTable([{ city: 'Bogotá', region: 'Cundinamarca', continent: 'América del Sur' }])
       )
-      const result = transferColumnValues(file, 0, 0, 'continent', 'region', true)
+      const result = transferColumnValues(file, 'region', { tableIdx: 0, fragmentIdx: 0, colName: 'continent', editColumnsGlobally: true })
       expect(Object.keys((result.tables[0] as { rows: Row[] }).rows[0])).toEqual([
         'city', 'region',
       ])
@@ -91,7 +91,7 @@ describe('transferColumnValues', () => {
           [{ city: 'Santiago', region: 'Metropolitana' }]
         )
       )
-      const result = transferColumnValues(file, 0, 0, 'city', 'region', false)
+      const result = transferColumnValues(file, 'region', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: false })
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ region: 'Bogotá' })
       expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', region: 'Metropolitana' })
@@ -104,7 +104,7 @@ describe('transferColumnValues', () => {
           [{ city: 'Santiago' }]
         )
       )
-      const result = transferColumnValues(file, 0, 1, 'city', 'capital', false)
+      const result = transferColumnValues(file, 'capital', { tableIdx: 0, fragmentIdx: 1, colName: 'city', editColumnsGlobally: false })
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ city: 'Bogotá' })
       expect(fragments[1].rows[0]).toEqual({ capital: 'Santiago' })
@@ -119,7 +119,7 @@ describe('transferColumnValues', () => {
           [{ city: 'Santiago' }]
         )
       )
-      const result = transferColumnValues(file, 0, 0, 'city', 'capital', true)
+      const result = transferColumnValues(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
       expect(fragments[0].rows[0]).toEqual({ capital: 'Bogotá' })
       expect(fragments[1].rows[0]).toEqual({ capital: 'Santiago' })
@@ -129,14 +129,14 @@ describe('transferColumnValues', () => {
   describe('edge cases', () => {
     it('returns the file unchanged when source and destination are the same', () => {
       const file = makeFile(flatTable([{ city: 'Bogotá' }]))
-      const result = transferColumnValues(file, 0, 0, 'city', 'city', true)
+      const result = transferColumnValues(file, 'city', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       expect(result).toBe(file)
     })
 
     it('leaves other tables untouched', () => {
       const other = flatTable([{ city: 'Caracas' }], 5)
       const file = makeFile(flatTable([{ city: 'Bogotá', country: 'Colombia' }]), other)
-      const result = transferColumnValues(file, 0, 0, 'city', 'capital', true)
+      const result = transferColumnValues(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: true })
       expect(result.tables[1]).toBe(other)
     })
   })
