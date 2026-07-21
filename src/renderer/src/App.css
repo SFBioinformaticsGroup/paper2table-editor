@@ -639,7 +639,6 @@ main {
   opacity: 0;
   transition: opacity 0.12s;
   vertical-align: middle;
-  position: relative;
 }
 
 tr:hover .row-actions {
@@ -662,9 +661,6 @@ tr:hover .row-actions {
 }
 
 .row-actions-menu {
-  position: absolute;
-  top: 0;
-  left: 100%;
   background: white;
   border: 1px solid #ccc;
   border-radius: 3px;
@@ -737,9 +733,6 @@ th:hover .col-header-actions {
 }
 
 .col-header-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
   background: white;
   border: 1px solid #ccc;
   border-radius: 3px;

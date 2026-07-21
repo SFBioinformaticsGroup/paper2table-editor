@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { FaCopy, FaEllipsisVertical, FaEraser, FaPencil, FaPlus, FaRightLeft, FaScissors, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { highlightText } from '../highlightUtils'
@@ -16,32 +17,41 @@ interface Props {
 export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, fragmentIdx, callbacks, searchQuery }: Props) {
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
   const [mergeMode, setMergeMode] = useState<'combine' | 'merge' | null>(null)
   const [addAfterOpen, setAddAfterOpen] = useState(false)
   const [addAfterName, setAddAfterName] = useState('')
   const [transferOpen, setTransferOpen] = useState(false)
   const [transferName, setTransferName] = useState('')
   const thRef = useRef<HTMLTableCellElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!menuOpen && !addAfterOpen && !transferOpen) return
+    if (menuPos === null && !addAfterOpen && !transferOpen) return
     function handleMouseDown(e: MouseEvent) {
-      if (thRef.current && !thRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-        setMergeOpen(false)
+      const target = e.target as Node
+      const inTh = thRef.current?.contains(target) ?? false
+      const inMenu = menuRef.current?.contains(target) ?? false
+      if (!inTh && !inMenu) {
+        setMenuPos(null)
+        setMergeMode(null)
         setAddAfterOpen(false)
         setTransferOpen(false)
       }
     }
+    function handleScroll() { setMenuPos(null) }
     document.addEventListener('mousedown', handleMouseDown)
-    return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [menuOpen, addAfterOpen, transferOpen])
+    document.addEventListener('scroll', handleScroll, true)
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('scroll', handleScroll, true)
+    }
+  }, [menuPos, addAfterOpen, transferOpen])
 
   function startRename() {
     setRenameValue(colName)
     setRenaming(true)
-    setMenuOpen(false)
+    setMenuPos(null)
   }
 
   function confirmRename() {
@@ -58,35 +68,35 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   }
 
   function handleClearColumn() {
-    setMenuOpen(false)
+    setMenuPos(null)
     callbacks.clearColumn(fileName, options)
   }
 
   function handleDelete() {
-    setMenuOpen(false)
+    setMenuPos(null)
     callbacks.deleteColumn(fileName, options)
   }
 
   function handleDuplicate() {
-    setMenuOpen(false)
+    setMenuPos(null)
     callbacks.duplicateColumn(fileName, options)
   }
 
   function handleSplitColumn() {
-    setMenuOpen(false)
+    setMenuPos(null)
     callbacks.splitColumn(fileName, options)
   }
 
   function handleMerge(target: string) {
     const separator = mergeMode === 'combine' ? ' ' : ''
-    setMenuOpen(false)
+    setMenuPos(null)
     setMergeMode(null)
     callbacks.mergeColumns(fileName, target, separator, options)
   }
 
   function openAddAfter() {
     setAddAfterOpen(true)
-    setMenuOpen(false)
+    setMenuPos(null)
     setMergeMode(null)
     setAddAfterName('')
   }
@@ -105,7 +115,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
 
   function openTransfer() {
     setTransferOpen(true)
-    setMenuOpen(false)
+    setMenuPos(null)
     setMergeMode(null)
     setTransferName('')
   }
@@ -157,7 +167,17 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
             <button
               className="col-header-icon-btn"
               title="More actions"
-              onClick={() => { setMenuOpen((v) => !v); setMergeMode(null); setAddAfterOpen(false); setTransferOpen(false) }}
+              onClick={() => {
+                if (menuPos !== null) {
+                  setMenuPos(null)
+                } else if (thRef.current) {
+                  const rect = thRef.current.getBoundingClientRect()
+                  setMenuPos({ top: rect.bottom, left: rect.left })
+                }
+                setMergeMode(null)
+                setAddAfterOpen(false)
+                setTransferOpen(false)
+              }}
             >
               <FaEllipsisVertical />
             </button>
@@ -196,8 +216,12 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
           />
         </div>
       )}
-      {menuOpen && (
-        <div className="col-header-menu">
+      {menuPos !== null && createPortal(
+        <div
+          ref={menuRef}
+          className="col-header-menu"
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+        >
           <button onClick={handleDuplicate}>
             <FaCopy /> Duplicate column
           </button>
@@ -232,7 +256,8 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </th>
   )

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaCopy, FaEllipsisVertical, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import { PageModal } from './PageModal'
 import type { CellClipboard, CellSelection, ColumnValue, TableFragment } from '../types'
@@ -55,19 +56,33 @@ function RowActionsMenu({
   callbacks,
   onBreakClick
 }: RowActionsMenuProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
   const tdRef = useRef<HTMLTableCellElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!menuOpen) return
+    if (menuPos === null) return
     function handleMouseDown(e: MouseEvent) {
-      if (tdRef.current && !tdRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
+      const target = e.target as Node
+      const inTd = tdRef.current?.contains(target) ?? false
+      const inMenu = menuRef.current?.contains(target) ?? false
+      if (!inTd && !inMenu) setMenuPos(null)
     }
+    function handleScroll() { setMenuPos(null) }
     document.addEventListener('mousedown', handleMouseDown)
-    return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [menuOpen])
+    document.addEventListener('scroll', handleScroll, true)
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('scroll', handleScroll, true)
+    }
+  }, [menuPos])
+
+  function openMenu() {
+    if (tdRef.current) {
+      const rect = tdRef.current.getBoundingClientRect()
+      setMenuPos(menuPos === null ? { top: rect.top, left: rect.right } : null)
+    }
+  }
 
   return (
     <td className="row-actions" ref={tdRef}>
@@ -125,24 +140,29 @@ function RowActionsMenu({
       </button>
       <button
         title="More actions"
-        onClick={() => setMenuOpen((v) => !v)}
+        onClick={openMenu}
       >
         <FaEllipsisVertical />
       </button>
-      {menuOpen && (
-        <div className="row-actions-menu">
-          <button onClick={() => { callbacks.promoteRowToHeader(fileName, tableIdxZero, fragmentIdx, originalIdx); setMenuOpen(false) }}>
+      {menuPos !== null && createPortal(
+        <div
+          ref={menuRef}
+          className="row-actions-menu"
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+        >
+          <button onClick={() => { callbacks.promoteRowToHeader(fileName, tableIdxZero, fragmentIdx, originalIdx); setMenuPos(null) }}>
             <FaArrowUp /> Promote to header
           </button>
           {originalIdx > 0 && (
-            <button onClick={() => { onBreakClick(); setMenuOpen(false) }}>
+            <button onClick={() => { onBreakClick(); setMenuPos(null) }}>
               <FaScissors /> Break fragment here
             </button>
           )}
-          <button onClick={() => { callbacks.duplicateRow(fileName, tableIdxZero, fragmentIdx, originalIdx); setMenuOpen(false) }}>
+          <button onClick={() => { callbacks.duplicateRow(fileName, tableIdxZero, fragmentIdx, originalIdx); setMenuPos(null) }}>
             <FaCopy /> Duplicate row
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </td>
   )
