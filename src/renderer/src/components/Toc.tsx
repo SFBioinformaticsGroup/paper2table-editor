@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { FaAnglesLeft, FaAnglesRight } from 'react-icons/fa6'
-import type { TablesFile } from '../types'
+import { FaAnglesLeft, FaAnglesRight, FaStar } from 'react-icons/fa6'
+import type { TablesFile, Curation } from '../types'
 import { getTableFragments } from '../utils/getTableFragments'
 import { highlightText } from '../highlightUtils'
 import { PinButton } from './PinButton'
@@ -109,6 +109,10 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, hasS
                   const content = papers[fileName]
                   const isPaperCollapsed = collapsedPapers.has(fileName)
 
+                  const hasCurations = content != null &&
+                    Array.isArray(content.metadata?.['curations']) &&
+                    (content.metadata!['curations'] as Curation[]).length > 0
+
                   const tableItems = content
                     ? content.tables.map((table, tableIdx) => {
                         const fragments = getTableFragments(table)
@@ -136,6 +140,11 @@ export function Toc({ fileNames, papers, activeId, hasMetadata, hasSources, hasS
                         >
                           {content ? (isPaperCollapsed ? '▸' : '▾') : '·'}
                         </button>
+                        {hasCurations && (
+                          <span className="toc-curation-star" title="Has curations">
+                            <FaStar />
+                          </span>
+                        )}
                         <a
                           href="#"
                           className={activeSectionKey === fileName && activeId === paperId ? 'active' : undefined}
