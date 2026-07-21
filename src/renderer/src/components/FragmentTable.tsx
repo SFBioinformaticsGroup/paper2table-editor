@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaCopy, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
+import { useEffect, useRef, useState } from 'react'
+import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaCopy, FaEllipsisVertical, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import { PageModal } from './PageModal'
 import type { CellClipboard, CellSelection, ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
@@ -30,6 +30,122 @@ interface Props {
   cellClipboard: CellClipboard | null
   onCellMouseDown: (fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number, isShift: boolean) => void
   onCellMouseOver: (fileName: string, tableIdx: number, fragmentIdx: number, rowOriginalIdx: number, editableColIdx: number) => void
+}
+
+interface RowActionsMenuProps {
+  fileName: string
+  tableIdxZero: number
+  fragmentIdx: number
+  originalIdx: number
+  displayIdx: number
+  displayedRowsLength: number
+  hasNextFragment: boolean
+  callbacks: EditorCallbacks
+  onBreakClick: () => void
+}
+
+function RowActionsMenu({
+  fileName,
+  tableIdxZero,
+  fragmentIdx,
+  originalIdx,
+  displayIdx,
+  displayedRowsLength,
+  hasNextFragment,
+  callbacks,
+  onBreakClick
+}: RowActionsMenuProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const tdRef = useRef<HTMLTableCellElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleMouseDown(e: MouseEvent) {
+      if (tdRef.current && !tdRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [menuOpen])
+
+  return (
+    <td className="row-actions" ref={tdRef}>
+      <button
+        title="Delete row"
+        onClick={() => callbacks.deleteRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}
+      >
+        <FaTrash />
+      </button>
+      {displayIdx > 0 && (
+        <button
+          title="Merge with previous row"
+          onClick={() => callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, originalIdx, 'prev')}
+        >
+          <FaArrowsUpToLine />
+        </button>
+      )}
+      {displayIdx < displayedRowsLength - 1 && (
+        <button
+          title="Merge with next row"
+          onClick={() => callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, originalIdx, 'next')}
+        >
+          <FaArrowsDownToLine />
+        </button>
+      )}
+      {displayIdx === 0 && fragmentIdx > 0 && (
+        <button
+          title="Move to previous fragment"
+          onClick={() => callbacks.moveFirstRowToPrevFragment(fileName, tableIdxZero, fragmentIdx)}
+        >
+          <FaCircleArrowUp />
+        </button>
+      )}
+      {displayIdx === displayedRowsLength - 1 && hasNextFragment && (
+        <button
+          title="Merge with first row of next fragment"
+          onClick={() => callbacks.mergeLastRowWithNextFragment(fileName, tableIdxZero, fragmentIdx)}
+        >
+          <FaAnglesDown />
+        </button>
+      )}
+      {displayIdx === displayedRowsLength - 1 && hasNextFragment && (
+        <button
+          title="Move to next fragment"
+          onClick={() => callbacks.moveLastRowToNextFragment(fileName, tableIdxZero, fragmentIdx)}
+        >
+          <FaCircleArrowDown />
+        </button>
+      )}
+      <button
+        title="Add row after"
+        onClick={() => callbacks.addRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}
+      >
+        <FaPlus />
+      </button>
+      <button
+        title="More actions"
+        onClick={() => setMenuOpen((v) => !v)}
+      >
+        <FaEllipsisVertical />
+      </button>
+      {menuOpen && (
+        <div className="row-actions-menu">
+          <button onClick={() => { callbacks.promoteRowToHeader(fileName, tableIdxZero, fragmentIdx, originalIdx); setMenuOpen(false) }}>
+            <FaArrowUp /> Promote to header
+          </button>
+          {originalIdx > 0 && (
+            <button onClick={() => { onBreakClick(); setMenuOpen(false) }}>
+              <FaScissors /> Break fragment here
+            </button>
+          )}
+          <button onClick={() => { callbacks.duplicateRow(fileName, tableIdxZero, fragmentIdx, originalIdx); setMenuOpen(false) }}>
+            <FaCopy /> Duplicate row
+          </button>
+        </div>
+      )}
+    </td>
+  )
 }
 
 export function FragmentTable({
@@ -184,99 +300,17 @@ export function FragmentTable({
                 const cellRowspans = rowspanMatrix[displayIdx] ?? {}
                 return (
                   <tr key={originalIdx}>
-                    <td className="row-actions">
-                      <button
-                        title="Delete row"
-                        onClick={() =>
-                          callbacks.deleteRow(fileName, tableIdxZero, fragmentIdx, originalIdx)
-                        }
-                      >
-                        <FaTrash />
-                      </button>
-                      <button
-                        title="Promote row to header"
-                        onClick={() =>
-                          callbacks.promoteRowToHeader(
-                            fileName,
-                            tableIdxZero,
-                            fragmentIdx,
-                            originalIdx
-                          )
-                        }
-                      >
-                        <FaArrowUp />
-                      </button>
-                      {displayIdx > 0 && (
-                        <button
-                          title="Merge with previous row"
-                          onClick={() =>
-                            callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, originalIdx, 'prev')
-                          }
-                        >
-                          <FaArrowsUpToLine />
-                        </button>
-                      )}
-                      {displayIdx < displayedRows.length - 1 && (
-                        <button
-                          title="Merge with next row"
-                          onClick={() =>
-                            callbacks.mergeRow(fileName, tableIdxZero, fragmentIdx, originalIdx, 'next')
-                          }
-                        >
-                          <FaArrowsDownToLine />
-                        </button>
-                      )}
-                      {displayIdx === 0 && fragmentIdx > 0 && (
-                        <button
-                          title="Move to previous fragment"
-                          onClick={() =>
-                            callbacks.moveFirstRowToPrevFragment(fileName, tableIdxZero, fragmentIdx)
-                          }
-                        >
-                          <FaCircleArrowUp />
-                        </button>
-                      )}
-                      {displayIdx === displayedRows.length - 1 && hasNextFragment && (
-                        <button
-                          title="Merge with first row of next fragment"
-                          onClick={() =>
-                            callbacks.mergeLastRowWithNextFragment(fileName, tableIdxZero, fragmentIdx)
-                          }
-                        >
-                          <FaAnglesDown />
-                        </button>
-                      )}
-                      {displayIdx === displayedRows.length - 1 && hasNextFragment && (
-                        <button
-                          title="Move to next fragment"
-                          onClick={() =>
-                            callbacks.moveLastRowToNextFragment(fileName, tableIdxZero, fragmentIdx)
-                          }
-                        >
-                          <FaCircleArrowDown />
-                        </button>
-                      )}
-                      <button
-                        title="Duplicate row"
-                        onClick={() => callbacks.duplicateRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}
-                      >
-                        <FaCopy />
-                      </button>
-                      <button
-                        title="Add row after"
-                        onClick={() => callbacks.addRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}
-                      >
-                        <FaPlus />
-                      </button>
-                      {originalIdx > 0 && (
-                        <button
-                          title="Break fragment here — rows from this row onward go to a new fragment"
-                          onClick={() => setPendingBreakRowIdx(originalIdx)}
-                        >
-                          <FaScissors />
-                        </button>
-                      )}
-                    </td>
+                    <RowActionsMenu
+                      fileName={fileName}
+                      tableIdxZero={tableIdxZero}
+                      fragmentIdx={fragmentIdx}
+                      originalIdx={originalIdx}
+                      displayIdx={displayIdx}
+                      displayedRowsLength={displayedRows.length}
+                      hasNextFragment={hasNextFragment}
+                      callbacks={callbacks}
+                      onBreakClick={() => setPendingBreakRowIdx(originalIdx)}
+                    />
                     {columns.map((col) => {
                       const span = cellRowspans[col] ?? 1
                       if (span === 0) return null
