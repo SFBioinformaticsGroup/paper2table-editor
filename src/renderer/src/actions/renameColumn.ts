@@ -13,9 +13,11 @@ export function renameColumn(
   scope: ColumnScope
 ): TablesFile {
   const table = file.tables[scope.tableIdx];
-  const allCols = new Set(
-    getTableFragments(table).flatMap((f) => columnNames(f.rows))
-  );
+  const fragments = getTableFragments(table);
+  const relevantFragments = scope.editColumnsGlobally
+    ? fragments
+    : [fragments[scope.fragmentIdx]];
+  const allCols = new Set(relevantFragments.flatMap((f) => columnNames(f.rows)));
   allCols.delete(scope.colName);
   const safeName = uniqueName(newName, allCols);
   const renameMap = new Map([[scope.colName, safeName]]);

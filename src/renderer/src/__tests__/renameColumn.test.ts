@@ -68,4 +68,14 @@ describe('renameColumn', () => {
     expect(fragments[0].rows[0]).toEqual({ capital: 'Bogotá' })
     expect(fragments[1].rows[0]).toEqual({ city: 'Santiago' })
   })
+
+  it('collision avoidance only checks the targeted fragment when editColumnsGlobally = false', () => {
+    const file = makeFile(
+      fragmentedTable([{ city: 'Bogotá' }], [{ city: 'Santiago', capital: 'Santiago Centro' }])
+    )
+    const result = renameColumn(file, 'capital', { tableIdx: 0, fragmentIdx: 0, colName: 'city', editColumnsGlobally: false })
+    const fragments = (result.tables[0] as { table_fragments: { rows: Row[] }[] }).table_fragments
+    expect(fragments[0].rows[0]).toEqual({ capital: 'Bogotá' })
+    expect(fragments[1].rows[0]).toEqual({ city: 'Santiago', capital: 'Santiago Centro' })
+  })
 })
