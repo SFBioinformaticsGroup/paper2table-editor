@@ -757,8 +757,8 @@ export function App() {
         applyEdit(fileName, (f) => deleteColumn(f, { ...options, editColumnsGlobally })),
       duplicateColumn: (fileName, options) =>
         applyEdit(fileName, (f) => duplicateColumn(f, { ...options, editColumnsGlobally })),
-      splitColumn: (fileName, options) =>
-        applyEdit(fileName, (f) => splitColumn(f, { ...options, editColumnsGlobally })),
+      splitColumn: (fileName, strategy, options) =>
+        applyEdit(fileName, (f) => splitColumn(f, { ...options, editColumnsGlobally }, strategy)),
       renameColumn: (fileName, newName, options) =>
         applyEdit(fileName, (f) => renameColumn(f, newName, { ...options, editColumnsGlobally })),
       mergeColumns: (fileName, dropCol, separator, options) =>

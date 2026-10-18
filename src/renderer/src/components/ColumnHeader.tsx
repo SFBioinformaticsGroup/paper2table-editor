@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FaCopy, FaEllipsisVertical, FaEraser, FaPencil, FaPlus, FaRightLeft, FaScissors, FaTrash } from 'react-icons/fa6'
 import type { EditorCallbacks } from '../editorCallbacks'
+import type { SplitStrategy } from '../actions/splitColumn'
 import { highlightText } from '../highlightUtils'
 
 interface Props {
@@ -19,6 +20,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   const [renameValue, setRenameValue] = useState('')
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
   const [mergeMode, setMergeMode] = useState<'combine' | 'merge' | null>(null)
+  const [splitOpen, setSplitOpen] = useState(false)
   const [addAfterOpen, setAddAfterOpen] = useState(false)
   const [addAfterName, setAddAfterName] = useState('')
   const [transferOpen, setTransferOpen] = useState(false)
@@ -27,7 +29,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (menuPos === null && !addAfterOpen && !transferOpen) return
+    if (menuPos === null && !addAfterOpen && !transferOpen && !splitOpen) return
     function handleMouseDown(e: MouseEvent) {
       const target = e.target as Node
       const inTh = thRef.current?.contains(target) ?? false
@@ -35,11 +37,12 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
       if (!inTh && !inMenu) {
         setMenuPos(null)
         setMergeMode(null)
+        setSplitOpen(false)
         setAddAfterOpen(false)
         setTransferOpen(false)
       }
     }
-    function handleScroll() { setMenuPos(null) }
+    function handleScroll() { setMenuPos(null); setSplitOpen(false) }
     document.addEventListener('mousedown', handleMouseDown)
     document.addEventListener('scroll', handleScroll, true)
     return () => {
@@ -82,9 +85,10 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
     callbacks.duplicateColumn(fileName, options)
   }
 
-  function handleSplitColumn() {
+  function handleSplit(strategy: SplitStrategy) {
     setMenuPos(null)
-    callbacks.splitColumn(fileName, options)
+    setSplitOpen(false)
+    callbacks.splitColumn(fileName, strategy, options)
   }
 
   function handleMerge(target: string) {
@@ -175,6 +179,7 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
                   setMenuPos({ top: rect.bottom, left: rect.left })
                 }
                 setMergeMode(null)
+                setSplitOpen(false)
                 setAddAfterOpen(false)
                 setTransferOpen(false)
               }}
@@ -225,9 +230,17 @@ export function ColumnHeader({ colName, allDataColumns, fileName, tableIdx, frag
           <button onClick={handleDuplicate}>
             <FaCopy /> Duplicate column
           </button>
-          <button onClick={handleSplitColumn}>
-            <FaScissors /> Split by last comma
+          <button onClick={() => setSplitOpen((o) => !o)}>
+            <FaScissors /> Split…
           </button>
+          {splitOpen && (
+            <div className="col-merge-list">
+              <button className="col-merge-item" onClick={() => handleSplit('comma')}>Last comma</button>
+              <button className="col-merge-item" onClick={() => handleSplit('parentheses')}>Last parentheses</button>
+              <button className="col-merge-item" onClick={() => handleSplit('period')}>Last period</button>
+              <button className="col-merge-item" onClick={() => handleSplit('slash')}>Last slash</button>
+            </div>
+          )}
           <button onClick={openTransfer}>
             <FaRightLeft /> Transfer values to…
           </button>

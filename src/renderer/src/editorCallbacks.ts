@@ -1,3 +1,5 @@
+import type { SplitStrategy } from './actions/splitColumn'
+
 export interface ColumnCallbackOpts {
   tableIdx: number
   fragmentIdx: number
@@ -40,7 +42,7 @@ export interface EditorCallbacks {
   clearColumn: (fileName: string, options: ColumnCallbackOpts) => void
   deleteColumn: (fileName: string, options: ColumnCallbackOpts) => void
   duplicateColumn: (fileName: string, options: ColumnCallbackOpts) => void
-  splitColumn: (fileName: string, options: ColumnCallbackOpts) => void
+  splitColumn: (fileName: string, strategy: SplitStrategy, options: ColumnCallbackOpts) => void
   renameColumn: (fileName: string, newName: string, options: ColumnCallbackOpts) => void
   mergeColumns: (fileName: string, dropCol: string, separator: string, options: ColumnCallbackOpts) => void
   addColumn: (fileName: string, columnName: string, options: ColumnCallbackOpts) => void
