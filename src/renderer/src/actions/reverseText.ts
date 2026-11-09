@@ -4,7 +4,10 @@ import type { TablesFile, Row, ColumnValue } from '../types';
 function reverseColumnValue(value: ColumnValue): ColumnValue {
   if (value === null || typeof value === 'number') return value
   if (typeof value === 'string') return value.split('').reverse().join('')
-  return value.map((v) => ({ ...v, value: v.value.split('').reverse().join('') }))
+  return value.map((v) => ({
+    ...v,
+    value: typeof v.value === 'string' ? v.value.split('').reverse().join('') : v.value,
+  }))
 }
 
 

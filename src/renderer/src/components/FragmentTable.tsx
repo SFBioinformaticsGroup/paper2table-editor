@@ -8,7 +8,7 @@ import { highlightText } from '../highlightUtils'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { ColumnHeader } from './ColumnHeader'
 import { EditableCell } from './EditableCell'
-import { isEmptyRow, buildFragmentColumns, columnNames, computeRowspans, agreementClass, rowPaletteClass, renderDataCell, renderColumnValue } from '../utils/table'
+import { isEmptyRow, buildFragmentColumns, columnNames, getMultivaluedExpansion, agreementClass, rowPaletteClass, renderDataCell, renderColumnValue } from '../utils/table'
 
 const META_COLS = new Set(['row_', 'agreement_level_', 'readers_', 'sources_'])
 
@@ -17,8 +17,8 @@ interface Props {
   tableIdxZero: number     // 0-based index into file.tables
   fragmentIdx: number      // 0-based fragment index
   fragment: TableFragment
-  uuidToReader: Map<string, string>
-  uuidToFullPath: Map<string, string | null>
+  idToReader: Map<string, string>
+  idToFullPath: Map<string, string | null>
   anchorId: string | undefined  // undefined for single-fragment tables (anchor is on h4 in parent)
   showFragmentHeading: boolean  // true when parent table has multiple fragments
   fileName: string
@@ -43,6 +43,7 @@ interface RowActionsMenuProps {
   hasNextFragment: boolean
   callbacks: EditorCallbacks
   onBreakClick: () => void
+  rowSpan?: number
 }
 
 function RowActionsMenu({
@@ -54,7 +55,8 @@ function RowActionsMenu({
   displayedRowsLength,
   hasNextFragment,
   callbacks,
-  onBreakClick
+  onBreakClick,
+  rowSpan,
 }: RowActionsMenuProps) {
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
   const tdRef = useRef<HTMLTableCellElement>(null)
@@ -85,7 +87,7 @@ function RowActionsMenu({
   }
 
   return (
-    <td className="row-actions" ref={tdRef}>
+    <td className="row-actions" ref={tdRef} rowSpan={rowSpan}>
       <button
         title="Delete row"
         onClick={() => callbacks.deleteRow(fileName, tableIdxZero, fragmentIdx, originalIdx)}
@@ -173,8 +175,8 @@ export function FragmentTable({
   tableIdxZero,
   fragmentIdx,
   fragment,
-  uuidToReader,
-  uuidToFullPath,
+  idToReader,
+  idToFullPath,
   anchorId,
   showFragmentHeading,
   fileName,
@@ -203,10 +205,6 @@ export function FragmentTable({
     ? buildFragmentColumns(displayedRows.map((r) => r.row))
     : []
   const allDataCols = columnNames(displayedRows.map((r) => r.row))
-  const rowspanMatrix = displayedRows.length > 0
-    ? computeRowspans(displayedRows.map((r) => r.row), columns, uuidToReader)
-    : []
-
   const editableCols = allDataCols.filter((c) => !META_COLS.has(c))
 
   const isOwnSelection =
@@ -315,46 +313,59 @@ export function FragmentTable({
                 </td>
               </tr>
             ) : (
-              displayedRows.map(({ row, originalIdx }, displayIdx) => {
+              displayedRows.flatMap(({ row, originalIdx }, displayIdx) => {
                 const dataCols = columns.filter((c) => !META_COLS.has(c))
-                const cellRowspans = rowspanMatrix[displayIdx] ?? {}
-                return (
-                  <tr key={originalIdx}>
-                    <RowActionsMenu
-                      fileName={fileName}
-                      tableIdxZero={tableIdxZero}
-                      fragmentIdx={fragmentIdx}
-                      originalIdx={originalIdx}
-                      displayIdx={displayIdx}
-                      displayedRowsLength={displayedRows.length}
-                      hasNextFragment={hasNextFragment}
-                      callbacks={callbacks}
-                      onBreakClick={() => setPendingBreakRowIdx(originalIdx)}
-                    />
+                const { span, multivaluedCols } = getMultivaluedExpansion(row, columns)
+                const rowSpanProp = span > 1 ? span : undefined
+                return Array.from({ length: span }, (_, subRowIdx) => (
+                  <tr key={`${originalIdx}-${subRowIdx}`}>
+                    {subRowIdx === 0 && (
+                      <RowActionsMenu
+                        fileName={fileName}
+                        tableIdxZero={tableIdxZero}
+                        fragmentIdx={fragmentIdx}
+                        originalIdx={originalIdx}
+                        displayIdx={displayIdx}
+                        displayedRowsLength={displayedRows.length}
+                        hasNextFragment={hasNextFragment}
+                        callbacks={callbacks}
+                        onBreakClick={() => setPendingBreakRowIdx(originalIdx)}
+                        rowSpan={rowSpanProp}
+                      />
+                    )}
                     {columns.map((col) => {
-                      const span = cellRowspans[col] ?? 1
-                      if (span === 0) return null
-                      const rowSpanProp = span > 1 ? span : undefined
+                      if (multivaluedCols.has(col)) {
+                        const values = multivaluedCols.get(col)!
+                        if (subRowIdx < values.length) {
+                          return (
+                            <td key={col} className={agreementClass(values[subRowIdx].agreement_level)}>
+                              {highlightText(values[subRowIdx].value, searchQuery ?? '')}
+                            </td>
+                          )
+                        }
+                        return <td key={col} />
+                      }
+                      if (subRowIdx > 0) return null
                       if (col === 'sources_') {
-                        const uuids = row.sources_ ?? []
+                        const ids = row.sources_ ?? []
                         return (
                           <td key={col} className="sources-cell" rowSpan={rowSpanProp}>
-                            {uuids.map((uuid) => {
-                              const fullPath = uuidToFullPath.get(uuid)
+                            {ids.map((id) => {
+                              const fullPath = idToFullPath.get(id)
                               const navigable = fullPath != null
                               return navigable ? (
                                 <a
-                                  key={uuid}
-                                  className="uuid-chip"
+                                  key={id}
+                                  className="id-chip"
                                   title={fullPath}
                                   href="#"
-                                  onClick={(e) => { e.preventDefault(); callbacks.navigateToSource(uuid, tableIdxZero + 1) }}
+                                  onClick={(e) => { e.preventDefault(); callbacks.navigateToSource(id, tableIdxZero + 1) }}
                                 >
-                                  {uuid.slice(0, 8)}
+                                  {id.slice(0, 8)}
                                 </a>
                               ) : (
-                                <span key={uuid} className="uuid-chip uuid-chip-dead" title={uuid}>
-                                  {uuid.slice(0, 8)}
+                                <span key={id} className="id-chip id-chip-dead" title={id}>
+                                  {id.slice(0, 8)}
                                 </span>
                               )
                             })}
@@ -365,7 +376,7 @@ export function FragmentTable({
                         let tdClass: string | undefined
                         if (col === 'agreement_level_') tdClass = agreementClass(row.agreement_level_)
                         else if (col === 'row_') tdClass = rowPaletteClass(row)
-                        return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{highlightText(renderDataCell(row, col, uuidToReader), searchQuery ?? '')}</td>
+                        return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{highlightText(renderDataCell(row, col, idToReader), searchQuery ?? '')}</td>
                       }
                       const colIdx = dataCols.indexOf(col)
                       const isEditing =
@@ -384,7 +395,7 @@ export function FragmentTable({
                       return (
                         <EditableCell
                           key={col}
-                          displayValue={renderDataCell(row, col, uuidToReader)}
+                          displayValue={renderDataCell(row, col, idToReader)}
                           fileName={fileName}
                           tableIdx={tableIdxZero}
                           fragmentIdx={fragmentIdx}
@@ -412,7 +423,7 @@ export function FragmentTable({
                       )
                     })}
                   </tr>
-                )
+                ))
               })
             )}
           </tbody>

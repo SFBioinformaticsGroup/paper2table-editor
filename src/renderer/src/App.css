@@ -908,7 +908,7 @@ th:hover .col-header-actions {
   white-space: nowrap;
 }
 
-.uuid-chip {
+.id-chip {
   display: inline-block;
   font-family: monospace;
   font-size: 0.78em;
@@ -923,12 +923,12 @@ th:hover .col-header-actions {
   cursor: pointer;
 }
 
-a.uuid-chip:hover {
+a.id-chip:hover {
   background: #d8e0ff;
   border-color: #8090e0;
 }
 
-.uuid-chip-dead {
+.id-chip-dead {
   background: #f0f0f0;
   border-color: #ccc;
   color: #999;

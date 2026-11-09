@@ -7,7 +7,7 @@ import { TableToolbar } from './TableToolbar'
 import { NoteButton } from './NoteButton'
 import { highlightText } from '../highlightUtils'
 import { getTableFragments } from '../utils/getTableFragments'
-import { readerEmoji, collectPaperSourceUuids, renderCitation, columnNames } from '../utils/table'
+import { readerEmoji, collectPaperSourceids, renderCitation, columnNames } from '../utils/table'
 import { hasNonSemanticColumns } from '../actions/applyPrevFragmentColumnNames'
 
 interface Props {
@@ -15,8 +15,8 @@ interface Props {
   paperName: string
   content: TablesFile
   allSources: Source[]
-  uuidToReader: Map<string, string>
-  uuidToFullPath: Map<string, string | null>
+  idToReader: Map<string, string>
+  idToFullPath: Map<string, string | null>
   fileName: string
   callbacks: EditorCallbacks
   canUndo: boolean
@@ -38,40 +38,40 @@ interface Props {
 function PaperSources({
   sources,
   navigateToSource,
-  uuidToFullPath
+  idToFullPath
 }: {
   sources: Source[]
-  navigateToSource: (uuid: string) => void
-  uuidToFullPath: Map<string, string | null>
+  navigateToSource: (id: string) => void
+  idToFullPath: Map<string, string | null>
 }) {
   if (sources.length === 0) return null
   const allKeys = new Set(sources.flatMap((s) => Object.keys(s)))
-  const preferred = ['uuid', 'reader', 'path']
+  const preferred = ['id', 'reader', 'path']
   const sourceKeys = [
     ...preferred.filter((k) => allKeys.has(k)),
     ...[...allKeys].filter((k) => !preferred.includes(k)).sort()
   ]
 
   function renderCell(source: Source, key: string) {
-    if (key === 'uuid' && source.uuid) {
+    if (key === 'id' && source.id) {
       const emoji = readerEmoji(source.reader)
-      const fullPath = uuidToFullPath.get(source.uuid)
+      const fullPath = idToFullPath.get(source.id)
       const navigable = fullPath != null
       return (
         <td key={key}>
           {emoji && <span style={{ marginRight: 4 }}>{emoji}</span>}
           {navigable ? (
             <a
-              className="uuid-chip"
+              className="id-chip"
               title={fullPath}
               href="#"
-              onClick={(e) => { e.preventDefault(); navigateToSource(source.uuid!) }}
+              onClick={(e) => { e.preventDefault(); navigateToSource(source.id!) }}
             >
-              {source.uuid.slice(0, 8)}
+              {source.id.slice(0, 8)}
             </a>
           ) : (
-            <span className="uuid-chip uuid-chip-dead" title={source.uuid}>
-              {source.uuid.slice(0, 8)}
+            <span className="id-chip id-chip-dead" title={source.id}>
+              {source.id.slice(0, 8)}
             </span>
           )}
         </td>
@@ -135,8 +135,8 @@ export function PaperSection({
   paperName,
   content,
   allSources,
-  uuidToReader,
-  uuidToFullPath,
+  idToReader,
+  idToFullPath,
   fileName,
   callbacks,
   canUndo,
@@ -155,8 +155,8 @@ export function PaperSection({
   onCellMouseOver
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const paperUuids = collectPaperSourceUuids(content)
-  const paperSources = allSources.filter((s) => s.uuid != null && paperUuids.has(s.uuid))
+  const paperids = collectPaperSourceids(content)
+  const paperSources = allSources.filter((s) => s.id != null && paperids.has(s.id))
 
   return (
     <div className="paper">
@@ -253,7 +253,7 @@ export function PaperSection({
       <PaperSources
         sources={paperSources}
         navigateToSource={callbacks.navigateToSource}
-        uuidToFullPath={uuidToFullPath}
+        idToFullPath={idToFullPath}
       />
       <PaperCurations
         curations={
@@ -310,8 +310,8 @@ export function PaperSection({
                   tableIdxZero={tableIdx}
                   fragmentIdx={fragmentIdx}
                   fragment={fragment}
-                  uuidToReader={uuidToReader}
-                  uuidToFullPath={uuidToFullPath}
+                  idToReader={idToReader}
+                  idToFullPath={idToFullPath}
                   anchorId={anchorId}
                   showFragmentHeading={hasMultipleFragments}
                   fileName={fileName}

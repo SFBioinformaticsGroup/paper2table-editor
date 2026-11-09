@@ -21,8 +21,8 @@ interface Window {
     onNavigateForward: (callback: () => void) => (() => void)
     resolveSources: (
       dirPath: string,
-      sources: Array<{ uuid: string; path: string }>
-    ) => Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>>
+      sources: Array<{ id: string; path: string }>
+    ) => Promise<Array<{ id: string; fullPath: string; isDir: boolean }>>
     onFocusSearchBar: (callback: () => void) => (() => void)
     onSetShowEmptyRows: (callback: (show: boolean) => void) => (() => void)
     onSetEditColumnsGlobally: (callback: (value: boolean) => void) => (() => void)

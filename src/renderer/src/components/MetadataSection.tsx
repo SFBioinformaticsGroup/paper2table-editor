@@ -5,8 +5,8 @@ import { highlightText } from '../highlightUtils'
 interface Props {
   metadata: Metadata
   settings?: Record<string, unknown>
-  navigateToSource: (uuid: string) => void
-  uuidToFullPath: Map<string, string | null>
+  navigateToSource: (id: string) => void
+  idToFullPath: Map<string, string | null>
   section: 'metadata' | 'sources' | 'settings'
   searchQuery?: string
 }
@@ -15,32 +15,32 @@ function SourceCell({
   source,
   colKey,
   navigateToSource,
-  uuidToFullPath
+  idToFullPath
 }: {
   source: Source
   colKey: string
-  navigateToSource: (uuid: string) => void
-  uuidToFullPath: Map<string, string | null>
+  navigateToSource: (id: string) => void
+  idToFullPath: Map<string, string | null>
 }) {
-  if (colKey === 'uuid' && source.uuid) {
+  if (colKey === 'id' && source.id) {
     const emoji = readerEmoji(source.reader)
-    const fullPath = uuidToFullPath.get(source.uuid)
+    const fullPath = idToFullPath.get(source.id)
     const navigable = fullPath != null
     return (
       <td>
         {emoji && <span style={{ marginRight: 4 }}>{emoji}</span>}
         {navigable ? (
           <a
-            className="uuid-chip"
+            className="id-chip"
             title={fullPath}
             href="#"
-            onClick={(e) => { e.preventDefault(); navigateToSource(source.uuid!) }}
+            onClick={(e) => { e.preventDefault(); navigateToSource(source.id!) }}
           >
-            {source.uuid.slice(0, 8)}
+            {source.id.slice(0, 8)}
           </a>
         ) : (
-          <span className="uuid-chip uuid-chip-dead" title={source.uuid}>
-            {source.uuid.slice(0, 8)}
+          <span className="id-chip id-chip-dead" title={source.id}>
+            {source.id.slice(0, 8)}
           </span>
         )}
       </td>
@@ -49,11 +49,11 @@ function SourceCell({
   return <td>{String(source[colKey] ?? '')}</td>
 }
 
-export function MetadataSection({ metadata, settings, navigateToSource, uuidToFullPath, section, searchQuery }: Props) {
+export function MetadataSection({ metadata, settings, navigateToSource, idToFullPath, section, searchQuery }: Props) {
   const rows = flattenMetadataRows(metadata)
   const sources = metadata.sources ?? []
   const allKeys = new Set(sources.flatMap((s) => Object.keys(s)))
-  const preferred = ['uuid', 'reader', 'path']
+  const preferred = ['id', 'reader', 'path']
   const sourceKeys = [
     ...preferred.filter((k) => allKeys.has(k)),
     ...[...allKeys].filter((k) => !preferred.includes(k)).sort()
@@ -100,7 +100,7 @@ export function MetadataSection({ metadata, settings, navigateToSource, uuidToFu
                       source={source}
                       colKey={k}
                       navigateToSource={navigateToSource}
-                      uuidToFullPath={uuidToFullPath}
+                      idToFullPath={idToFullPath}
                     />
                   ))}
                 </tr>

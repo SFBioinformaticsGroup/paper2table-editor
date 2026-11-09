@@ -451,7 +451,7 @@ ipcMain.handle('run-tablemerge', (_event, paperName: string, outputPath: string,
 ipcMain.handle('resolve-sources', async (
   _event,
   dirPath: string,
-  sources: Array<{ uuid: string; path: string }>
+  sources: Array<{ id: string; path: string }>
 ) => {
   if (sources.length === 0) return []
   const candidates = [dirPath, dirname(dirPath), dirname(dirname(dirPath))]
@@ -463,11 +463,11 @@ ipcMain.handle('resolve-sources', async (
     if (baseDir) break
   }
   if (!baseDir) return []
-  return sources.flatMap(({ uuid, path: sp }) => {
+  return sources.flatMap(({ id, path: sp }) => {
     const full = join(baseDir!, sp)
     if (!existsSync(full)) return []
     try {
-      return [{ uuid, fullPath: full, isDir: statSync(full).isDirectory() }]
+      return [{ id, fullPath: full, isDir: statSync(full).isDirectory() }]
     } catch {
       return []
     }

@@ -55,8 +55,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   resolveSources: (
     dirPath: string,
-    sources: Array<{ uuid: string; path: string }>
-  ): Promise<Array<{ uuid: string; fullPath: string; isDir: boolean }>> =>
+    sources: Array<{ id: string; path: string }>
+  ): Promise<Array<{ id: string; fullPath: string; isDir: boolean }>> =>
     ipcRenderer.invoke('resolve-sources', dirPath, sources),
   onFocusSearchBar: (callback: () => void): (() => void) => {
     const handler = () => callback()

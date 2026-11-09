@@ -70,9 +70,9 @@ describe('mergeAllFragments', () => {
       flatTable([{ name: 'A' }], 1),
       flatTable([{ name: 'B' }], 2)
     )
-    const fileWithCitation = { ...file, citation: 'Test citation', uuid: 'abc-123' }
+    const fileWithCitation = { ...file, citation: 'Test citation', id: 'abc-123' }
     const result = mergeAllFragments(fileWithCitation)
     expect(result.citation).toBe('Test citation')
-    expect(result.uuid).toBe('abc-123')
+    expect(result.id).toBe('abc-123')
   })
 })

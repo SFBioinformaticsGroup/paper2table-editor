@@ -134,18 +134,18 @@ const META_COL_SET = new Set(['row_', 'agreement_level_', 'readers_', 'sources_'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function buildUuidToReader(metadata: Metadata): Map<string, string> {
+function buildidToReader(metadata: Metadata): Map<string, string> {
   const map = new Map<string, string>()
   for (const source of metadata.sources ?? []) {
-    if (source.uuid && source.reader) map.set(source.uuid, source.reader)
+    if (source.id && source.reader) map.set(source.id, source.reader)
   }
   return map
 }
 
-function buildUuidToFullPath(resolvedSources: Record<string, ResolvedSource>): Map<string, string | null> {
+function buildidToFullPath(resolvedSources: Record<string, ResolvedSource>): Map<string, string | null> {
   const map = new Map<string, string | null>()
-  for (const [uuid, info] of Object.entries(resolvedSources)) {
-    map.set(uuid, info.fullPath)
+  for (const [id, info] of Object.entries(resolvedSources)) {
+    map.set(id, info.fullPath)
   }
   return map
 }
@@ -260,8 +260,8 @@ export function App() {
       }
       await window.api.importAnnotationsFromSyncFile(dirPath)
       const sourcesInput = (listing.metadata.sources ?? [])
-        .filter((s) => s.uuid && s.path)
-        .map((s) => ({ uuid: String(s.uuid), path: String(s.path) }))
+        .filter((s) => s.id && s.path)
+        .map((s) => ({ id: String(s.id), path: String(s.path) }))
       const [resolved, pinnedPapers, archivedPapers, paperNotes] = await Promise.all([
         window.api.resolveSources(dirPath, sourcesInput),
         window.api.getPinnedPapers(dirPath),
@@ -269,8 +269,8 @@ export function App() {
         window.api.getPaperNotes(dirPath)
       ])
       const resolvedSources: Record<string, ResolvedSource> = {}
-      for (const { uuid, fullPath, isDir } of resolved) {
-        resolvedSources[uuid] = { fullPath, isDir }
+      for (const { id, fullPath, isDir } of resolved) {
+        resolvedSources[id] = { fullPath, isDir }
       }
       const hasMetadata = Object.keys(listing.metadata).length > 0
       setState({
@@ -611,9 +611,9 @@ export function App() {
   }
 
   const navigateToSourceFn = useCallback(
-    (uuid: string, tableNumber?: number) => {
+    (id: string, tableNumber?: number) => {
       if (!state) return
-      const info = state.resolvedSources[uuid]
+      const info = state.resolvedSources[id]
       if (!info) return
 
       const dirtyCount = Object.values(histories).filter(
@@ -1016,8 +1016,8 @@ export function App() {
     )
   }
 
-  const uuidToReader = buildUuidToReader(state.metadata)
-  const uuidToFullPath = buildUuidToFullPath(state.resolvedSources)
+  const idToReader = buildidToReader(state.metadata)
+  const idToFullPath = buildidToFullPath(state.resolvedSources)
   const allSources = state.metadata.sources ?? []
   const hasMetadata = Object.keys(state.metadata).length > 0
   const effectiveSettings: Record<string, unknown> | null =
@@ -1101,7 +1101,7 @@ export function App() {
                   <MetadataSection
                     metadata={state.metadata}
                     navigateToSource={callbacks.navigateToSource}
-                    uuidToFullPath={uuidToFullPath}
+                    idToFullPath={idToFullPath}
                     section="metadata"
                     searchQuery={searchQuery}
                   />
@@ -1110,7 +1110,7 @@ export function App() {
                   <MetadataSection
                     metadata={state.metadata}
                     navigateToSource={callbacks.navigateToSource}
-                    uuidToFullPath={uuidToFullPath}
+                    idToFullPath={idToFullPath}
                     section="sources"
                     searchQuery={searchQuery}
                   />
@@ -1120,7 +1120,7 @@ export function App() {
                     metadata={state.metadata}
                     settings={effectiveSettings}
                     navigateToSource={callbacks.navigateToSource}
-                    uuidToFullPath={uuidToFullPath}
+                    idToFullPath={idToFullPath}
                     section="settings"
                     searchQuery={searchQuery}
                   />
@@ -1143,8 +1143,8 @@ export function App() {
                         paperName={fileName}
                         content={content}
                         allSources={allSources}
-                        uuidToReader={uuidToReader}
-                        uuidToFullPath={uuidToFullPath}
+                        idToReader={idToReader}
+                        idToFullPath={idToFullPath}
                         fileName={fileName}
                         callbacks={callbacks}
                         canUndo={canUndo}
@@ -1172,7 +1172,7 @@ export function App() {
                   <MetadataSection
                     metadata={state.metadata}
                     navigateToSource={callbacks.navigateToSource}
-                    uuidToFullPath={uuidToFullPath}
+                    idToFullPath={idToFullPath}
                     section={activeSectionKey}
                     searchQuery={searchQuery}
                   />
@@ -1182,7 +1182,7 @@ export function App() {
                     metadata={state.metadata}
                     settings={effectiveSettings}
                     navigateToSource={callbacks.navigateToSource}
-                    uuidToFullPath={uuidToFullPath}
+                    idToFullPath={idToFullPath}
                     section="settings"
                     searchQuery={searchQuery}
                   />
@@ -1216,8 +1216,8 @@ export function App() {
                         paperName={fileName}
                         content={content}
                         allSources={allSources}
-                        uuidToReader={uuidToReader}
-                        uuidToFullPath={uuidToFullPath}
+                        idToReader={idToReader}
+                        idToFullPath={idToFullPath}
                         fileName={fileName}
                         callbacks={callbacks}
                         canUndo={canUndo}

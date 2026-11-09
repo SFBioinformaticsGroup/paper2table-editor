@@ -5,8 +5,8 @@ import {
   buildPaperAnchorIds,
   collectPaperSourceUuids,
   columnNames,
-  computeRowspans,
   flattenMetadataRows,
+  getMultivaluedExpansion,
   getRowColumns,
   isEmptyRow,
   readerEmoji,
@@ -425,65 +425,62 @@ describe('buildFragmentColumns', () => {
   })
 })
 
-// ── computeRowspans ──────────────────────────────────────────────────────────
+// ── getMultivaluedExpansion ──────────────────────────────────────────────────
 
-describe('computeRowspans', () => {
-  const noReaders = new Map<string, string>()
-
-  it('returns rowspan 1 for all cells when rows have no row_ values', () => {
-    const rows: Row[] = [{ family: 'Apiaceae' }, { family: 'Apiaceae' }]
-    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([{ family: 1 }, { family: 1 }])
+describe('getMultivaluedExpansion', () => {
+  it('returns span 1 and empty multivaluedCols for a single-valued row', () => {
+    const row: Row = { family: 'Apiaceae', species: 'Ammi majus' }
+    const { span, multivaluedCols } = getMultivaluedExpansion(row, ['family', 'species'])
+    expect(span).toBe(1)
+    expect(multivaluedCols.size).toBe(0)
   })
 
-  it('returns rowspan 1 when consecutive rows have different row_ values', () => {
-    const rows: Row[] = [
-      { family: 'Apiaceae', row_: 0 },
-      { family: 'Apiaceae', row_: 1 },
-    ]
-    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([{ family: 1 }, { family: 1 }])
+  it('returns span equal to the length of the multi-valued column', () => {
+    const row: Row = {
+      family: 'Apiaceae',
+      species: [
+        { value: 'Ammi majus', agreement_level: 1 },
+        { value: 'Carum carvi', agreement_level: 2 },
+      ],
+    }
+    const { span, multivaluedCols } = getMultivaluedExpansion(row, ['family', 'species'])
+    expect(span).toBe(2)
+    expect(multivaluedCols).toEqual(new Map([
+      ['species', [
+        { value: 'Ammi majus', agreement_level: 1 },
+        { value: 'Carum carvi', agreement_level: 2 },
+      ]],
+    ]))
   })
 
-  it('merges consecutive rows with same row_ and same value', () => {
-    const rows: Row[] = [
-      { family: 'Apiaceae', row_: 0 },
-      { family: 'Apiaceae', row_: 0 },
-    ]
-    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([{ family: 2 }, { family: 0 }])
+  it('uses the max span when multiple columns are multi-valued with different lengths', () => {
+    const row: Row = {
+      family: [
+        { value: 'Apiaceae', agreement_level: 1 },
+        { value: 'Fabaceae', agreement_level: 1 },
+        { value: 'Rosaceae', agreement_level: 1 },
+      ],
+      species: [
+        { value: 'Ammi majus', agreement_level: 1 },
+        { value: 'Carum carvi', agreement_level: 1 },
+      ],
+    }
+    const { span } = getMultivaluedExpansion(row, ['family', 'species'])
+    expect(span).toBe(3)
   })
 
-  it('merges per-column independently when values differ across columns', () => {
-    const rows: Row[] = [
-      { family: 'Apiaceae', species: 'Ammi majus', row_: 0 },
-      { family: 'Apiaceae', species: 'Carum carvi', row_: 0 },
-    ]
-    expect(computeRowspans(rows, ['family', 'species'], noReaders)).toEqual([
-      { family: 2, species: 1 },
-      { family: 0, species: 1 },
-    ])
+  it('ignores single-element lists (convergent rows)', () => {
+    const row: Row = { species: [{ value: 'Ammi majus', agreement_level: 1 }] }
+    const { span, multivaluedCols } = getMultivaluedExpansion(row, ['species'])
+    expect(span).toBe(1)
+    expect(multivaluedCols.size).toBe(0)
   })
 
-  it('merges three consecutive rows with the same row_ and same value', () => {
-    const rows: Row[] = [
-      { family: 'Apiaceae', row_: 0 },
-      { family: 'Apiaceae', row_: 0 },
-      { family: 'Apiaceae', row_: 0 },
-    ]
-    expect(computeRowspans(rows, ['family'], noReaders)).toEqual([
-      { family: 3 },
-      { family: 0 },
-      { family: 0 },
-    ])
-  })
-
-  it('never merges the agreement_level_ column', () => {
-    const rows: Row[] = [
-      { family: 'Apiaceae', agreement_level_: 2, row_: 0 },
-      { family: 'Apiaceae', agreement_level_: 2, row_: 0 },
-    ]
-    expect(computeRowspans(rows, ['agreement_level_', 'family'], noReaders)).toEqual([
-      { agreement_level_: 1, family: 2 },
-      { agreement_level_: 1, family: 0 },
-    ])
+  it('ignores columns not present in the row', () => {
+    const row: Row = { family: 'Apiaceae' }
+    const { span, multivaluedCols } = getMultivaluedExpansion(row, ['family', 'species'])
+    expect(span).toBe(1)
+    expect(multivaluedCols.size).toBe(0)
   })
 })
 

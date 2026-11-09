@@ -1,5 +1,5 @@
 export interface ValueWithAgreement {
-  value: string
+  value: string | number | boolean
   agreement_level: number
 }
 
@@ -34,11 +34,11 @@ export interface TablesFile {
   tables: Table[]
   citation?: Citation
   metadata?: Record<string, unknown> | null
-  uuid?: string | null
+  id?: string | null
 }
 
 export interface Source {
-  uuid?: string
+  id?: string
   reader?: string
   path?: string
   [key: string]: unknown
@@ -67,7 +67,7 @@ export type PaperNotes = Record<string, string>
 export interface DirectoryState {
   dirPath: string
   metadata: Metadata
-  resolvedSources: Record<string, ResolvedSource>  // keyed by uuid
+  resolvedSources: Record<string, ResolvedSource>  // keyed by id
   fileNames: string[]
   pinnedPapers: string[]
   archivedPapers: string[]

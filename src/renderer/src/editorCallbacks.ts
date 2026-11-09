@@ -14,7 +14,7 @@ export interface EditorCallbacks {
   savePaperAs: (fileName: string) => void
   reloadPaper: (fileName: string) => void
   rerunTablemerge: (fileName: string) => void
-  navigateToSource: (uuid: string, tableNumber?: number) => void
+  navigateToSource: (id: string, tableNumber?: number) => void
 
   reverseText: (fileName: string, tableIdx: number) => void
   transposeTable: (fileName: string, tableIdx: number) => void

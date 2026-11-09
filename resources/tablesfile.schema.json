@@ -97,7 +97,7 @@
         }
       ]
     },
-    "uuid": {
+    "id": {
       "oneOf": [
         {
           "type": "null"
@@ -130,7 +130,7 @@
       "type": "object",
       "properties": {
         "value": {
-          "type": "string"
+          "type": ["string", "number", "boolean"]
         },
         "agreement_level": {
           "type": "integer"
@@ -149,6 +149,12 @@
         },
         {
           "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
         },
         {
           "type": "array",
@@ -177,6 +183,12 @@
           "oneOf": [
             {"type": "null"},
             {"type": "integer"}
+          ]
+        },
+        "curation_type_": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "enum": ["none", "automatic", "manual"]}
           ]
         }
       },

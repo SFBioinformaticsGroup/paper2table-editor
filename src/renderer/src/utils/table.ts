@@ -1,4 +1,4 @@
-import { Row, ColumnValue, Citation, Metadata, Table } from '@renderer/types';
+import { Row, ColumnValue, Citation, Metadata, Table, ValueWithAgreement } from '@renderer/types';
 import { getTableFragments } from './getTableFragments';
 
 export function getRowColumns(row: Row): Record<string, ColumnValue> {
@@ -167,45 +167,24 @@ export function buildFragmentColumns(rows: Row[]): string[] {
   return cols
 }
 
-export function computeRowspans(
-  rows: Row[],
-  columns: string[],
-  uuidToReader: Map<string, string>
-): Array<Record<string, number>> {
-  const n = rows.length
-  const rowspans: Array<Record<string, number>> = rows.map(() =>
-    Object.fromEntries(columns.map((col) => [col, 1]))
-  )
+export type MultivaluedExpansion = {
+  span: number
+  multivaluedCols: Map<string, ValueWithAgreement[]>
+}
+
+export function getMultivaluedExpansion(row: Row, columns: string[]): MultivaluedExpansion {
+  const colValues = getRowColumns(row)
+  const multivaluedCols = new Map<string, ValueWithAgreement[]>()
   for (const col of columns) {
-    if (col === 'agreement_level_') continue
-    let i = 0
-    while (i < n) {
-      const rowNum = typeof rows[i]['row_'] === 'number' ? rows[i]['row_'] : null
-      if (rowNum === null) {
-        i++
-        continue
-      }
-      const val = renderDataCell(rows[i], col, uuidToReader)
-      let span = 1
-      let j = i + 1
-      while (
-        j < n &&
-        rows[j]['row_'] === rowNum &&
-        renderDataCell(rows[j], col, uuidToReader) === val
-      ) {
-        span++
-        j++
-      }
-      if (span > 1) {
-        rowspans[i][col] = span
-        for (let k = i + 1; k < i + span; k++) {
-          rowspans[k][col] = 0
-        }
-      }
-      i += span
+    const val = colValues[col]
+    if (Array.isArray(val) && val.length > 1) {
+      multivaluedCols.set(col, val as ValueWithAgreement[])
     }
   }
-  return rowspans
+  const span = multivaluedCols.size > 0
+    ? Math.max(...[...multivaluedCols.values()].map((v) => v.length))
+    : 1
+  return { span, multivaluedCols }
 }
 
 export function renderDataCell(
