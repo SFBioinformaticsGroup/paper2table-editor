@@ -7,7 +7,7 @@ import { TableToolbar } from './TableToolbar'
 import { NoteButton } from './NoteButton'
 import { highlightText } from '../highlightUtils'
 import { getTableFragments } from '../utils/getTableFragments'
-import { readerEmoji, collectPaperSourceids, renderCitation, columnNames } from '../utils/table'
+import { readerEmoji, collectPaperSourceids, renderCitationItems, columnNames } from '../utils/table'
 import { hasNonSemanticColumns } from '../actions/applyPrevFragmentColumnNames'
 
 interface Props {
@@ -249,7 +249,12 @@ export function PaperSection({
         )}
       </div>
 
-      <p>Citation: {highlightText(renderCitation(content.citation), searchQuery ?? '')}</p>
+      <p>Citation:</p>
+      <ul>
+        {renderCitationItems(content.citation).map((item, index) => (
+          <li key={index}>{highlightText(item, searchQuery ?? '')}</li>
+        ))}
+      </ul>
       <PaperSources
         sources={paperSources}
         navigateToSource={callbacks.navigateToSource}

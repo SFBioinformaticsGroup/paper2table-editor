@@ -5,12 +5,13 @@ import {
   buildPaperAnchorIds,
   collectPaperSourceUuids,
   columnNames,
+  curationIconInfo,
   flattenMetadataRows,
   getMultivaluedExpansion,
   getRowColumns,
   isEmptyRow,
   readerEmoji,
-  renderCitation,
+  renderCitationItems,
   renderColumnValue,
   renderDataCell,
   rowPaletteClass,
@@ -58,6 +59,11 @@ describe('getRowColumns', () => {
     const row: Row = { agreement_level_: 1, sources_: [] }
     expect(getRowColumns(row)).toEqual({})
   })
+
+  it('strips curation_type_ from the result', () => {
+    const row: Row = { curation_type_: 'manual', name: 'aspirin' }
+    expect(getRowColumns(row)).toEqual({ name: 'aspirin' })
+  })
 })
 
 // ── columnNames ──────────────────────────────────────────────────────────────
@@ -78,6 +84,11 @@ describe('columnNames', () => {
 
   it('returns [] for an empty row list', () => {
     expect(columnNames([])).toEqual([])
+  })
+
+  it('skips curation_type_ as a meta column', () => {
+    const rows: Row[] = [{ curation_type_: 'automatic', name: 'A' }]
+    expect(columnNames(rows)).toEqual(['name'])
   })
 })
 
@@ -106,6 +117,11 @@ describe('isEmptyRow', () => {
 
   it('returns true when ValueWithAgreement array has only empty values', () => {
     const row: Row = { name: [{ value: '', agreement_level: 1 }] }
+    expect(isEmptyRow(row)).toBe(true)
+  })
+
+  it('treats curation_type_ as a meta column', () => {
+    const row: Row = { curation_type_: 'manual', name: '' }
     expect(isEmptyRow(row)).toBe(true)
   })
 })
@@ -139,27 +155,35 @@ describe('renderColumnValue', () => {
   })
 })
 
-// ── renderCitation ───────────────────────────────────────────────────────────
+// ── renderCitationItems ──────────────────────────────────────────────────────
 
-describe('renderCitation', () => {
-  it('returns empty string for null', () => {
-    expect(renderCitation(null)).toBe('')
+describe('renderCitationItems', () => {
+  it('returns empty array for null', () => {
+    expect(renderCitationItems(null)).toEqual([])
   })
 
-  it('returns empty string for undefined', () => {
-    expect(renderCitation(undefined)).toBe('')
+  it('returns empty array for undefined', () => {
+    expect(renderCitationItems(undefined)).toEqual([])
   })
 
-  it('returns plain string citation unchanged', () => {
-    expect(renderCitation('Smith et al. 2020')).toBe('Smith et al. 2020')
+  it('returns a single-item array for a plain string citation', () => {
+    expect(renderCitationItems('Smith et al. 2020')).toEqual(['Smith et al. 2020'])
   })
 
-  it('joins citation array values with ", "', () => {
+  it('splits a newline-separated citation string into items', () => {
+    expect(renderCitationItems('Smith 2020;\nJones 2021;\nBrown 2022')).toEqual([
+      'Smith 2020;',
+      'Jones 2021;',
+      'Brown 2022',
+    ])
+  })
+
+  it('returns one item per citation array entry', () => {
     const citation = [
       { value: 'Smith 2020', agreement_level: 3 },
       { value: 'Jones 2021', agreement_level: 2 },
     ]
-    expect(renderCitation(citation)).toBe('Smith 2020, Jones 2021')
+    expect(renderCitationItems(citation)).toEqual(['Smith 2020', 'Jones 2021'])
   })
 })
 
@@ -188,6 +212,30 @@ describe('agreementClass', () => {
 
   it('returns "high" for any level above 2', () => {
     expect(agreementClass(10)).toBe('high')
+  })
+})
+
+// ── curationIconInfo ─────────────────────────────────────────────────────────
+
+describe('curationIconInfo', () => {
+  it('returns null for undefined', () => {
+    expect(curationIconInfo(undefined)).toBe(null)
+  })
+
+  it('returns null for null', () => {
+    expect(curationIconInfo(null)).toBe(null)
+  })
+
+  it('returns null for "none"', () => {
+    expect(curationIconInfo('none')).toBe(null)
+  })
+
+  it('returns automatic info for "automatic"', () => {
+    expect(curationIconInfo('automatic')).toEqual({ type: 'automatic', title: 'Automatically curated' })
+  })
+
+  it('returns manual info for "manual"', () => {
+    expect(curationIconInfo('manual')).toEqual({ type: 'manual', title: 'Manually curated' })
   })
 })
 

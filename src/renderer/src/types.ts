@@ -6,9 +6,12 @@ export interface ValueWithAgreement {
 export type ColumnValue = null | string | number | ValueWithAgreement[]
 export type Citation = null | string | ValueWithAgreement[]
 
+export type CurationType = 'none' | 'automatic' | 'manual'
+
 export interface Row {
   agreement_level_?: number | null
   sources_?: string[] | null
+  curation_type_?: CurationType | null
   [key: string]: ColumnValue | string[] | undefined
 }
 

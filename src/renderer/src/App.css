@@ -369,6 +369,12 @@ main {
   background-color: #dfd;
 }
 
+.curation-icon {
+  margin-left: 4px;
+  opacity: 0.7;
+  vertical-align: middle;
+}
+
 .row-0 {
   background-color: #aed6f1;
 }

@@ -1,10 +1,12 @@
-import { Row, ColumnValue, Citation, Metadata, Table, ValueWithAgreement } from '@renderer/types';
+import { Row, ColumnValue, Citation, CurationType, Metadata, Table, ValueWithAgreement } from '@renderer/types';
 import { getTableFragments } from './getTableFragments';
+
+const META_KEYS = new Set(['agreement_level_', 'sources_', 'curation_type_'])
 
 export function getRowColumns(row: Row): Record<string, ColumnValue> {
   const result: Record<string, ColumnValue> = {}
   for (const [key, val] of Object.entries(row)) {
-    if (key !== 'agreement_level_' && key !== 'sources_') {
+    if (!META_KEYS.has(key)) {
       result[key] = val as ColumnValue
     }
   }
@@ -16,7 +18,7 @@ export function columnNames(rows: Row[]): string[] {
   const result: string[] = []
   for (const row of rows) {
     for (const key of Object.keys(row)) {
-      if (key !== 'agreement_level_' && key !== 'sources_' && !seen.has(key)) {
+      if (!META_KEYS.has(key) && !seen.has(key)) {
         seen.add(key)
         result.push(key)
       }
@@ -27,7 +29,7 @@ export function columnNames(rows: Row[]): string[] {
 
 export function isEmptyRow(row: Row): boolean {
   for (const [key, val] of Object.entries(row)) {
-    if (key === 'agreement_level_' || key === 'sources_') continue
+    if (META_KEYS.has(key)) continue
     if (val == null) continue
     if (Array.isArray(val)) {
       if (val.some((v) => typeof v === 'object' && 'value' in v ? v.value !== '' : String(v) !== '')) return false
@@ -44,16 +46,33 @@ export function renderColumnValue(val: ColumnValue): string {
   return String(val)
 }
 
-export function renderCitation(citation: Citation | undefined): string {
-  if (citation == null) return ''
-  if (Array.isArray(citation)) return citation.map((v) => v.value).join(', ')
-  return citation
+export function renderCitationItems(citation: Citation | undefined): string[] {
+  if (citation == null) return []
+  const texts = Array.isArray(citation) ? citation.map((v) => v.value) : [citation]
+  const items: string[] = []
+  for (const text of texts) {
+    for (const part of text.split('\n')) {
+      const stripped = part.trim()
+      if (stripped) items.push(stripped)
+    }
+  }
+  return items
 }
 
 export function agreementClass(level: number | null | undefined): string {
   if (level == null || level <= 1) return 'low'
   if (level === 2) return 'medium'
   return 'high'
+}
+
+export type CurationTypeIcon = Exclude<CurationType, 'none'>
+
+export function curationIconInfo(
+  curationType: Row['curation_type_']
+): { type: CurationTypeIcon; title: string } | null {
+  if (curationType === 'automatic') return { type: 'automatic', title: 'Automatically curated' }
+  if (curationType === 'manual') return { type: 'manual', title: 'Manually curated' }
+  return null
 }
 
 export function readerEmoji(reader: string | undefined): string {

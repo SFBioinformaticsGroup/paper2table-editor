@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaCopy, FaEllipsisVertical, FaPlus, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
+import { FaAnglesDown, FaArrowDown, FaArrowsDownToLine, FaArrowsUpToLine, FaArrowUp, FaCircleArrowDown, FaCircleArrowUp, FaCopy, FaEllipsisVertical, FaPenToSquare, FaPlus, FaRobot, FaScissors, FaTableColumns, FaTrash } from 'react-icons/fa6'
 import { PageModal } from './PageModal'
 import type { CellClipboard, CellSelection, ColumnValue, TableFragment } from '../types'
 import { highlightText } from '../highlightUtils'
@@ -8,7 +8,7 @@ import { highlightText } from '../highlightUtils'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { ColumnHeader } from './ColumnHeader'
 import { EditableCell } from './EditableCell'
-import { isEmptyRow, buildFragmentColumns, columnNames, getMultivaluedExpansion, agreementClass, rowPaletteClass, renderDataCell, renderColumnValue } from '../utils/table'
+import { isEmptyRow, buildFragmentColumns, columnNames, curationIconInfo, getMultivaluedExpansion, agreementClass, rowPaletteClass, renderDataCell, renderColumnValue } from '../utils/table'
 
 const META_COLS = new Set(['row_', 'agreement_level_', 'readers_', 'sources_'])
 
@@ -372,10 +372,21 @@ export function FragmentTable({
                           </td>
                         )
                       }
+                      if (col === 'agreement_level_') {
+                        const iconInfo = curationIconInfo(row.curation_type_)
+                        return (
+                          <td key={col} className={agreementClass(row.agreement_level_)} rowSpan={rowSpanProp}>
+                            {highlightText(renderDataCell(row, col, idToReader), searchQuery ?? '')}
+                            {iconInfo && (
+                              <span className="curation-icon" title={iconInfo.title}>
+                                {iconInfo.type === 'automatic' ? <FaRobot /> : <FaPenToSquare />}
+                              </span>
+                            )}
+                          </td>
+                        )
+                      }
                       if (META_COLS.has(col)) {
-                        let tdClass: string | undefined
-                        if (col === 'agreement_level_') tdClass = agreementClass(row.agreement_level_)
-                        else if (col === 'row_') tdClass = rowPaletteClass(row)
+                        const tdClass = col === 'row_' ? rowPaletteClass(row) : undefined
                         return <td key={col} className={tdClass} rowSpan={rowSpanProp}>{highlightText(renderDataCell(row, col, idToReader), searchQuery ?? '')}</td>
                       }
                       const colIdx = dataCols.indexOf(col)
