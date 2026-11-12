@@ -9,6 +9,7 @@ import {
   flattenMetadataRows,
   getMultivaluedExpansion,
   getRowColumns,
+  isEmptyCellValue,
   isEmptyRow,
   readerEmoji,
   renderCitationItems,
@@ -212,6 +213,38 @@ describe('agreementClass', () => {
 
   it('returns "high" for any level above 2', () => {
     expect(agreementClass(10)).toBe('high')
+  })
+})
+
+// ── isEmptyCellValue ─────────────────────────────────────────────────────────
+
+describe('isEmptyCellValue', () => {
+  it('returns true for null', () => {
+    expect(isEmptyCellValue(null)).toBe(true)
+  })
+
+  it('returns true for undefined', () => {
+    expect(isEmptyCellValue(undefined)).toBe(true)
+  })
+
+  it('returns true for an empty string', () => {
+    expect(isEmptyCellValue('')).toBe(true)
+  })
+
+  it('returns true for a whitespace-only string', () => {
+    expect(isEmptyCellValue('   ')).toBe(true)
+  })
+
+  it('returns false for a non-empty string', () => {
+    expect(isEmptyCellValue('Rosa')).toBe(false)
+  })
+
+  it('returns false for a number', () => {
+    expect(isEmptyCellValue(0)).toBe(false)
+  })
+
+  it('returns false for a boolean', () => {
+    expect(isEmptyCellValue(false)).toBe(false)
   })
 })
 

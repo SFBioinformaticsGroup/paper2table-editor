@@ -65,6 +65,12 @@ export function agreementClass(level: number | null | undefined): string {
   return 'high'
 }
 
+export function isEmptyCellValue(value: unknown): boolean {
+  if (value == null) return true
+  if (typeof value === 'string') return value.trim().length === 0
+  return false
+}
+
 export type CurationTypeIcon = Exclude<CurationType, 'none'>
 
 export function curationIconInfo(

@@ -8,7 +8,7 @@ import { highlightText } from '../highlightUtils'
 import type { EditorCallbacks } from '../editorCallbacks'
 import { ColumnHeader } from './ColumnHeader'
 import { EditableCell } from './EditableCell'
-import { isEmptyRow, buildFragmentColumns, columnNames, curationIconInfo, getMultivaluedExpansion, agreementClass, rowPaletteClass, renderDataCell, renderColumnValue } from '../utils/table'
+import { isEmptyRow, buildFragmentColumns, columnNames, curationIconInfo, getMultivaluedExpansion, agreementClass, isEmptyCellValue, rowPaletteClass, renderDataCell, renderColumnValue } from '../utils/table'
 
 const META_COLS = new Set(['row_', 'agreement_level_', 'readers_', 'sources_'])
 
@@ -337,9 +337,11 @@ export function FragmentTable({
                       if (multivaluedCols.has(col)) {
                         const values = multivaluedCols.get(col)!
                         if (subRowIdx < values.length) {
+                          const entryValue = values[subRowIdx].value
+                          const cellClass = isEmptyCellValue(entryValue) ? undefined : agreementClass(values[subRowIdx].agreement_level)
                           return (
-                            <td key={col} className={agreementClass(values[subRowIdx].agreement_level)}>
-                              {highlightText(values[subRowIdx].value, searchQuery ?? '')}
+                            <td key={col} className={cellClass}>
+                              {highlightText(entryValue, searchQuery ?? '')}
                             </td>
                           )
                         }
