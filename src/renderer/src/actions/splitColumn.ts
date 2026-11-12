@@ -28,7 +28,7 @@ function splitValue(rendered: string, strategy: SplitStrategy): { head: string |
   }
 
   if (strategy === 'period') {
-    const stripped = rendered.replace(/\.+$/, '')
+    const stripped = rendered.replace(/[\s.]+$/, '')
     const lastIdx = stripped.lastIndexOf('.')
     if (lastIdx < 0) return { head: stripped.trim() || null, tail: null }
     return {
@@ -38,7 +38,7 @@ function splitValue(rendered: string, strategy: SplitStrategy): { head: string |
   }
 
   // slash
-  const stripped = rendered.replace(/\/+$/, '')
+  const stripped = rendered.replace(/[\s/]+$/, '')
   const lastIdx = stripped.lastIndexOf('/')
   if (lastIdx < 0) return { head: stripped.trim() || null, tail: null }
   return {
