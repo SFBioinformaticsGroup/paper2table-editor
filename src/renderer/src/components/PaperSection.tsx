@@ -7,7 +7,7 @@ import { TableToolbar } from './TableToolbar'
 import { NoteButton } from './NoteButton'
 import { highlightText } from '../highlightUtils'
 import { getTableFragments } from '../utils/getTableFragments'
-import { readerEmoji, collectPaperSourceids, renderCitationItems, columnNames } from '../utils/table'
+import { readerEmoji, collectPaperSourceUuids, renderCitationItems, columnNames } from '../utils/table'
 import { hasNonSemanticColumns } from '../actions/applyPrevFragmentColumnNames'
 
 interface Props {
@@ -155,8 +155,8 @@ export function PaperSection({
   onCellMouseOver
 }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const paperids = collectPaperSourceids(content)
-  const paperSources = allSources.filter((s) => s.id != null && paperids.has(s.id))
+  const paperUuids = collectPaperSourceUuids(content)
+  const paperSources = allSources.filter((s) => s.id != null && paperUuids.has(s.id))
 
   return (
     <div className="paper">
