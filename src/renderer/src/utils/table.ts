@@ -48,7 +48,7 @@ export function renderColumnValue(val: ColumnValue): string {
 
 export function renderCitationItems(citation: Citation | undefined): string[] {
   if (citation == null) return []
-  const texts = Array.isArray(citation) ? citation.map((v) => v.value) : [citation]
+  const texts = Array.isArray(citation) ? citation.map((v) => String(v.value)) : [citation]
   const items: string[] = []
   for (const text of texts) {
     for (const part of text.split('\n')) {

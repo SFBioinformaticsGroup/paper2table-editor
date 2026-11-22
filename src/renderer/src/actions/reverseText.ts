@@ -18,7 +18,7 @@ export function reverseText(file: TablesFile, tableIdx: number): TablesFile {
       const next: Row = {};
       for (const [k, v] of Object.entries(row)) {
         if (k === 'agreement_level_' || k === 'sources_' || k === 'readers_') {
-          next[k] = v as ColumnValue;
+          (next as Record<string, unknown>)[k] = v;
         } else {
           next[k] = reverseColumnValue(v as ColumnValue);
         }

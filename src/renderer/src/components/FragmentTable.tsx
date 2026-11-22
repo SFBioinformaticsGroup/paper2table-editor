@@ -341,7 +341,7 @@ export function FragmentTable({
                           const cellClass = isEmptyCellValue(entryValue) ? undefined : agreementClass(values[subRowIdx].agreement_level)
                           return (
                             <td key={col} className={cellClass}>
-                              {highlightText(entryValue, searchQuery ?? '')}
+                              {highlightText(String(entryValue), searchQuery ?? '')}
                             </td>
                           )
                         }
