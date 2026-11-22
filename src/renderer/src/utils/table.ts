@@ -174,6 +174,23 @@ export function rowPaletteClass(row: Row): string | undefined {
   return rowNum !== null ? `row-${rowNum % ROW_PALETTE_SIZE}` : undefined
 }
 
+const OPTIONAL_META_COLS = new Set(['citation_', 'path_', 'page_', 'fragment_'])
+
+export function columnHasData(rows: Row[], col: string): boolean {
+  return rows.some((row) => {
+    const value = row[col]
+    if (value == null) return false
+    if (Array.isArray(value)) {
+      return value.some((entry) =>
+        typeof entry === 'object' && entry !== null && 'value' in entry
+          ? String((entry as ValueWithAgreement).value) !== ''
+          : String(entry) !== ''
+      )
+    }
+    return String(value) !== ''
+  })
+}
+
 export function buildFragmentColumns(rows: Row[]): string[] {
   const hasAgreement = rows.some((r) => r.agreement_level_ != null)
   const hasSources = rows.some((r) => r.sources_ != null)
@@ -181,8 +198,10 @@ export function buildFragmentColumns(rows: Row[]): string[] {
   const rowColSets = rows.map((r) => new Set(Object.keys(getRowColumns(r))))
   const commonCols = allColNames.filter((c) => rowColSets.every((s) => s.has(c)))
   const extraCols = allColNames.filter((c) => !commonCols.includes(c))
-  const dataCols = [...commonCols, ...extraCols].filter((c) => c !== 'row_')
-  const hasRow = allColNames.includes('row_')
+  const dataCols = [...commonCols, ...extraCols].filter(
+    (c) => c !== 'row_' && (!OPTIONAL_META_COLS.has(c) || columnHasData(rows, c))
+  )
+  const hasRow = allColNames.includes('row_') && columnHasData(rows, 'row_')
 
   const cols: string[] = []
   if (hasRow) cols.push('row_')

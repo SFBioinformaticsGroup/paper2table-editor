@@ -504,6 +504,38 @@ describe('buildFragmentColumns', () => {
   it('returns an empty array for an empty row list', () => {
     expect(buildFragmentColumns([])).toEqual([])
   })
+
+  it('omits row_ when every row has a null row_ value', () => {
+    const rows: Row[] = [
+      { row_: null, name: 'A' },
+      { row_: null, name: 'B' },
+    ]
+    expect(buildFragmentColumns(rows)).toEqual(['name'])
+  })
+
+  it('omits citation_, path_, page_, fragment_ when all values are null', () => {
+    const rows: Row[] = [
+      { name: 'A', citation_: null, path_: null, page_: null, fragment_: null },
+      { name: 'B', citation_: null, path_: null, page_: null, fragment_: null },
+    ]
+    expect(buildFragmentColumns(rows)).toEqual(['name'])
+  })
+
+  it('keeps citation_, path_, page_, fragment_ when any row has a value', () => {
+    const rows: Row[] = [
+      { name: 'A', citation_: 'Smith 2020', path_: null, page_: 3, fragment_: null },
+      { name: 'B', citation_: null, path_: '/x.pdf', page_: null, fragment_: 1 },
+    ]
+    expect(buildFragmentColumns(rows)).toEqual(['name', 'citation_', 'path_', 'page_', 'fragment_'])
+  })
+
+  it('omits a meta column whose only values are empty strings', () => {
+    const rows: Row[] = [
+      { name: 'A', citation_: '' },
+      { name: 'B', citation_: '' },
+    ]
+    expect(buildFragmentColumns(rows)).toEqual(['name'])
+  })
 })
 
 // ── getMultivaluedExpansion ──────────────────────────────────────────────────
