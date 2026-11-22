@@ -2,6 +2,7 @@
   "name": "tables-editor",
   "version": "1.3.0",
   "private": true,
+  "packageManager": "pnpm@10.18.0",
   "main": "out/main/index.js",
   "author": {
     "name": "Franco Leonardo Bulgarelli",

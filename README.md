@@ -9,20 +9,20 @@ An Electron + React desktop viewer for [paper2table](../) result sets. Load a di
 ## Install
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Run
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 This opens the app in development mode with hot reload.
 
 > **Troubleshooting — `Error: Electron uninstall`**: the Electron binary is downloaded as a separate postinstall step and can be missing if the download failed silently. Fix it with:
 > ```bash
-> npm run electron:download
+> pnpm run electron:download
 > ```
 
 Once open, click **Open ResultSet** and select a folder that contains one or more `.tables.json` files produced by `paper2table` or `tablemerge`. A `tables.metadata.json` file in the same directory is optional but enables the metadata panel and per-row source tracking.
@@ -30,19 +30,19 @@ Once open, click **Open ResultSet** and select a folder that contains one or mor
 ## Type-check
 
 ```bash
-npm run typecheck
+pnpm run typecheck
 ```
 
 ## Build
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 The compiled output is written to `out/`. Run the built app with:
 
 ```bash
-npm run preview
+pnpm run preview
 ```
 
 ## Releasing
@@ -54,7 +54,7 @@ Releases are built automatically by GitHub Actions and published to [GitHub Rele
 Install `electron-builder`:
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### Steps
@@ -75,7 +75,7 @@ The workflow builds Linux (`.deb`, `.AppImage`) and Windows (`.exe`) installers 
 To build an unpackaged app directory (no installer, fast) on your machine:
 
 ```bash
-npm run dist:dir
+pnpm run dist:dir
 ```
 
 The unpacked app lands in `dist/linux-unpacked/` or `dist/win-unpacked/`. Run the executable inside to verify the packaged build works before cutting the tag.

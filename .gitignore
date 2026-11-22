@@ -4,3 +4,6 @@ dist/
 
 *.tsbuildinfo
 electron.vite.config.js
+
+package-lock.json
+yarn.lock
