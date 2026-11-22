@@ -20,7 +20,7 @@ pnpm run dev
 
 This opens the app in development mode with hot reload.
 
-> **Troubleshooting — `Error: Electron uninstall`**: the Electron binary is downloaded as a separate postinstall step and can be missing if the download failed silently. Fix it with:
+> **Troubleshooting — `Error: Electron uninstall`**: the Electron binary is downloaded by this project's own `postinstall` script, which runs automatically after `pnpm install`. If the download failed silently, re-run it with:
 > ```bash
 > pnpm run electron:download
 > ```
